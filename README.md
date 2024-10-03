@@ -1,2 +1,101 @@
-# didcomm-mediator
-DIDComm Mediator
+# DIDComm Mediator
+
+## Configuration
+
+### Mediator
+
+At the moment, all configuration is done by environment variables. All of them are optional
+
+| Variable                  | Description                                                                                                         | Default value                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| AGENT_NAME                | Label to show to other DIDComm agents                                                                               | Test Cloud Agent                |
+| AGENT_ENDPOINTS           | Comma-separated public endpoint list where agent DIDComm endpoints will be accessible (including protocol and port) | ws://localhost:4000             |
+| AGENT_PUBLIC_DID          | Agent's public DID (in did:web format)                                                                              | None                            |
+| AGENT_PORT                | Port where DIDComm agent will be running                                                                            | 4000                            |
+| AGENT_LOG_LEVEL           | Agent log level                                                                                                     | 2 (debug)                       |
+| HTTP_SUPPORT              | Enable support of incoming DIDComm messages through HTTP transport                                                  | true                            |
+| WS_SUPPORT                | Enable support of incoming DIDComm messages through WebSocket transport                                             | true                            |
+| WALLET_NAME               | Wallet (database) name                                                                                              | test-cloud-agent                |
+| WALLET_KEY                | Wallet base encryption key                                                                                          | 'Test Cloud Agent'              |
+| KEY_DERIVATION_METHOD     | Wallet key derivation method                                                                                        | ARGON2I_MOD                     |
+| POSTGRES_HOST             | PosgreSQL database host                                                                                             | None (use SQLite)               |
+| POSTGRES_USER             | PosgreSQL database username                                                                                         | None                            |
+| POSTGRES_PASSWORD         | PosgreSQL database password                                                                                         | None                            |
+| POSTGRES_ADMIN_USER       | PosgreSQL database admin user                                                                                       | None                            |
+| POSTGRES_ADMIN_PASSWORD   | PosgreSQL database admin password                                                                                   | None                            |
+| DB_NOSQL                  | Activate MessageRepositoryDbService with Nosql database or SQL                                                      | false                           |
+| DB_PUBSUB_FIXED           | Activate Pub/Sub mode, Fixed Channel or ConnectionId Channel                                                        | false                           |
+| ENABLE_MESSAGE_REPOSITORY | Allow change strategy storage. choose true activate messageRepository PG database                                   | false                           |
+| FCM_SERVICE_HOST          | Host or service where connect to rest fcm-notification-service                                                      | localhost                       |
+| FCM_SERVICE_PORT          | Port to connection service to rest fcm-notification-service                                                         | 3001                            |
+| FCM_SERVICE_ROUTE         | Route of endpoit service to rest fcm-notification-service                                                           | /fcm/fcmNotificationSender/send |
+
+These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
+
+## Deploy and run
+
+2060-cloud-agent can be run both locally or containerized.
+
+### Locally
+
+2060-cloud-agent mediator can be built and run on localhost by just setting the corresponding variables and executing:
+
+```
+yarn build
+yarn start
+```
+
+Upon a successful start, the following lines should be read in log:
+
+```
+INFO: Cloud Agent initialized OK
+```
+
+### Using docker
+
+First of all, a docker image must be created by doing:
+
+```
+docker build -t 2060-cloud-agent:[tag] .
+```
+
+Then, a container can be created and deployed:
+
+```
+docker run -e AGENT_NAME=... -e AGENT_ENDPOINT=... -e AGENT_PUBLIC_DID=yyy -e AGENT_PORT=xxx -p yyy:xxx 2060-cloud-agent:[tag]
+```
+
+where yyy is an publicly accesible port from the host machine.
+
+This one will run default command, which launches the mediator. If you want to run a VDR Proxy, you can override this command and use `yarn vdrproxy`.
+
+# How to testing
+
+## Testing with Agent Clients
+
+For more details, see the [Client-Agent test](/src/test/Client-Agent/README.md).
+
+## Testing massive message between Agents Clients
+
+For more details, see the [Massive Message Sender test](/src/test/Send-Messages/README.md).
+
+## Test Load balancer with Cloud agent live mode with message repository DB pub/sub and postgres wallets
+
+- The porpuse is to be able to test the cloud agent live mode implemented with postgres for storage messagePickup, pub/sub for comunication instances and postgres for storage wallets, to do this you must do running docker compose locate on root of project file called [docker-comopose-lb.yml]
+
+### Setup
+
+1. You should be set IP local in the file nginx.conf locate on ngnix folder a section upstream
+
+```
+upstream loadbalancer {
+server IP-HOST:4001;
+server IP-HOST:4002;
+}
+```
+
+2. Execute docker compose with load balancer:
+
+```bash
+docker compose -f docker-compose-lb.yml up --build
+```
