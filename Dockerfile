@@ -6,7 +6,6 @@ ENV RUN_MODE="docker"
 
 COPY package.json package.json
 COPY yarn.lock yarn.lock
-COPY ./patches ./patches
 
 # Run install after copying only dependency file
 # to make use of docker layer caching
@@ -16,7 +15,6 @@ RUN yarn install
 COPY ./src ./src
 COPY tsconfig.json tsconfig.json
 COPY jest.config.js jest.config.js
-#COPY firebase-cfg.json firebase-cfg.json
 
 
 RUN yarn build
