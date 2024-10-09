@@ -68,7 +68,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   const agent = createCloudAgent(config, messageRepository)
 
   if (messageRepository instanceof CustomMessageRepository) {
-    messageRepository.initialize(agent, dbPubSubFixed!)
+    if (dbPubSubFixed) messageRepository.initialize(agent, dbPubSubFixed)
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
   }

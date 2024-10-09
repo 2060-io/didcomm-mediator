@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { Logger } from 'tslog'
+const logger = new Logger()
 
 // Function to send REST messages
 async function sendMessages(
@@ -7,8 +9,8 @@ async function sendMessages(
   connectionId: string,
   executionCount: number
 ): Promise<void> {
-  console.log('Entered to send message')
-  const url: string = `http://localhost:${port}/send-message`
+  logger.info('Entered to send message')
+  const url = `http://localhost:${port}/send-message`
 
   const startTime = performance.now() // Start the timer
 
@@ -23,10 +25,10 @@ async function sendMessages(
       try {
         // Make a POST request using axios
         const response = await axios.post(url, message)
-        console.log(`Message ${i} Status Code: ${response.status}`)
+        logger.info(`Message ${i} Status Code: ${response.status}`)
       } catch (error) {
         // Handle errors in case the request fails
-        console.error('Error sending the message:', error.message)
+        logger.error('Error sending the message:', error.message)
       }
     }
   }
@@ -34,10 +36,10 @@ async function sendMessages(
   // Function to control the interval and total execution times
   async function controlIntervalAndExecution() {
     for (let i = 1; i <= executionCount; i++) {
-      console.log(`Execution number: ${i}`)
+      logger.info(`Execution number: ${i}`)
       await sendMessageAtInterval()
       if (i !== executionCount) {
-        console.log(`Waiting 1 minute execution ${i} / ${executionCount}`)
+        logger.info(`Waiting 1 minute execution ${i} / ${executionCount}`)
         await new Promise((resolve) => setTimeout(resolve, 1 * 60 * 1000)) // Wait for 1 minutes
       }
     }
@@ -47,7 +49,7 @@ async function sendMessages(
 
   const endTime = performance.now() // Stop the timer
   const duration = endTime - startTime
-  console.log(`Total Execution time: ${duration} milliseconds`)
+  logger.info(`Total Execution time: ${duration} milliseconds`)
 }
 
 // Get the message count, port, connectionId, and execution count from environment variables

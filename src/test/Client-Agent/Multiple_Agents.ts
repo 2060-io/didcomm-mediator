@@ -2,6 +2,8 @@
  * Multiple_Agent.js has only been tested to work on Linux OS. The openTerminal method should handle the OS on which it is being executed.
  */
 import spawn from 'cross-spawn'
+import { Logger } from 'tslog'
+const logger = new Logger()
 
 // Function to wait for keyboard input to close the program
 function waitForKey(keyCode: number): Promise<void> {
@@ -43,5 +45,5 @@ for (let i = 0; i < numClients; i++) {
   const command = buildCommand(port)
   openTerminal(command)
 }
-console.log('press enter to exit')
+logger.info('press enter to exit')
 waitForKey(10)
