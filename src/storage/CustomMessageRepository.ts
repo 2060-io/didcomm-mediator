@@ -20,8 +20,7 @@ export class CustomMessageRepository implements MessagePickupRepository {
   private logger?: Logger
   private agent?: CloudAgent
   private dbPubSubFixed?: boolean
-  private subscription: { unsubscribe: () => void } | void | undefined
-  private instanceName?: string
+  private instanceName: string
   private notificationSender: FcmNotificationSender
   private MessagePickupDbService: MessagePickupDbService
 
@@ -33,6 +32,7 @@ export class CustomMessageRepository implements MessagePickupRepository {
     this.logger = logger
     this.notificationSender = notificationSender
     this.MessagePickupDbService = MessagePickupDbService
+    this.instanceName = os.hostname()
   }
 
   public async initialize(agent: CloudAgent, dbPubSubFixed: boolean) {
@@ -47,9 +47,6 @@ export class CustomMessageRepository implements MessagePickupRepository {
       // Agent initialization
       this.agent = agent
 
-      // Instance name initialization
-      this.instanceName = os.hostname()
-
       // Create pubSubInstance with channel fixed mode
       this.logger?.debug(`[initialize] Listener Mode channel fixed: ${this.dbPubSubFixed} `)
 
@@ -57,7 +54,7 @@ export class CustomMessageRepository implements MessagePickupRepository {
         this.logger?.debug(`[initialize] initialize pubSubInstance with fixed channel `)
 
         await this.MessagePickupDbService.subscribePubSubWithFixedChannel(async (message) => {
-          const connectionId = message.message
+          const connectionId = message
           this.logger?.debug(
             `[subscribePubSubWithFixedChannel] Publish new Message on ${this.instanceName} to connectionId:  ${connectionId} `
           )
@@ -89,32 +86,12 @@ export class CustomMessageRepository implements MessagePickupRepository {
         await this.MessagePickupDbService.addLiveSession(
           liveSessionData.id,
           liveSessionData.connectionId,
-          this.instanceName!
+          this.instanceName
         )
         const connectionId = liveSessionData.connectionId
 
         if (!this.dbPubSubFixed) {
           this.logger?.debug(`[initialize] initialize subscribe with connectionId ${connectionId}`)
-          this.subscription = await this.MessagePickupDbService.subscribePubSub(connectionId, async () => {
-            this.logger?.debug(
-              `[subscribePubSub] Publish new Message in channel to ${connectionId}
-            )}`
-            )
-            if (!agent) throw new Error('Agent is not defined')
-
-            const pickupLiveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
-
-            this.logger?.debug(
-              `[subscribePubSub] find pickupLiveSession ${pickupLiveSession} to connectionId ${connectionId} `
-            )
-            if (pickupLiveSession) {
-              this.logger?.debug(
-                `[subscribePubSub] found LiveSession connectionId ${connectionId}, Delivering Messages`
-              )
-
-              agent.messagePickup.deliverMessagesFromQueue({ pickupSessionId: pickupLiveSession.id })
-            }
-          })
         }
       })
 
@@ -251,7 +228,7 @@ export class CustomMessageRepository implements MessagePickupRepository {
     }
 
     try {
-      const result = await this.MessagePickupDbService.removeMessagesFromQueue(connectionId, messageIds)
+      await this.MessagePickupDbService.removeMessagesFromQueue(connectionId, messageIds)
     } catch (error) {
       this.logger?.error(`[removeMessages] Error removing messages: ${error}`)
     }

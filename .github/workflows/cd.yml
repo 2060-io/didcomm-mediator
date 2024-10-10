@@ -1,0 +1,97 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [main, 'release/**']
+
+  workflow_dispatch:
+
+env:
+  DH_USERNAME: ${{secrets.DOCKER_HUB_LOGIN}}
+  DH_TOKEN: ${{secrets.DOCKER_HUB_PWD}}
+  IMAGE_NAME: 'didcomm-mediator'
+  IMAGE_TAG: ${{ github.ref == 'refs/heads/main' && 'dev' || github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout didcomm-mediator
+        uses: actions/checkout@v4
+
+      - name: Setup node v18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          yarn install
+
+      - uses: codfish/semantic-release-action@v3
+        id: semantic
+        with:
+          branches: |
+            [
+              'release',
+              { 
+                name: 'main',
+                prerelease: 'dev'
+              }
+            ]
+          plugins: |
+            [
+              [
+                "@semantic-release/commit-analyzer",
+                {
+                  "preset": "angular",
+                  "releaseRules": [
+                    {
+                      "type": "refactor",
+                      "release": "patch"
+                    }
+                  ]
+                }
+              ],
+              [
+                "@semantic-release/npm",
+                {
+                  "npmPublish": false
+                }
+              ],
+              "@semantic-release/release-notes-generator",
+            ]
+
+      - name: Log in to Docker Hub
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          echo "$DH_TOKEN" | docker login -u "$DH_USERNAME" --password-stdin
+
+      - name: Build Docker image
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          docker build -f Dockerfile -t $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Add tags to Docker image and push to Docker Hub
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          docker tag $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DH_USERNAME/$IMAGE_NAME:v${RELEASE_MAJOR}-$IMAGE_TAG
+          docker tag $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DH_USERNAME/$IMAGE_NAME:v${RELEASE_MAJOR}.${RELEASE_MINOR}-$IMAGE_TAG
+          docker tag $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DH_USERNAME/$IMAGE_NAME:v${RELEASE_MAJOR}.${RELEASE_MINOR}.${RELEASE_PATCH:0:1}-$IMAGE_TAG
+          docker tag $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DH_USERNAME/$IMAGE_NAME:v$RELEASE_VERSION
+          docker push $DH_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR-$IMAGE_TAG
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR-$IMAGE_TAG
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR.${RELEASE_PATCH:0:1}-$IMAGE_TAG
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_VERSION
+
+      - name: Add tags to Docker image and push to Docker Hub (specific to releases)
+        if: github.ref == 'refs/heads/release' && steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          docker tag $DH_USERNAME/$IMAGE_NAME:${GITHUB_REF##*/} $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR
+          docker tag $DH_USERNAME/$IMAGE_NAME:${GITHUB_REF##*/} $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR
+          docker tag $DH_USERNAME/$IMAGE_NAME:${GITHUB_REF##*/} $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.${RELEASE_MINOR}.${RELEASE_PATCH:0:1}
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR.${RELEASE_PATCH:0:1}

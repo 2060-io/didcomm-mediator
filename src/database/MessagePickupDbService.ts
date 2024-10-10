@@ -1,7 +1,7 @@
 import { EncryptedMessage, QueuedMessage } from '@credo-ts/core'
 import { MessagePickupSession } from '@credo-ts/core/build/modules/message-pickup/MessagePickupSession'
 import { MubSub } from '@mawhea/mongopubsub'
-import { CloudAgent } from '../agent/CloudAgent'
+import PGPubsub from 'pg-pubsub'
 
 export interface MessagePickupDbService {
   initialize(): Promise<void>
@@ -43,7 +43,7 @@ export interface MessagePickupDbService {
     connectionId: string,
     recipientDids: string[],
     payload: EncryptedMessage,
-    liveSession: any
+    liveSession: MessagePickupSession | undefined
   ): Promise<{ messageId: string; receivedAt: Date } | undefined>
   /**
    * Remove messages of queue that have been sent and received by the client is allowed.
@@ -65,7 +65,7 @@ export interface MessagePickupDbService {
    * @param connectionId
    * @returns Promise<any | boolean>
    */
-  getLiveSession(connectionId: string): Promise<any | boolean>
+  getLiveSession(connectionId: string): Promise<boolean>
   /**
    * This method adds a new connectionId and instance name to DB upon LiveSessionSave event
    * @param connectionId
@@ -85,7 +85,7 @@ export interface MessagePickupDbService {
    * are messages for a certain connectionId
    * @returns Promise a connection DB
    */
-  pubSubConnection(): any
+  pubSubConnection(): Promise<PGPubsub | MubSub | undefined>
 
   /**
    * Allow creating a subscription to a channel to listen for events generated
@@ -114,7 +114,7 @@ export interface MessagePickupDbService {
    * @param onMessageReceived
    */
 
-  subscribePubSubWithFixedChannel(onMessageReceived: (message: any) => void): Promise<void>
+  subscribePubSubWithFixedChannel(onMessageReceived: (message: string) => void): Promise<void>
 
   /**
    * Publish message in Fixed Channel messageQueue

@@ -1,9 +1,10 @@
-import { MongoClient, Collection, ObjectId, ReadPreference } from 'mongodb'
+import { MongoClient, Collection, ObjectId } from 'mongodb'
 import { EncryptedMessage, Logger, QueuedMessage } from '@credo-ts/core'
 import { DB_URL_CONNECT, MessageState } from '../../config/constants'
 import { CustomQueuedMessage, CustomLiveSession } from './CollectionsDb'
 import { MessagePickupDbService } from '../MessagePickupDbService'
 import { MubSub } from '@mawhea/mongopubsub'
+import { MessagePickupSession } from '@credo-ts/core/build/modules/message-pickup/MessagePickupSession'
 
 export class MongoDBService implements MessagePickupDbService {
   private client?: MongoClient
@@ -22,8 +23,6 @@ export class MongoDBService implements MessagePickupDbService {
 
       // create connection to MongoDB
       this.client = new MongoClient(DB_URL_CONNECT, { monitorCommands: true })
-
-      //await this.client.connect()
 
       // Access database and collections
       const db = this.client.db('MessagePickupRepository')
@@ -45,8 +44,10 @@ export class MongoDBService implements MessagePickupDbService {
 
   public async connect(): Promise<void> {
     try {
-      await this.client!.connect()
-      this.logger?.debug(`[connect] MongoDBService connection MongoDb was successfully established`)
+      if (this.client) {
+        await this.client.connect()
+        this.logger?.debug(`[connect] MongoDBService connection MongoDb was successfully established`)
+      }
     } catch (error) {
       this.logger?.debug(`[connect] MongoDBService Error establishing the connection ${error}`)
     }
@@ -86,15 +87,15 @@ export class MongoDBService implements MessagePickupDbService {
           state: MessageState.pending,
         })
         .sort({ created_at: 1 })
-        .limit(0)
+        .limit(limit)
         .project({ _id: 1, state: 1, encryptedMessage: 1, created_at: 1, receivedAt: '$created_at' })
         .toArray()
         .then(async (result) => {
           messagesToUpdateIds = result.map((message) => message._id.toString())
 
           // Update the state of messages to 'sending'
-          if (!deleteMessages && messagesToUpdateIds.length > 0) {
-            await this.messagesCollection!.updateMany(
+          if (!deleteMessages && messagesToUpdateIds.length > 0 && this.messagesCollection) {
+            await this.messagesCollection.updateMany(
               { _id: { $in: result.map((message) => message._id) } },
               { $set: { state: MessageState.sending } }
             )
@@ -148,7 +149,7 @@ export class MongoDBService implements MessagePickupDbService {
     connectionId: string,
     recipientDids: string[],
     payload: EncryptedMessage,
-    liveSession: any
+    liveSession: MessagePickupSession | undefined
   ): Promise<{ messageId: string; receivedAt: Date } | undefined> {
     if (!this.messagesCollection) {
       throw new Error('[addMessageToQueue] MongoDBService messagesCollection is not initialized')
@@ -242,7 +243,7 @@ export class MongoDBService implements MessagePickupDbService {
     }
   }
 
-  public async getLiveSession(connectionId: string): Promise<any | boolean> {
+  public async getLiveSession(connectionId: string): Promise<boolean> {
     if (!this.livesessionCollection) {
       throw new Error('[getLiveSession] MongoDBService livesessionCollection is not initialized')
     }
@@ -259,7 +260,7 @@ export class MongoDBService implements MessagePickupDbService {
         `[getLiveSession] MongoDBService record found status ${recordFound} for connectionId ${connectionId}`
       )
 
-      return recordFound ? liveSession : false
+      return recordFound
     } catch (error) {
       this.logger?.error(
         `[getLiveSession] MongoDBService Error finding live session for connectionId ${connectionId}: ${error.message}`
@@ -339,13 +340,13 @@ export class MongoDBService implements MessagePickupDbService {
 
   public async subscribePubSub(
     connectionId: string,
-    onMessageReceived: (message: any) => void
+    onMessageReceived: (message: string) => void
   ): Promise<{ unsubscribe: () => void } | undefined> {
     this.logger?.info(`[subscribePubSub] MongoDbService Initializing Method ${connectionId}`)
 
-    let event = connectionId
+    const event = connectionId
     let subscription
-    const callback = async (message: any) => {
+    const callback = async (message: string) => {
       onMessageReceived(message)
     }
     if (this.clientPubSub) {
@@ -365,16 +366,10 @@ export class MongoDBService implements MessagePickupDbService {
     }
   }
 
-  // methods to handle fixed event
-  /**
-   *
-   * @param onMessageReceived
-   */
-
-  public async subscribePubSubWithFixedChannel(onMessageReceived: (message: any) => void): Promise<void> {
+  public async subscribePubSubWithFixedChannel(onMessageReceived: (message: string) => void): Promise<void> {
     this.logger?.info(`[subscribePubSubWithFixedChannel] MongoDbService Initializing Method `)
 
-    const callback = async (message: any) => {
+    const callback = async (message: string) => {
       onMessageReceived(message)
     }
 
@@ -382,11 +377,6 @@ export class MongoDBService implements MessagePickupDbService {
       this.clientPubSub?.subscribe({ event: 'messageQueue', callback })
     }
   }
-
-  /**
-   *
-   * @param message
-   */
 
   public async publishPubSubWithFixedChannel(message: string): Promise<void> {
     this.logger?.info(`[publishPubSubWithFixedChannel] MongoDbService Initializing Method `)

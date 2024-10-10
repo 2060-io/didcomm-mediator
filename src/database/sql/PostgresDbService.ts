@@ -2,20 +2,21 @@ import { EncryptedMessage, Logger, QueuedMessage } from '@credo-ts/core'
 import { Pool, Client } from 'pg'
 import PGPubsub from 'pg-pubsub'
 import { MessagePickupDbService } from '../MessagePickupDbService'
-import { createTableMessage, tableNameMessage, tableNameLive, createTableLive } from './CollectionsDb'
+import { createTableMessage, tableNameLive, createTableLive } from './CollectionsDb'
 
 import { DB_HOST, POSTGRES_USER, POSTGRES_PASSWORD, MessageState } from '../../config/constants'
+import { MessagePickupSession } from '@credo-ts/core/build/modules/message-pickup/MessagePickupSession'
 
 export class PostgresDbService implements MessagePickupDbService {
   private logger?: Logger
   public messagesCollection?: Pool
   private clientPubSub?: PGPubsub
 
-  constructor(logger?: Logger) {
+  public constructor(logger?: Logger) {
     this.logger = logger
   }
 
-  async initialize(): Promise<void> {
+  public async initialize(): Promise<void> {
     try {
       this.logger?.info(`[initialize] PostgresDbService Initializing PostgreSQL database handler`)
       // Database initialization
@@ -37,7 +38,7 @@ export class PostgresDbService implements MessagePickupDbService {
     this.clientPubSub = await this.pubSubConnection()
   }
 
-  async connect(): Promise<void> {
+  public async connect(): Promise<void> {
     try {
       if (!this.messagesCollection) {
         this.messagesCollection = new Pool({
@@ -57,7 +58,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     try {
       if (this.messagesCollection) {
         await this.messagesCollection.end()
@@ -69,7 +70,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async getMessagesInQueue(
+  public async getMessagesInQueue(
     connectionId: string,
     limit: number | undefined,
     deleteMessages: boolean | undefined,
@@ -79,10 +80,10 @@ export class PostgresDbService implements MessagePickupDbService {
       // Obtain messages from the database
       const storedMessages = await this.messagesCollection
         ?.query(
-          `SELECT id, encryptedmessage, state, created_at FROM queuedmessages WHERE (connectionid = $1 OR $2 = ANY (recipientkeys)) AND (state = ${MessageState.pending}) ORDER BY created_at LIMIT $3`,
+          `SELECT id, encryptedmessage as encryptedMessage, state, created_at as receivedAt FROM queuedmessages WHERE (connectionid = $1 OR $2 = ANY (recipientkeys)) AND (state = ${MessageState.pending}) ORDER BY created_at LIMIT $3`,
           [connectionId, recipientDid, limit ?? 0]
         )
-        .then(async (result: { rows: any[] }) => {
+        .then(async (result: { rows: QueuedMessage[] }) => {
           const messagesToUpdateIds = result.rows.map((message) => message.id)
           // Update the state of messages to 'sending'
           if (!deleteMessages && messagesToUpdateIds.length > 0) {
@@ -105,8 +106,8 @@ export class PostgresDbService implements MessagePickupDbService {
             (message) =>
               ({
                 id: message.id,
-                receivedAt: message.created_at,
-                encryptedMessage: message.encryptedmessage,
+                receivedAt: message.receivedAt,
+                encryptedMessage: message.encryptedMessage,
               } as QueuedMessage)
           )
         })
@@ -124,7 +125,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async getQueuedMessagesCount(connectionId: string): Promise<number> {
+  public async getQueuedMessagesCount(connectionId: string): Promise<number> {
     const result = await this.messagesCollection?.query(
       `SELECT COUNT(*) FROM queuedmessages WHERE connectionid = $1 and state = ${MessageState.pending}`,
       [connectionId]
@@ -141,11 +142,11 @@ export class PostgresDbService implements MessagePickupDbService {
     return 0
   }
 
-  async addMessageToQueue(
+  public async addMessageToQueue(
     connectionId: string,
     recipientDids: string[],
     payload: EncryptedMessage,
-    liveSession: any
+    liveSession: MessagePickupSession | undefined
   ): Promise<{ messageId: string; receivedAt: Date } | undefined> {
     let messageId: string
     let receivedAt: Date
@@ -166,7 +167,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async removeMessagesFromQueue(connectionId: string, messageIds: string[]): Promise<void> {
+  public async removeMessagesFromQueue(connectionId: string, messageIds: string[]): Promise<void> {
     this.logger?.debug(
       `[removeMessagesFromQueue] PostgresDbService remove messages for messageIds ${messageIds} for connectionId ${connectionId}`
     )
@@ -197,7 +198,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async checkPendingMessagesInQueue(connectionID: string): Promise<void> {
+  public async checkPendingMessagesInQueue(connectionID: string): Promise<void> {
     try {
       this.logger?.debug(
         `[checkPendingMessagesInQueue] PostgresDbService Initialize verify messages on state 'sending'`
@@ -226,7 +227,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async getLiveSession(connectionId: string): Promise<any> {
+  public async getLiveSession(connectionId: string): Promise<boolean> {
     this.logger?.debug(`[getLiveSession] PostgresDbService initializing find registry for connectionId ${connectionId}`)
     if (!connectionId) throw new Error('connectionId is not defined')
     try {
@@ -242,10 +243,11 @@ export class PostgresDbService implements MessagePickupDbService {
       return recordFound ? queryLiveSession.rows[0] : false
     } catch (error) {
       this.logger?.debug(`[getLiveSession] PostgresDbService Error find to connectionId ${connectionId}`)
+      return false
     }
   }
 
-  async addLiveSession(id: string, connectionId: string, instance: string): Promise<void> {
+  public async addLiveSession(id: string, connectionId: string, instance: string): Promise<void> {
     this.logger?.debug(
       `[addLiveSession] PostgresDbService initializing add LiveSession DB to connectionId ${connectionId}`
     )
@@ -264,7 +266,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async removeLiveSession(connectionId: string): Promise<void> {
+  public async removeLiveSession(connectionId: string): Promise<void> {
     this.logger?.debug(
       `[removeLiveSession] PostgresDbService initializing remove LiveSession to connectionId ${connectionId}`
     )
@@ -284,7 +286,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async pubSubConnection() {
+  public async pubSubConnection() {
     try {
       this.logger?.debug(`[pubSubConnection] PostgresDbService PostgresDbService initialize pubSubInstance `)
 
@@ -297,7 +299,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async publishPubSub(connectionId: string, message: string): Promise<void> {
+  public async publishPubSub(connectionId: string, message: string): Promise<void> {
     try {
       if (this.clientPubSub) {
         this.logger?.debug(`[publishPubSub] PostgresDbService Publishing message to ${connectionId} `)
@@ -308,7 +310,7 @@ export class PostgresDbService implements MessagePickupDbService {
     }
   }
 
-  async subscribePubSub(connectionId: string, onMessageReceived: (message: any) => void): Promise<void> {
+  public async subscribePubSub(connectionId: string, onMessageReceived: (message: string) => void): Promise<void> {
     this.logger?.info(`[subscribePubSub] PostgresDbService PostgresDbService Initializing Method to ${connectionId}`)
 
     await this.clientPubSub?.addChannel(connectionId, async (message) => {
@@ -317,7 +319,7 @@ export class PostgresDbService implements MessagePickupDbService {
     })
   }
 
-  async subscribePubSubWithFixedChannel(onMessageReceived: (message: any) => void): Promise<void> {
+  public async subscribePubSubWithFixedChannel(onMessageReceived: (message: string) => void): Promise<void> {
     await this.clientPubSub?.addChannel('messageQueue', async (message) => {
       this.logger?.debug(
         `[subscribePubSubWithFixedChannel] PostgresDbService PostgresDbService subscribe on messageQueue channel`
@@ -326,7 +328,7 @@ export class PostgresDbService implements MessagePickupDbService {
     })
   }
 
-  async publishPubSubWithFixedChannel(message: string): Promise<void> {
+  public async publishPubSubWithFixedChannel(message: string): Promise<void> {
     try {
       if (this.clientPubSub) {
         this.logger?.debug(`[publishPubSubWithFixedChannel] PostgresDbService Publishing message to ${message} `)
