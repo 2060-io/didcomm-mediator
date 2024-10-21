@@ -39,26 +39,18 @@ import express from 'express'
 import cors from 'cors'
 import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notifications'
 import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
-import { CustomMessageRepository } from '../storage/CustomMessageRepository'
 import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePickupRepository'
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
 import { RemoteFcmNotificationSender } from '../notifications/RemoteFcmNotificationSender'
-import { MongoDBService } from '../database/noSql/MongoDbService'
-import { PostgresDbService } from '../database/sql/PostgresDbService'
+import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 
 export const initCloudAgent = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
-  const dbPubSubFixed = config.dbPubSubFixed
-  const dbNosql = config.dbNosql
   const enableMessageRepository = config.enableMessageRepository
 
   const messageRepository = enableMessageRepository
-    ? new CustomMessageRepository(
-        new RemoteFcmNotificationSender(logger),
-        dbNosql ? new MongoDBService(logger) : new PostgresDbService(logger),
-        logger
-      )
+    ? new MessagePickupRepositoryClient(config.wsMprUrlConnect)
     : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
 
   if (!config.enableHttp && !config.enableWs) {
@@ -67,8 +59,24 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
 
   const agent = createCloudAgent(config, messageRepository)
 
-  if (messageRepository instanceof CustomMessageRepository) {
-    if (dbPubSubFixed) messageRepository.initialize(agent, dbPubSubFixed)
+  if (messageRepository instanceof MessagePickupRepositoryClient) {
+    await messageRepository.connect()
+
+    messageRepository.messageReceived(async (data) => {
+      const { connectionId, message } = data
+
+      logger.debug(`[messageReceived] new message to ${connectionId} message to ${JSON.stringify(message, null, 2)}`)
+
+      const liveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
+
+      if (liveSession) {
+        logger.debug(`[messageReceived] found LiveSession for connectionId ${connectionId}, Delivering Messages`)
+        await agent.messagePickup.deliverMessages({
+          pickupSessionId: liveSession.id,
+          messages: message,
+        })
+      }
+    })
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
   }
@@ -100,10 +108,19 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
 
   agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, (data: MessagePickupLiveSessionRemovedEvent) => {
     logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
+    if (messageRepository instanceof MessagePickupRepositoryClient) {
+      const connectionId = data.payload.session.connectionId
+      messageRepository.removeLiveSession({ connectionId })
+    }
   })
 
   agent.events.on(MessagePickupEventTypes.LiveSessionSaved, (data: MessagePickupLiveSessionSavedEvent) => {
     logger.debug(`********** Live Mode Session for ${data.payload.session.connectionId}`)
+    if (messageRepository instanceof MessagePickupRepositoryClient) {
+      const connectionId = data.payload.session.connectionId
+      const sessionId = data.payload.session.id
+      messageRepository.addLiveSession({ connectionId, sessionId })
+    }
   })
 
   // Handle mediation events

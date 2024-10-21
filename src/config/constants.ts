@@ -38,3 +38,6 @@ export const DB_NOSQL = Boolean(process.env.DB_NOSQL ?? false)
 // FCM variables build url
 export const FCM_SERVICE_BASE_URL =
   process.env.FCM_SERVICE_BASE_URL || 'http://localhost:3001/fcm/fcmNotificationSender/send'
+
+// Message Pickup Repository Client
+export const WS_MPR_URL_CONNECT = process.env.WS_MPR_URL_CONNECT || 'ws://localhost:3100'
