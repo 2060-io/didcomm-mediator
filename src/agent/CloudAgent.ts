@@ -44,8 +44,7 @@ export interface CloudAgentOptions {
   enableHttp?: boolean
   enableWs?: boolean
   dependencies: AgentDependencies
-  enableMessageRepository?: boolean
-  wsMprUrlConnect: string
+  messagePickupRepositoryWebSocketUrl?: string
 }
 
 export const createCloudAgent = (

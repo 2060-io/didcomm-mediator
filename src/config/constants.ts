@@ -22,22 +22,5 @@ export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD
 export const POSTGRES_ADMIN_USER = process.env.POSTGRES_ADMIN_USER
 export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
 
-//Db MessageRepositoryPickup
-export const ENABLE_MESSAGE_REPOSITORY = Boolean(process.env.ENABLE_MESSAGE_REPOSITORY ?? false)
-export const DB_HOST = process.env.DB_HOST || 'postgres-service'
-export const DB_URL_CONNECT = process.env.DB_URL_CONNECT || 'mongodb://cloud-agent:cloud-agent@localhost:27017'
-export const DB_PUBSUB_FIXED = Boolean(process.env.DB_PUBSUB_FIXED ?? false)
-export enum MessageState {
-  pending = 'pending',
-  sending = 'sending',
-}
-
-//Define handle database
-export const DB_NOSQL = Boolean(process.env.DB_NOSQL ?? false)
-
-// FCM variables build url
-export const FCM_SERVICE_BASE_URL =
-  process.env.FCM_SERVICE_BASE_URL || 'http://localhost:3001/fcm/fcmNotificationSender/send'
-
 // Message Pickup Repository Client
-export const WS_MPR_URL_CONNECT = process.env.WS_MPR_URL_CONNECT || 'ws://localhost:3100'
+export const MPR_WS_URL = process.env.MPR_WS_URL

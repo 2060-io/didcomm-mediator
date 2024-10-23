@@ -14,8 +14,7 @@ import {
   WALLET_KEY,
   WALLET_NAME,
   WS_SUPPORT,
-  ENABLE_MESSAGE_REPOSITORY,
-  WS_MPR_URL_CONNECT,
+  MPR_WS_URL,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 
@@ -43,8 +42,7 @@ async function run() {
       enableWs: WS_SUPPORT,
       enableHttp: HTTP_SUPPORT,
       dependencies: agentDependencies,
-      enableMessageRepository: ENABLE_MESSAGE_REPOSITORY,
-      wsMprUrlConnect: WS_MPR_URL_CONNECT,
+      messagePickupRepositoryWebSocketUrl: MPR_WS_URL,
     })
   } catch (error) {
     logger.error(`${error}`)

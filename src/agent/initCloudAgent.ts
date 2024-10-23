@@ -45,10 +45,9 @@ import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repositor
 export const initCloudAgent = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
-  const enableMessageRepository = config.enableMessageRepository
 
-  const messageRepository = enableMessageRepository
-    ? new MessagePickupRepositoryClient(config.wsMprUrlConnect)
+  const messageRepository = config.messagePickupRepositoryWebSocketUrl
+    ? new MessagePickupRepositoryClient(config.messagePickupRepositoryWebSocketUrl)
     : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
 
   if (!config.enableHttp && !config.enableWs) {
