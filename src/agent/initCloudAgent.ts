@@ -31,7 +31,6 @@ import WebSocket from 'ws'
 import { Socket } from 'net'
 
 import { CloudAgentOptions, createCloudAgent } from './CloudAgent'
-
 import { CloudWsInboundTransport } from '../transport/CloudWsInboundTransport'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport'
 import { uuid } from '@credo-ts/core/build/utils/uuid'
@@ -41,7 +40,6 @@ import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notific
 import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
 import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePickupRepository'
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
-import { RemoteFcmNotificationSender } from '../notifications/RemoteFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 
 export const initCloudAgent = async (config: CloudAgentOptions) => {
@@ -65,16 +63,21 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
     messageRepository.messageReceived(async (data) => {
       const { connectionId, message } = data
 
-      logger.debug(`[messageReceived] new message to ${connectionId} message to ${JSON.stringify(message, null, 2)}`)
+      logger.debug(`[messageReceived] init with ${connectionId} message to ${JSON.stringify(message, null, 2)}`)
 
       const liveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
 
       if (liveSession) {
         logger.debug(`[messageReceived] found LiveSession for connectionId ${connectionId}, Delivering Messages`)
+
         await agent.messagePickup.deliverMessages({
           pickupSessionId: liveSession.id,
           messages: message,
         })
+
+        //await agent.messagePickup.deliverMessagesFromQueue({ pickupSessionId: liveSession.id })
+      } else {
+        logger.debug(`[messageReceived] not found LiveSession for connectionId ${connectionId}`)
       }
     })
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
@@ -106,20 +109,22 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   await agent.initialize()
   logger.info('agent initialized')
 
-  agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, (data: MessagePickupLiveSessionRemovedEvent) => {
+  agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
     logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
     if (messageRepository instanceof MessagePickupRepositoryClient) {
       const connectionId = data.payload.session.connectionId
-      messageRepository.removeLiveSession({ connectionId })
+      await messageRepository.removeLiveSession({ connectionId })
+      logger.debug(`*** removeLiveSession succesfull ${data.payload.session.connectionId} ***`)
     }
   })
 
-  agent.events.on(MessagePickupEventTypes.LiveSessionSaved, (data: MessagePickupLiveSessionSavedEvent) => {
+  agent.events.on(MessagePickupEventTypes.LiveSessionSaved, async (data: MessagePickupLiveSessionSavedEvent) => {
     logger.debug(`********** Live Mode Session for ${data.payload.session.connectionId}`)
     if (messageRepository instanceof MessagePickupRepositoryClient) {
       const connectionId = data.payload.session.connectionId
       const sessionId = data.payload.session.id
-      messageRepository.addLiveSession({ connectionId, sessionId })
+      await messageRepository.addLiveSession({ connectionId, sessionId })
+      logger.debug(`*** addLiveSession succesfull ${data.payload.session.connectionId} ***`)
     }
   })
 

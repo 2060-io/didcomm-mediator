@@ -17,6 +17,13 @@ module.exports = {
     'no-console': 'error',
     // Because of early development, we only warn on ts-ignore. In future we want to move to error
     '@typescript-eslint/ban-ts-comment': 'warn',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^(injectable|CustomMessageRepository|InMemoryMessagePickupRepository)$',
+      },
+    ],
   },
   overrides: [
     {

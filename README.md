@@ -6,29 +6,25 @@
 
 At the moment, all configuration is done by environment variables. All of them are optional
 
-| Variable                  | Description                                                                                                         | Default value                   |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| AGENT_NAME                | Label to show to other DIDComm agents                                                                               | Test Cloud Agent                |
-| AGENT_ENDPOINTS           | Comma-separated public endpoint list where agent DIDComm endpoints will be accessible (including protocol and port) | ws://localhost:4000             |
-| AGENT_PUBLIC_DID          | Agent's public DID (in did:web format)                                                                              | None                            |
-| AGENT_PORT                | Port where DIDComm agent will be running                                                                            | 4000                            |
-| AGENT_LOG_LEVEL           | Agent log level                                                                                                     | 2 (debug)                       |
-| HTTP_SUPPORT              | Enable support of incoming DIDComm messages through HTTP transport                                                  | true                            |
-| WS_SUPPORT                | Enable support of incoming DIDComm messages through WebSocket transport                                             | true                            |
-| WALLET_NAME               | Wallet (database) name                                                                                              | test-cloud-agent                |
-| WALLET_KEY                | Wallet base encryption key                                                                                          | 'Test Cloud Agent'              |
-| KEY_DERIVATION_METHOD     | Wallet key derivation method                                                                                        | ARGON2I_MOD                     |
-| POSTGRES_HOST             | PosgreSQL database host                                                                                             | None (use SQLite)               |
-| POSTGRES_USER             | PosgreSQL database username                                                                                         | None                            |
-| POSTGRES_PASSWORD         | PosgreSQL database password                                                                                         | None                            |
-| POSTGRES_ADMIN_USER       | PosgreSQL database admin user                                                                                       | None                            |
-| POSTGRES_ADMIN_PASSWORD   | PosgreSQL database admin password                                                                                   | None                            |
-| DB_NOSQL                  | Activate MessageRepositoryDbService with Nosql database or SQL                                                      | false                           |
-| DB_PUBSUB_FIXED           | Activate Pub/Sub mode, Fixed Channel or ConnectionId Channel                                                        | false                           |
-| ENABLE_MESSAGE_REPOSITORY | Allow change strategy storage. choose true activate messageRepository PG database                                   | false                           |
-| FCM_SERVICE_HOST          | Host or service where connect to rest fcm-notification-service                                                      | localhost                       |
-| FCM_SERVICE_PORT          | Port to connection service to rest fcm-notification-service                                                         | 3001                            |
-| FCM_SERVICE_ROUTE         | Route of endpoit service to rest fcm-notification-service                                                           | /fcm/fcmNotificationSender/send |
+| Variable                  | Description                                                                                                         | Default value       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| AGENT_NAME                | Label to show to other DIDComm agents                                                                               | Test Cloud Agent    |
+| AGENT_ENDPOINTS           | Comma-separated public endpoint list where agent DIDComm endpoints will be accessible (including protocol and port) | ws://localhost:4000 |
+| AGENT_PUBLIC_DID          | Agent's public DID (in did:web format)                                                                              | None                |
+| AGENT_PORT                | Port where DIDComm agent will be running                                                                            | 4000                |
+| AGENT_LOG_LEVEL           | Agent log level                                                                                                     | 2 (debug)           |
+| HTTP_SUPPORT              | Enable support of incoming DIDComm messages through HTTP transport                                                  | true                |
+| WS_SUPPORT                | Enable support of incoming DIDComm messages through WebSocket transport                                             | true                |
+| WALLET_NAME               | Wallet (database) name                                                                                              | test-cloud-agent    |
+| WALLET_KEY                | Wallet base encryption key                                                                                          | 'Test Cloud Agent'  |
+| KEY_DERIVATION_METHOD     | Wallet key derivation method                                                                                        | ARGON2I_MOD         |
+| POSTGRES_HOST             | PosgreSQL database host                                                                                             | None (use SQLite)   |
+| POSTGRES_USER             | PosgreSQL database username                                                                                         | None                |
+| POSTGRES_PASSWORD         | PosgreSQL database password                                                                                         | None                |
+| POSTGRES_ADMIN_USER       | PosgreSQL database admin user                                                                                       | None                |
+| POSTGRES_ADMIN_PASSWORD   | PosgreSQL database admin password                                                                                   | None                |
+| WS_MPR_URL_CONNECT        | Url to connect websocket with Message Pickup Repository module when ENABLE_MESSAGE_REPOSITORY is true               | ws://localhost:3100 |
+| ENABLE_MESSAGE_REPOSITORY | Allow change strategy storage. choose true activate messageRepository PG database                                   | false               |
 
 These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
 
