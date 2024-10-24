@@ -6,24 +6,24 @@
 
 At the moment, all configuration is done by environment variables. All of them are optional
 
-| Variable                | Description                                                                                                         | Default value       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| AGENT_NAME              | Label to show to other DIDComm agents                                                                               | Test Cloud Agent    |
-| AGENT_ENDPOINTS         | Comma-separated public endpoint list where agent DIDComm endpoints will be accessible (including protocol and port) | ws://localhost:4000 |
-| AGENT_PUBLIC_DID        | Agent's public DID (in did:web format)                                                                              | None                |
-| AGENT_PORT              | Port where DIDComm agent will be running                                                                            | 4000                |
-| AGENT_LOG_LEVEL         | Agent log level                                                                                                     | 2 (debug)           |
-| HTTP_SUPPORT            | Enable support of incoming DIDComm messages through HTTP transport                                                  | true                |
-| WS_SUPPORT              | Enable support of incoming DIDComm messages through WebSocket transport                                             | true                |
-| WALLET_NAME             | Wallet (database) name                                                                                              | test-cloud-agent    |
-| WALLET_KEY              | Wallet base encryption key                                                                                          | 'Test Cloud Agent'  |
-| KEY_DERIVATION_METHOD   | Wallet key derivation method                                                                                        | ARGON2I_MOD         |
-| POSTGRES_HOST           | PosgreSQL database host                                                                                             | None (use SQLite)   |
-| POSTGRES_USER           | PosgreSQL database username                                                                                         | None                |
-| POSTGRES_PASSWORD       | PosgreSQL database password                                                                                         | None                |
-| POSTGRES_ADMIN_USER     | PosgreSQL database admin user                                                                                       | None                |
-| POSTGRES_ADMIN_PASSWORD | PosgreSQL database admin password                                                                                   | None                |
-| MPR_WS_URL              | Message Pickup Repository server WebSocket URL. If not defined, it will use internal Message Pickup management (for single-instance, local development only).                                                             | ws://localhost:3100 |
+| Variable                | Description                                                                                                                                                   | Default value       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| AGENT_NAME              | Label to show to other DIDComm agents                                                                                                                         | Test Cloud Agent    |
+| AGENT_ENDPOINTS         | Comma-separated public endpoint list where agent DIDComm endpoints will be accessible (including protocol and port)                                           | ws://localhost:4000 |
+| AGENT_PUBLIC_DID        | Agent's public DID (in did:web format)                                                                                                                        | None                |
+| AGENT_PORT              | Port where DIDComm agent will be running                                                                                                                      | 4000                |
+| AGENT_LOG_LEVEL         | Agent log level                                                                                                                                               | 2 (debug)           |
+| HTTP_SUPPORT            | Enable support of incoming DIDComm messages through HTTP transport                                                                                            | true                |
+| WS_SUPPORT              | Enable support of incoming DIDComm messages through WebSocket transport                                                                                       | true                |
+| WALLET_NAME             | Wallet (database) name                                                                                                                                        | test-cloud-agent    |
+| WALLET_KEY              | Wallet base encryption key                                                                                                                                    | 'Test Cloud Agent'  |
+| KEY_DERIVATION_METHOD   | Wallet key derivation method                                                                                                                                  | ARGON2I_MOD         |
+| POSTGRES_HOST           | PosgreSQL database host                                                                                                                                       | None (use SQLite)   |
+| POSTGRES_USER           | PosgreSQL database username                                                                                                                                   | None                |
+| POSTGRES_PASSWORD       | PosgreSQL database password                                                                                                                                   | None                |
+| POSTGRES_ADMIN_USER     | PosgreSQL database admin user                                                                                                                                 | None                |
+| POSTGRES_ADMIN_PASSWORD | PosgreSQL database admin password                                                                                                                             | None                |
+| MPR_WS_URL              | Message Pickup Repository server WebSocket URL. If not defined, it will use internal Message Pickup management (for single-instance, local development only). | none                |
 
 These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
 

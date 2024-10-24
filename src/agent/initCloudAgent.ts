@@ -73,8 +73,6 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
           pickupSessionId: liveSession.id,
           messages: message,
         })
-
-        //await agent.messagePickup.deliverMessagesFromQueue({ pickupSessionId: liveSession.id })
       } else {
         logger.debug(`[messageReceived] not found LiveSession for connectionId ${connectionId}`)
       }
