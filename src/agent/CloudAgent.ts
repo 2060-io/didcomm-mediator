@@ -44,9 +44,7 @@ export interface CloudAgentOptions {
   enableHttp?: boolean
   enableWs?: boolean
   dependencies: AgentDependencies
-  dbPubSubFixed?: boolean
-  dbNosql?: boolean
-  enableMessageRepository?: boolean
+  messagePickupRepositoryWebSocketUrl?: string
 }
 
 export const createCloudAgent = (
