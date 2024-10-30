@@ -23,7 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@2060.io/message-pickup-repository-client": "^0.0.4",
+    "@2060.io/message-pickup-repository-client": "^0.0.5",
     "@credo-ts/askar": "0.5.11",
     "@credo-ts/core": "0.5.11",
     "@credo-ts/node": "0.5.11",

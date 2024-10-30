@@ -59,10 +59,10 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   if (messageRepository instanceof MessagePickupRepositoryClient) {
     await messageRepository.connect()
 
-    messageRepository.messageReceived(async (data) => {
-      const { connectionId, message } = data
+    messageRepository.messagesReceived(async (data) => {
+      const { connectionId, messages } = data
 
-      logger.debug(`[messageReceived] init with ${connectionId} message to ${JSON.stringify(message, null, 2)}`)
+      logger.debug(`[messageReceived] init with ${connectionId} message to ${JSON.stringify(messages, null, 2)}`)
 
       const liveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
 
@@ -71,7 +71,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
 
         await agent.messagePickup.deliverMessages({
           pickupSessionId: liveSession.id,
-          messages: message,
+          messages,
         })
       } else {
         logger.debug(`[messageReceived] not found LiveSession for connectionId ${connectionId}`)
