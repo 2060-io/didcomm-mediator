@@ -11,11 +11,11 @@ services:
       - POSTGRES_PASSWORD=cloud-agent
       - POSTGRES_USER=cloud-agent
 
-  cloud-agent-1:
+  didcomm-mediator-1:
     build: .
-    image: 2060-cloud-agent
-    container_name: 2060-cloud-agent-1
-    hostname: mi-cloud-agent-1
+    image: didcomm-mediator
+    container_name: didcomm-mediator-1
+    hostname: didcomm-mediator-1
     environment:
       #- AGENT_PUBLIC_DID=did:web:10.82.14.176%3A4000
       #- AGENT_ENDPOINTS=ws://10.82.14.176:4000
@@ -26,12 +26,7 @@ services:
       - POSTGRES_USER=cloud-agent
       - POSTGRES_PASSWORD=cloud-agent
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
-      - DB_HOST=postgres
-      - DB_PUBSUB_FIXED=
-      - DB_NOSQL=true
-      - DB_URL_CONNECT=mongodb://cloud-agent:cloud-agent@mongodb:27017
-      - ENABLE_MESSAGE_REPOSITORY=true
-      - FCM_SERVICE_BASE_URL=http://fcm-notification-sender:3001/fcm/fcmNotificationSender/send
+      - MPR_WS_URL=ws://192.168.10.13:3100
     ports:
       - 3001:3000
       - 4001:4000
@@ -39,17 +34,14 @@ services:
       - .afj:/root/.afj
     depends_on:
       - postgres
-      - mongodb
-      - fcm-notification-sender
     links:
       - postgres
-      - mongodb
-      - fcm-notification-sender
-  cloud-agent-2:
+
+  didcomm-mediator-2:
     build: .
-    image: 2060-cloud-agent
-    container_name: 2060-cloud-agent-2
-    hostname: mi-cloud-agent-2
+    image: didcomm-mediator
+    container_name: didcomm-mediator-2
+    hostname: didcomm-mediator-2
     environment:
       #- AGENT_PUBLIC_DID=did:web:10.82.14.176%3A4000
       #- AGENT_ENDPOINTS=ws://10.82.14.176:4000
@@ -60,12 +52,7 @@ services:
       - POSTGRES_USER=cloud-agent
       - POSTGRES_PASSWORD=cloud-agent
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
-      - DB_HOST=postgres
-      - DB_PUBSUB_FIXED=
-      - DB_NOSQL=true
-      - DB_URL_CONNECT=mongodb://cloud-agent:cloud-agent@mongodb:27017
-      - ENABLE_MESSAGE_REPOSITORY=true
-      - FCM_SERVICE_BASE_URL=http://fcm-notification-sender:3001/fcm/fcmNotificationSender/send
+      - MPR_WS_URL=ws://192.168.10.13:3100
     restart: always
     ports:
       - 3002:3000
@@ -74,56 +61,16 @@ services:
       - .afj:/root/.afj
     depends_on:
       - postgres
-      - mongodb
-      - fcm-notification-sender
     links:
       - postgres
-      - mongodb
-      - fcm-notification-sender
 
   nginx:
     build: ./nginx
     ports:
       - '4000:4000'
     depends_on:
-      - cloud-agent-1
-      - cloud-agent-2
-
-  fcm-notification-sender:
-    image: io2060/2060-fcm-notification-sender:dev
-    ports:
-      - 3003:3003
-    environment:
-      - APP_PORT=3001
-
-  mongodb:
-    container_name: mongodb
-    image: mongo:latest
-    restart: always
-    command:
-      - --storageEngine
-      - wiredTiger
-      - --auth
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=cloud-agent
-      - MONGO_INITDB_ROOT_PASSWORD=cloud-agent
-    ports:
-      - '27017:27017'
-    volumes:
-      - ~/data/mongodb:/data/db
-      #- ./db/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: cloud-agent
-      ME_CONFIG_MONGODB_ADMINPASSWORD: cloud-agent
-      ME_CONFIG_MONGODB_URL: mongodb://cloud-agent:cloud-agent@mongodb:27017
-    depends_on:
-      - mongodb
+      - didcomm-mediator-1
+      - didcomm-mediator-2
 
   adminer:
     image: adminer
