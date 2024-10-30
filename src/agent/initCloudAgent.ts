@@ -74,7 +74,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
           messages,
         })
       } else {
-        logger.debug(`[messageReceived] not found LiveSession for connectionId ${connectionId}`)
+        logger.debug(`[messagesReceived] not found LiveSession for connectionId ${connectionId}`)
       }
     })
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
