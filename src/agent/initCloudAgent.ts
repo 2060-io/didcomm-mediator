@@ -62,7 +62,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
     messageRepository.messagesReceived(async (data) => {
       const { connectionId, messages } = data
 
-      logger.debug(`[messageReceived] init with ${connectionId} message to ${JSON.stringify(messages, null, 2)}`)
+      logger.debug(`[messagesReceived] init with ${connectionId} message to ${JSON.stringify(messages, null, 2)}`)
 
       const liveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
 
