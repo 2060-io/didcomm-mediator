@@ -47,7 +47,10 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   const publicDid = config.did
 
   const messageRepository = config.messagePickupRepositoryWebSocketUrl
-    ? new MessagePickupRepositoryClient(config.messagePickupRepositoryWebSocketUrl)
+    ? new MessagePickupRepositoryClient({
+        url: config.messagePickupRepositoryWebSocketUrl,
+        maxReceiveBytes: config.maxReceiveBytes,
+      })
     : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
 
   if (!config.enableHttp && !config.enableWs) {

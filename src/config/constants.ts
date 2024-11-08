@@ -24,3 +24,4 @@ export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
 
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL
+export const MAX_RECEIVE_BYTES = Number(process.env.MAX_RECEIVE_BYTES)
