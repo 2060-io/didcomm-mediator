@@ -44,7 +44,7 @@ async function run() {
       enableHttp: HTTP_SUPPORT,
       dependencies: agentDependencies,
       messagePickupRepositoryWebSocketUrl: MPR_WS_URL,
-      maxReceiveBytes: MAX_RECEIVE_BYTES
+      maxReceiveBytes: MAX_RECEIVE_BYTES,
     })
   } catch (error) {
     logger.error(`${error}`)
