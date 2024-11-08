@@ -49,7 +49,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   const messageRepository = config.messagePickupRepositoryWebSocketUrl
     ? new MessagePickupRepositoryClient({
         url: config.messagePickupRepositoryWebSocketUrl,
-        maxReceiveBytes: config.maxReceiveBytes,
+        maxReceiveBytes: config.messagePickupMaxReceiveBytes,
       })
     : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
 
