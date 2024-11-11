@@ -24,6 +24,7 @@ At the moment, all configuration is done by environment variables. All of them a
 | POSTGRES_ADMIN_USER     | PosgreSQL database admin user                                                                                                                                 | None                |
 | POSTGRES_ADMIN_PASSWORD | PosgreSQL database admin password                                                                                                                             | None                |
 | MPR_WS_URL              | Message Pickup Repository server WebSocket URL. If not defined, it will use internal Message Pickup management (for single-instance, local development only). | none                |
+| MPR_MAX_RECEIVE_BYTES   | Message Pickup Repository Optional byte size limit for retrieving messages                                                                                    | none                |
 
 These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
 

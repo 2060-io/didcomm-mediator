@@ -45,6 +45,7 @@ export interface CloudAgentOptions {
   enableWs?: boolean
   dependencies: AgentDependencies
   messagePickupRepositoryWebSocketUrl?: string
+  messagePickupMaxReceiveBytes?: number
 }
 
 export const createCloudAgent = (

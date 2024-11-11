@@ -15,6 +15,7 @@ import {
   WALLET_NAME,
   WS_SUPPORT,
   MPR_WS_URL,
+  MPR_MAX_RECEIVE_BYTES,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 
@@ -43,6 +44,7 @@ async function run() {
       enableHttp: HTTP_SUPPORT,
       dependencies: agentDependencies,
       messagePickupRepositoryWebSocketUrl: MPR_WS_URL,
+      messagePickupMaxReceiveBytes: MPR_MAX_RECEIVE_BYTES,
     })
   } catch (error) {
     logger.error(`${error}`)
