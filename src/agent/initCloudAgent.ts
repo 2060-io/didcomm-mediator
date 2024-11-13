@@ -41,6 +41,7 @@ import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
 import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePickupRepository'
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
+import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 
 export const initCloudAgent = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
@@ -49,7 +50,6 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   const messageRepository = config.messagePickupRepositoryWebSocketUrl
     ? new MessagePickupRepositoryClient({
         url: config.messagePickupRepositoryWebSocketUrl,
-        maxReceiveBytes: config.messagePickupMaxReceiveBytes,
       })
     : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
 
@@ -61,6 +61,17 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
 
   if (messageRepository instanceof MessagePickupRepositoryClient) {
     await messageRepository.connect()
+
+    // Define the generic callback to retrieve ConnectionInfo
+    const getConnectionInfo = async (connectionId: string): Promise<ConnectionInfo | undefined> => {
+      const connectionRecord = await agent.connections.findById(connectionId)
+      return {
+        fcmNotificationToken: connectionRecord?.getTag('device_token') as string | undefined,
+        maxReceiveBytes: config.messagePickupMaxReceiveBytes,
+      }
+    }
+
+    messageRepository.setConnectionInfo(getConnectionInfo)
 
     messageRepository.messagesReceived(async (data) => {
       const { connectionId, messages } = data
