@@ -21,6 +21,7 @@ export const POSTGRES_USER = process.env.POSTGRES_USER
 export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD
 export const POSTGRES_ADMIN_USER = process.env.POSTGRES_ADMIN_USER
 export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
+export const POSTGRES_DATABASE_NAME = process.env.POSTGRES_DATABASE_NAME
 
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL

@@ -26,6 +26,7 @@ import {
   MediationStateChangedEvent,
   RoutingEventTypes,
   HangupMessage,
+  MessagePickupRepository,
 } from '@credo-ts/core'
 import WebSocket from 'ws'
 import { Socket } from 'net'
@@ -42,16 +43,30 @@ import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePicku
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
+import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
 
 export const initCloudAgent = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
 
-  const messageRepository = config.messagePickupRepositoryWebSocketUrl
-    ? new MessagePickupRepositoryClient({
+  const createMessagePickupRepository = (): MessagePickupRepository => {
+    if (config.messagePickupRepositoryWebSocketUrl) {
+      return new MessagePickupRepositoryClient({
         url: config.messagePickupRepositoryWebSocketUrl,
       })
-    : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
+    } else if (config.postgresHost) {
+      return new PostgresMessagePickupRepository({
+        logger: logger,
+        postgresUser: config.postgresUser!,
+        postgresPassword: config.postgresPassword!,
+        postgresHost: config.postgresHost!,
+      })
+    } else {
+      return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
+    }
+  }
+
+  const messageRepository = createMessagePickupRepository()
 
   if (!config.enableHttp && !config.enableWs) {
     throw new Error('No transport has been enabled. Set at least one of HTTP and WS')
@@ -93,6 +108,11 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
     })
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
+  } else if (messageRepository instanceof PostgresMessagePickupRepository) {
+    //TODO: Define function that use to send push notification.
+    await messageRepository.initialize({
+      agent,
+    })
   }
 
   const app = express()

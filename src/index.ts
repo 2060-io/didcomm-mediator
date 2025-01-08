@@ -16,6 +16,9 @@ import {
   WS_SUPPORT,
   MPR_WS_URL,
   MPR_MAX_RECEIVE_BYTES,
+  POSTGRES_PASSWORD,
+  POSTGRES_USER,
+  POSTGRES_DATABASE_NAME,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 
@@ -45,6 +48,10 @@ async function run() {
       dependencies: agentDependencies,
       messagePickupRepositoryWebSocketUrl: MPR_WS_URL,
       messagePickupMaxReceiveBytes: MPR_MAX_RECEIVE_BYTES,
+      postgresUser: POSTGRES_USER,
+      postgresPassword: POSTGRES_PASSWORD,
+      postgresHost: POSTGRES_HOST,
+      postgresDatabaseName: POSTGRES_DATABASE_NAME,
     })
   } catch (error) {
     logger.error(`${error}`)
