@@ -6,7 +6,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ~/data/postgres:/var/lib/postgresql/data
+      - ~/data/dm/postgres:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=cloud-agent
       - POSTGRES_USER=cloud-agent
@@ -26,7 +26,8 @@ services:
       - POSTGRES_USER=cloud-agent
       - POSTGRES_PASSWORD=cloud-agent
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
-      - MPR_WS_URL=ws://192.168.10.13:3100
+      #- MPR_WS_URL=ws://192.168.10.13:3100
+      #- MAX_RECEIVE_BYTES=1000000
     ports:
       - 3001:3000
       - 4001:4000
@@ -52,7 +53,8 @@ services:
       - POSTGRES_USER=cloud-agent
       - POSTGRES_PASSWORD=cloud-agent
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
-      - MPR_WS_URL=ws://192.168.10.13:3100
+      #- MPR_WS_URL=ws://192.168.10.13:3100
+      #- MAX_RECEIVE_BYTES=1000000
     restart: always
     ports:
       - 3002:3000

@@ -95,3 +95,19 @@ server IP-HOST:4002;
 ```bash
 docker compose -f docker-compose-lb.yml up --build
 ```
+
+## Didcomm Mediator: Configurable Message Pickup Repository
+
+The Didcomm Mediator now supports flexible configuration for message repositories, allowing users to choose between different persistence methods depending on their needs. This enhancement provides seamless integration with the following repository options:
+
+- MessagePickupRepositoryClient: A WebSocket-based repository for distributed environments.
+- PostgresMessagePickupRepository: A PostgreSQL-based repository for persistent storage.
+- InMemoryMessagePickupRepository: An in-memory repository for lightweight setups or testing purposes.
+
+### How to configure
+
+The repository configuration is controlled by these environment variables. The mediator will automatically detect the active variable and initialize the appropriate repository.
+
+1. WebSocket-Based Repository (MessagePickupRepositoryClient): Set the `MPR_WS_URL` environment variable to the WebSocket server URL.
+2. PostgreSQL-Based Repository (PostgresMessagePickupRepository): Set the `POSTGRES_HOST` environment variable to the PostgreSQL connection string and `MPR_WS_URL` is null
+3. In-Memory Repository (InMemoryMessagePickupRepository): If neither `MPR_WS_URL` and `POSTGRES_HOST` is set, the mediator will default to InMemoryMessagePickupRepository.
