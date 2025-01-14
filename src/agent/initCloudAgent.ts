@@ -56,11 +56,18 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
         url: config.messagePickupRepositoryWebSocketUrl,
       })
     } else if (config.postgresHost) {
+      const { postgresUser, postgresPassword, postgresHost } = config
+
+      if (!postgresUser || !postgresPassword) {
+        throw new Error(
+          '[createMessagePickupRepository] Both postgresUser and postgresPassword are required when using PostgresMessagePickupRepository.'
+        )
+      }
       return new PostgresMessagePickupRepository({
         logger: logger,
-        postgresUser: config.postgresUser!,
-        postgresPassword: config.postgresPassword!,
-        postgresHost: config.postgresHost!,
+        postgresUser,
+        postgresPassword,
+        postgresHost,
       })
     } else {
       return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)

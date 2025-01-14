@@ -6,7 +6,7 @@ import { FCM_SERVICE_BASE_URL } from '../config/constants'
 export class PostgresFcmNotificationSender implements FcmNotificationSender {
   private logger: Logger
 
-  constructor(logger: Logger) {
+  public constructor(logger: Logger) {
     if (!logger) {
       throw new Error('[PostgresFcmNotificationSender] Logger instance is required')
     }
@@ -21,7 +21,7 @@ export class PostgresFcmNotificationSender implements FcmNotificationSender {
    * @returns {Promise<boolean>} - Resolves to `true` if the notification was sent successfully, otherwise `false`.
    * @throws {Error} Throws an error if FCM_SERVICE_BASE_URL is not defined or if inputs are invalid.
    */
-  async sendMessage(registrationToken: string, messageId: string): Promise<boolean> {
+  public async sendMessage(registrationToken: string, messageId: string): Promise<boolean> {
     try {
       // Validate inputs
       if (!registrationToken || typeof registrationToken !== 'string') {
