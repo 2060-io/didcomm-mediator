@@ -41,6 +41,7 @@ import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notific
 import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
 import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePickupRepository'
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
+import { PostgresFcmNotificationSender } from '../notifications/PostgresFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
@@ -109,9 +110,26 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
   } else if (messageRepository instanceof PostgresMessagePickupRepository) {
-    //TODO: Define function that use to send push notification.
+    // Define function that use to send push notification.
+
+    const postgresFcmNotificationSender = new PostgresFcmNotificationSender(logger)
+
+    const connectionInfoCallback = async (connectionId: string) => {
+      const connectionRecord = await agent.connections.findById(connectionId)
+
+      const token = connectionRecord?.getTag('device_token') as string | null
+
+      return {
+        sendPushNotification: token
+          ? async (messageId: string) => {
+              await postgresFcmNotificationSender.sendMessage(token, messageId)
+            }
+          : undefined,
+      }
+    }
     await messageRepository.initialize({
       agent,
+      connectionInfoCallback,
     })
   }
 

@@ -28,6 +28,7 @@ services:
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
       #- MPR_WS_URL=ws://192.168.10.13:3100
       #- MAX_RECEIVE_BYTES=1000000
+      - FCM_SERVICE_BASE_URL=http://192.168.100.84:3000/test
     ports:
       - 3001:3000
       - 4001:4000
@@ -55,6 +56,7 @@ services:
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
       #- MPR_WS_URL=ws://192.168.10.13:3100
       #- MAX_RECEIVE_BYTES=1000000
+      - FCM_SERVICE_BASE_URL=http://192.168.100.84:3000/test
     restart: always
     ports:
       - 3002:3000

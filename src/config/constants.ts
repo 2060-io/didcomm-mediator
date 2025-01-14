@@ -23,6 +23,10 @@ export const POSTGRES_ADMIN_USER = process.env.POSTGRES_ADMIN_USER
 export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
 export const POSTGRES_DATABASE_NAME = process.env.POSTGRES_DATABASE_NAME
 
+//FCM URL SERVICE
+
+export const FCM_SERVICE_BASE_URL = process.env.FCM_SERVICE_BASE_URL
+
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL
 export const MPR_MAX_RECEIVE_BYTES = Number(process.env.MPR_MAX_RECEIVE_BYTES)
