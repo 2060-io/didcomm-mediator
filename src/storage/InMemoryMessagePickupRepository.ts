@@ -22,11 +22,11 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
   private logger?: Logger
   private messages: InMemoryQueuedMessage[]
   private agent?: CloudAgent
-  private notificationSender: FcmNotificationSender
+  private notificationSender: FcmNotificationSender | undefined
 
   public constructor(notificationSender: FcmNotificationSender, logger?: Logger) {
     this.logger = logger
-    this.notificationSender = notificationSender
+    notificationSender.isInitialized() ? (this.notificationSender = notificationSender) : undefined
     this.messages = []
   }
 
@@ -82,7 +82,7 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
 
       if (token) {
         this.logger?.info(`[CustomMessageRepository] Send notification for connection ${connectionId}`)
-        await this.notificationSender.sendMessage(token, 'messageId')
+        if (this.notificationSender) await this.notificationSender.sendMessage(token, 'messageId')
       }
     }
 

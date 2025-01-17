@@ -51,7 +51,7 @@ async function run() {
       postgresUser: POSTGRES_USER,
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
-      postgresDatabaseName: POSTGRES_DATABASE_NAME,
+      postgresMessagePickupDatabaseName: POSTGRES_DATABASE_NAME,
     })
   } catch (error) {
     logger.error(`${error}`)

@@ -26,12 +26,14 @@ services:
       - POSTGRES_USER=cloud-agent
       - POSTGRES_PASSWORD=cloud-agent
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
+      - FIREBASE_CFG_FILE=/config/firebase-cfg.json
       #- MPR_WS_URL=ws://192.168.10.13:3100
     ports:
       - 3000:3000
       - 4000:4000
     volumes:
       - .afj:/root/.afj
+      - ./firebase-cfg.json:/config/firebase-cfg.json
     depends_on:
       - postgres
     links:
