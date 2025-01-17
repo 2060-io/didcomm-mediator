@@ -25,7 +25,7 @@ export const POSTGRES_DATABASE_NAME = process.env.POSTGRES_DATABASE_NAME
 
 //FIREBASE CONFIG FILE
 
-export const FIREBASE_CFG_FILE = process.env.FIREBASE_CFG_FILE || '../../firebase-cfg.json'
+export const FIREBASE_CFG_FILE = process.env.FIREBASE_CFG_FILE || './firebase-cfg.json'
 
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL
