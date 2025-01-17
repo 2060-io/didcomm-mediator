@@ -49,7 +49,7 @@ export interface CloudAgentOptions {
   postgresUser?: string
   postgresPassword?: string
   postgresHost?: string
-  postgresDatabaseName?: string
+  postgresMessagePickupDatabaseName?: string
 }
 
 export const createCloudAgent = (
