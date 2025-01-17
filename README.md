@@ -103,7 +103,7 @@ The Didcomm Mediator now supports flexible configuration for message pickup repo
 
 - MessagePickupRepositoryClient: A WebSocket-based repository for distributed environments.
 - PostgresMessagePickupRepository: A PostgreSQL-based repository for persistent storage. It is meant for simplicity, so it uses the same Postgres host than mediator's wallet.
-- InMemoryMessagePickupRepository: An in-memory repository for lightweight setups or testing purposes.
+- InMemoryMessagePickupRepository: An in-memory repository for lightweight setups or testing purposes. It only works when SQLite is used for mediator wallet.
 
 ### How to configure
 
