@@ -99,7 +99,7 @@ docker compose -f docker-compose-lb.yml up --build
 
 ## Didcomm Mediator: Configurable Message Pickup Repository
 
-The Didcomm Mediator now supports flexible configuration for message repositories, allowing users to choose between different persistence methods depending on their needs. This enhancement provides seamless integration with the following repository options:
+The Didcomm Mediator now supports flexible configuration for message pickup repositories, allowing users to choose between different persistence methods depending on their needs. This enhancement provides seamless integration with the following repository options:
 
 - MessagePickupRepositoryClient: A WebSocket-based repository for distributed environments.
 - PostgresMessagePickupRepository: A PostgreSQL-based repository for persistent storage.
