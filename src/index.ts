@@ -18,7 +18,7 @@ import {
   MPR_MAX_RECEIVE_BYTES,
   POSTGRES_PASSWORD,
   POSTGRES_USER,
-  POSTGRES_DATABASE_NAME,
+  MPR_POSTGRES_DATABASE_NAME,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 
@@ -51,7 +51,7 @@ async function run() {
       postgresUser: POSTGRES_USER,
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
-      postgresMessagePickupDatabaseName: POSTGRES_DATABASE_NAME,
+      postgresMessagePickupDatabaseName: MPR_POSTGRES_DATABASE_NAME,
     })
   } catch (error) {
     logger.error(`${error}`)

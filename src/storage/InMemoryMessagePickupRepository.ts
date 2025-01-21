@@ -26,7 +26,7 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
 
   public constructor(notificationSender: FcmNotificationSender, logger?: Logger) {
     this.logger = logger
-    notificationSender.isInitialized() ? (this.notificationSender = notificationSender) : undefined
+    this.notificationSender = notificationSender
     this.messages = []
   }
 
