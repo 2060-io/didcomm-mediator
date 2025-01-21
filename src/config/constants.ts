@@ -21,6 +21,11 @@ export const POSTGRES_USER = process.env.POSTGRES_USER
 export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD
 export const POSTGRES_ADMIN_USER = process.env.POSTGRES_ADMIN_USER
 export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
+export const MPR_POSTGRES_DATABASE_NAME = process.env.MPR_POSTGRES_DATABASE_NAME
+
+//FIREBASE CONFIG FILE
+
+export const FIREBASE_CFG_FILE = process.env.FIREBASE_CFG_FILE || './firebase-cfg.json'
 
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL

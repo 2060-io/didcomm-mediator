@@ -46,6 +46,10 @@ export interface CloudAgentOptions {
   dependencies: AgentDependencies
   messagePickupRepositoryWebSocketUrl?: string
   messagePickupMaxReceiveBytes?: number
+  postgresUser?: string
+  postgresPassword?: string
+  postgresHost?: string
+  postgresMessagePickupDatabaseName?: string
 }
 
 export const createCloudAgent = (

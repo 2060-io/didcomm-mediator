@@ -26,6 +26,7 @@ import {
   MediationStateChangedEvent,
   RoutingEventTypes,
   HangupMessage,
+  MessagePickupRepository,
 } from '@credo-ts/core'
 import WebSocket from 'ws'
 import { Socket } from 'net'
@@ -42,16 +43,37 @@ import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePicku
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
+import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
 
 export const initCloudAgent = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
 
-  const messageRepository = config.messagePickupRepositoryWebSocketUrl
-    ? new MessagePickupRepositoryClient({
+  const createMessagePickupRepository = (): MessagePickupRepository => {
+    if (config.messagePickupRepositoryWebSocketUrl) {
+      return new MessagePickupRepositoryClient({
         url: config.messagePickupRepositoryWebSocketUrl,
       })
-    : new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
+    } else if (config.postgresHost) {
+      const { postgresUser, postgresPassword, postgresHost } = config
+
+      if (!postgresUser || !postgresPassword) {
+        throw new Error(
+          '[createMessagePickupRepository] Both postgresUser and postgresPassword are required when using PostgresMessagePickupRepository.'
+        )
+      }
+      return new PostgresMessagePickupRepository({
+        logger: logger,
+        postgresUser,
+        postgresPassword,
+        postgresHost,
+      })
+    } else {
+      return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
+    }
+  }
+
+  const messageRepository = createMessagePickupRepository()
 
   if (!config.enableHttp && !config.enableWs) {
     throw new Error('No transport has been enabled. Set at least one of HTTP and WS')
@@ -93,6 +115,29 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
     })
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
+  } else if (messageRepository instanceof PostgresMessagePickupRepository) {
+    // Define function that use to send push notification.
+
+    const localFcmNotificationSender = new LocalFcmNotificationSender(logger)
+
+    const connectionInfoCallback = async (connectionId: string) => {
+      const connectionRecord = await agent.connections.findById(connectionId)
+
+      const token = connectionRecord?.getTag('device_token') as string | null
+
+      return {
+        sendPushNotification:
+          token && localFcmNotificationSender.isInitialized()
+            ? async (messageId: string) => {
+                await localFcmNotificationSender.sendMessage(token, messageId)
+              }
+            : undefined,
+      }
+    }
+    await messageRepository.initialize({
+      agent,
+      connectionInfoCallback,
+    })
   }
 
   const app = express()

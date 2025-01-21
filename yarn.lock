@@ -2,6 +2,17 @@
 # yarn lockfile v1
 
 
+"@2060.io/credo-ts-message-pickup-repository-pg@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@2060.io/credo-ts-message-pickup-repository-pg/-/credo-ts-message-pickup-repository-pg-0.0.7.tgz#41998c44ec77432bf7be9e439fccc64217c86c20"
+  integrity sha512-95Lg+JgXRTW9NmCLVmiWw4bhBNFDIWOinYG2nRMnktFdXnQxjy1UzKjJeQO+Ido+ltu2GTfyzM4W0Q7cgzXBVw==
+  dependencies:
+    "@credo-ts/core" "^0.5.11"
+    loglevel "^1.8.0"
+    pg "^8.11.3"
+    pg-pubsub "^0.8.1"
+    typescript "^4.0.0"
+
 "@2060.io/ffi-napi@^4.0.9":
   version "4.0.9"
   resolved "https://registry.yarnpkg.com/@2060.io/ffi-napi/-/ffi-napi-4.0.9.tgz#194fca2132932ba02e62d716c786d20169b20b8d"
@@ -372,7 +383,7 @@
     rxjs "^7.8.0"
     tsyringe "^4.8.0"
 
-"@credo-ts/core@0.5.11", "@credo-ts/core@^0.5.10":
+"@credo-ts/core@0.5.11", "@credo-ts/core@^0.5.10", "@credo-ts/core@^0.5.11":
   version "0.5.11"
   resolved "https://registry.yarnpkg.com/@credo-ts/core/-/core-0.5.11.tgz#529826628cafbac9a4dc1bf1425b3e21e4c394f3"
   integrity sha512-mf/Y5eEf3llGrwJ2VUdlhyxAnBuQtFdBHz2NFFr8FhIHbd8TDzJM0Jl9f+n33uf83WV2nKB/O1VROj+II5JGzQ==
