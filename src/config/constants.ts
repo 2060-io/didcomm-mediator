@@ -6,15 +6,15 @@ dotenv.config()
 export const AGENT_PORT = Number(process.env.AGENT_PORT || 4000)
 export const AGENT_LOG_LEVEL = process.env.AGENT_LOG_LEVEL ? Number(process.env.AGENT_LOG_LEVEL) : LogLevel.debug
 
-export const AGENT_NAME = process.env.AGENT_NAME || 'Test Cloud Agent'
+export const AGENT_NAME = process.env.AGENT_NAME || 'Test DIDComm Mediator'
 export const AGENT_ENDPOINTS = process.env.AGENT_ENDPOINTS?.replace(' ', '').split(',') || ['ws://localhost:4000']
 export const AGENT_PUBLIC_DID = process.env.AGENT_PUBLIC_DID
 export const HTTP_SUPPORT = Boolean(process.env.HTTP_SUPPORT ?? true)
 export const WS_SUPPORT = Boolean(process.env.WS_SUPPORT ?? true)
 
 // Wallet
-export const WALLET_NAME = process.env.WALLET_NAME || 'test-cloud-agent'
-export const WALLET_KEY = process.env.WALLET_KEY || 'Test Cloud Agent'
+export const WALLET_NAME = process.env.WALLET_NAME || 'test-didcomm-mediator'
+export const WALLET_KEY = process.env.WALLET_KEY || 'Test DIDComm Mediator'
 export const KEY_DERIVATION_METHOD = process.env.KEY_DERIVATION_METHOD
 export const POSTGRES_HOST = process.env.POSTGRES_HOST
 export const POSTGRES_USER = process.env.POSTGRES_USER

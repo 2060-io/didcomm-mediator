@@ -14,7 +14,7 @@ import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { PushNotificationsFcmModule } from '@credo-ts/push-notifications'
 import { MessageForwardingStrategy } from '@credo-ts/core/build/modules/routing/MessageForwardingStrategy'
 
-type CloudAgentModules = {
+type DidCommMediatorAgentModules = {
   askar: AskarModule
   connections: ConnectionsModule
   mediator: MediatorModule
@@ -22,16 +22,20 @@ type CloudAgentModules = {
   pushNotifications: PushNotificationsFcmModule
 }
 
-interface AgentOptions<ServiceAgentModules> {
+interface AgentOptions<Modules> {
   config: InitConfig
-  modules?: ServiceAgentModules
+  modules?: Modules
   dependencies: AgentDependencies
 }
 
-export class CloudAgent extends Agent<CloudAgentModules> {
+export class DidCommMediatorAgent extends Agent<DidCommMediatorAgentModules> {
   public did?: string
 
-  public constructor(options: AgentOptions<CloudAgentModules>, did?: string, dependencyManager?: DependencyManager) {
+  public constructor(
+    options: AgentOptions<DidCommMediatorAgentModules>,
+    did?: string,
+    dependencyManager?: DependencyManager
+  ) {
     super(options, dependencyManager)
     this.did = did
   }
@@ -49,14 +53,14 @@ export interface CloudAgentOptions {
   postgresUser?: string
   postgresPassword?: string
   postgresHost?: string
-  postgresMessagePickupDatabaseName?: string
+  messagePickupPostgresDatabaseName?: string
 }
 
-export const createCloudAgent = (
+export const createMediator = (
   options: CloudAgentOptions,
   messagePickupRepository: MessagePickupRepository
-): CloudAgent => {
-  return new CloudAgent(
+): DidCommMediatorAgent => {
+  return new DidCommMediatorAgent(
     {
       config: options.config,
       dependencies: options.dependencies,
