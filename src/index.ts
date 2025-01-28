@@ -1,5 +1,5 @@
 import { ConsoleLogger, KeyDerivationMethod } from '@credo-ts/core'
-import { initCloudAgent } from './agent/initCloudAgent'
+import { initMediator } from './agent/initDidCommMediatorAgent'
 import { agentDependencies } from '@credo-ts/node'
 import { AgentLogger } from './config/logger'
 import {
@@ -27,7 +27,7 @@ const logger = new ConsoleLogger(AGENT_LOG_LEVEL)
 async function run() {
   logger.info(`Cloud Agent started on port ${AGENT_PORT}`)
   try {
-    await initCloudAgent({
+    await initMediator({
       config: {
         label: AGENT_NAME,
         endpoints: AGENT_ENDPOINTS,
@@ -51,14 +51,14 @@ async function run() {
       postgresUser: POSTGRES_USER,
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
-      postgresMessagePickupDatabaseName: MPR_POSTGRES_DATABASE_NAME,
+      messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
     })
   } catch (error) {
     logger.error(`${error}`)
     process.exit(1)
   }
 
-  logger.info(`Cloud Agent initialized OK`)
+  logger.info(`DIDComm mediator initialized OK`)
 }
 
 run()

@@ -6,11 +6,9 @@ import type {
   RemoveMessagesOptions,
   TakeFromQueueOptions,
 } from '@credo-ts/core'
-import { injectable } from '@credo-ts/core'
-import { CloudAgent } from '../agent/CloudAgent'
+import { injectable, MessagePickupRepository, utils } from '@credo-ts/core'
+import { DidCommMediatorAgent } from '../agent/DidCommMediatorAgent'
 import { FcmNotificationSender } from '../notifications/FcmNotificationSender'
-import { MessagePickupRepository } from '@credo-ts/core'
-import { uuid } from '@credo-ts/core/build/utils/uuid'
 
 interface InMemoryQueuedMessage extends QueuedMessage {
   connectionId: string
@@ -21,7 +19,7 @@ interface InMemoryQueuedMessage extends QueuedMessage {
 export class InMemoryMessagePickupRepository implements MessagePickupRepository {
   private logger?: Logger
   private messages: InMemoryQueuedMessage[]
-  private agent?: CloudAgent
+  private agent?: DidCommMediatorAgent
   private notificationSender: FcmNotificationSender | undefined
 
   public constructor(notificationSender: FcmNotificationSender, logger?: Logger) {
@@ -30,7 +28,7 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
     this.messages = []
   }
 
-  public setAgent(agent: CloudAgent) {
+  public setAgent(agent: DidCommMediatorAgent) {
     this.agent = agent
   }
 
@@ -54,7 +52,7 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
 
     const messagesToTake = limit ?? messages.length
     this.logger?.debug(
-      `[CustomMessageRepository] Taking ${messagesToTake} messages from queue for connection ${connectionId}`
+      `[InMemoryMessagePickupRepository] Taking ${messagesToTake} messages from queue for connection ${connectionId}`
     )
     if (deleteMessages) {
       this.removeMessages({ connectionId, messageIds: messages.map((msg) => msg.id) })
@@ -65,9 +63,9 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
 
   public async addMessage(options: AddMessageOptions) {
     const { connectionId, recipientDids, payload } = options
-    this.logger?.info(`[CustomMessageRepository] Adding message for connection ${connectionId}`)
+    this.logger?.info(`[InMemoryMessagePickupRepository] Adding message for connection ${connectionId}`)
 
-    const id = uuid()
+    const id = utils.uuid()
     this.messages.push({
       id,
       connectionId,
@@ -81,7 +79,7 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
       const token = connectionRecord?.getTag('device_token') as string | null
 
       if (token) {
-        this.logger?.info(`[CustomMessageRepository] Send notification for connection ${connectionId}`)
+        this.logger?.info(`[InMemoryMessagePickupRepository] Send notification for connection ${connectionId}`)
         if (this.notificationSender) await this.notificationSender.sendMessage(token, 'messageId')
       }
     }

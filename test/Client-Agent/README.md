@@ -83,5 +83,5 @@ After run clientAgents you select 2 connections that are connected with diferent
 ## Notes
 
 - The client agent automatically accepts incoming connections (autoAcceptConnections is set to true).
-- Mediation is initiated if no default mediator is found. The mediator's - - invitation URL is fetched from http://localhost:4000/invitation. You can change this url to that of the cloud-agent locate to cloud an connect with Mobile Agent.
+- Mediation is initiated if no default mediator is found. The mediator's - - invitation URL is fetched from http://localhost:4000/invitation. You can change this url to that of the didcomm-mediator locate to cloud an connect with Mobile Agent.
 - The agent utilizes WebSocket (WsOutboundTransport) for outbound transport.

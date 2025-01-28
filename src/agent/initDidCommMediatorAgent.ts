@@ -27,14 +27,14 @@ import {
   RoutingEventTypes,
   HangupMessage,
   MessagePickupRepository,
+  utils,
 } from '@credo-ts/core'
 import WebSocket from 'ws'
 import { Socket } from 'net'
 
-import { CloudAgentOptions, createCloudAgent } from './CloudAgent'
-import { CloudWsInboundTransport } from '../transport/CloudWsInboundTransport'
+import { CloudAgentOptions, createMediator } from './DidCommMediatorAgent'
+import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport'
-import { uuid } from '@credo-ts/core/build/utils/uuid'
 import express from 'express'
 import cors from 'cors'
 import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notifications'
@@ -45,7 +45,7 @@ import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repositor
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
 
-export const initCloudAgent = async (config: CloudAgentOptions) => {
+export const initMediator = async (config: CloudAgentOptions) => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
 
@@ -79,7 +79,7 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
     throw new Error('No transport has been enabled. Set at least one of HTTP and WS')
   }
 
-  const agent = createCloudAgent(config, messageRepository)
+  const agent = createMediator(config, messageRepository)
 
   if (messageRepository instanceof MessagePickupRepositoryClient) {
     await messageRepository.connect()
@@ -158,69 +158,9 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
 
   if (config.enableWs) {
     webSocketServer = new WebSocket.Server({ noServer: true })
-    agent.registerInboundTransport(new CloudWsInboundTransport({ server: webSocketServer }))
+    agent.registerInboundTransport(new MediatorWsInboundTransport({ server: webSocketServer }))
     agent.registerOutboundTransport(new WsOutboundTransport())
   }
-
-  await agent.initialize()
-  logger.info('agent initialized')
-
-  agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
-    logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
-    if (messageRepository instanceof MessagePickupRepositoryClient) {
-      const connectionId = data.payload.session.connectionId
-      await messageRepository.removeLiveSession({ connectionId })
-      logger.debug(`*** removeLiveSession succesfull ${data.payload.session.connectionId} ***`)
-    }
-  })
-
-  agent.events.on(MessagePickupEventTypes.LiveSessionSaved, async (data: MessagePickupLiveSessionSavedEvent) => {
-    logger.debug(`********** Live Mode Session for ${data.payload.session.connectionId}`)
-    if (messageRepository instanceof MessagePickupRepositoryClient) {
-      const connectionId = data.payload.session.connectionId
-      const sessionId = data.payload.session.id
-      await messageRepository.addLiveSession({ connectionId, sessionId })
-      logger.debug(`*** addLiveSession succesfull ${data.payload.session.connectionId} ***`)
-    }
-  })
-
-  // Handle mediation events
-  agent.events.on<MediationStateChangedEvent>(
-    RoutingEventTypes.MediationStateChanged,
-    async (data: MediationStateChangedEvent) => {
-      const mediationRecord = data.payload.mediationRecord
-
-      if (mediationRecord.state === MediationState.Requested) {
-        await agent.mediator.grantRequestedMediation(mediationRecord.id)
-      }
-    }
-  )
-
-  const server = httpInboundTransport ? httpInboundTransport.server : app.listen(config.port)
-
-  if (config.enableWs) {
-    server?.on('upgrade', (request, socket, head) => {
-      webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
-        const socketId = uuid()
-        webSocketServer.emit('connection', socketParam, request, socketId)
-      })
-    })
-  }
-
-  app.get('/.well-known/did.json', async (req, res) => {
-    logger.info(`Public DidDocument requested`)
-    if (agent.did) {
-      const [didRecord] = await agent.dids.getCreatedDids({ did: agent.did })
-
-      const didDocument = didRecord.didDocument?.toJSON()
-
-      if (didDocument) {
-        res.send(didDocument)
-      }
-    } else {
-      res.send({ error: 'not found' })
-    }
-  })
 
   app.get('/invitation', async (req, res) => {
     logger.info(`Invitation requested`)
@@ -242,6 +182,51 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
       url: outOfBandInvitation.toUrl({ domain: process.env.AGENT_INVITATION_BASE_URL ?? 'https://2060.io/i' }),
     })
   })
+
+  await agent.initialize()
+  logger.info('agent initialized')
+
+  agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
+    logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
+    if (messageRepository instanceof MessagePickupRepositoryClient) {
+      const connectionId = data.payload.session.connectionId
+      await messageRepository.removeLiveSession({ connectionId })
+      logger.debug(`*** removeLiveSession succesfull ${data.payload.session.connectionId} ***`)
+    }
+  })
+
+  agent.events.on(MessagePickupEventTypes.LiveSessionSaved, async (data: MessagePickupLiveSessionSavedEvent) => {
+    logger.debug(`********** Live Mode Session for ${data.payload.session.connectionId}`)
+    if (messageRepository instanceof MessagePickupRepositoryClient) {
+      const connectionId = data.payload.session.connectionId
+      const sessionId = data.payload.session.id
+      await messageRepository.addLiveSession({ connectionId, sessionId })
+      logger.debug(`*** addLiveSession successful for ${data.payload.session.connectionId} ***`)
+    }
+  })
+
+  // Handle mediation events
+  agent.events.on<MediationStateChangedEvent>(
+    RoutingEventTypes.MediationStateChanged,
+    async (data: MediationStateChangedEvent) => {
+      const mediationRecord = data.payload.mediationRecord
+
+      if (mediationRecord.state === MediationState.Requested) {
+        await agent.mediator.grantRequestedMediation(mediationRecord.id)
+      }
+    }
+  )
+
+  const server = httpInboundTransport ? httpInboundTransport.server : app.listen(config.port)
+
+  if (config.enableWs) {
+    server?.on('upgrade', (request, socket, head) => {
+      webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
+        const socketId = utils.uuid()
+        webSocketServer.emit('connection', socketParam, request, socketId)
+      })
+    })
+  }
 
   agent.events.on<AgentMessageProcessedEvent>(AgentEventTypes.AgentMessageProcessed, async (data) => {
     logger.info(`Message processed for connection id ${data.payload.connection?.id} Type: ${data.payload.message.type}`)
@@ -265,6 +250,20 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
   })
 
   if (publicDid) {
+    app.get('/.well-known/did.json', async (req, res) => {
+      logger.info(`Public DidDocument requested`)
+
+      const [didRecord] = await agent.dids.getCreatedDids({ did: agent.did })
+
+      const didDocument = didRecord.didDocument?.toJSON()
+
+      if (didDocument) {
+        res.send(didDocument)
+      } else {
+        res.status(404).end()
+      }
+    })
+
     // If a public did is specified, check if it's already stored in the wallet. If it's not the case,
     // create a new one and generate keys for DIDComm (if there are endpoints configured)
     // TODO: Make DIDComm version, keys, etc. configurable. Keys can also be imported
@@ -351,14 +350,6 @@ export const initCloudAgent = async (config: CloudAgentOptions) => {
       logger.debug('Public did record saved')
     }
   }
-
-  const outOfBandRecord = await agent.oob.createInvitation({
-    multiUseInvitation: true,
-  })
-
-  const multiuseInvitation = outOfBandRecord.outOfBandInvitation.toUrl({ domain: 'https://2060.io/i' })
-
-  logger.info(`multiuseInvitation: ${multiuseInvitation}`)
 
   return { app, agent }
 }

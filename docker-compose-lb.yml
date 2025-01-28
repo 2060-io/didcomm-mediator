@@ -8,8 +8,8 @@ services:
     volumes:
       - ~/data/dm/postgres:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=cloud-agent
-      - POSTGRES_USER=cloud-agent
+      - POSTGRES_PASSWORD=didcomm-mediator
+      - POSTGRES_USER=didcomm-mediator
 
   didcomm-mediator-1:
     build: .
@@ -19,12 +19,12 @@ services:
     environment:
       #- AGENT_PUBLIC_DID=did:web:10.82.14.176%3A4000
       #- AGENT_ENDPOINTS=ws://10.82.14.176:4000
-      - AGENT_NAME=2060 Cloud Agent - Dev
-      - WALLET_NAME=2060-cloud-agent-dev
-      - WALLET_KEY=2060-cloud-agent-dev
+      - AGENT_NAME=2060 DIDComm mediator - Dev
+      - WALLET_NAME=2060-didcomm-mediator-dev
+      - WALLET_KEY=2060-didcomm-mediator-dev
       - POSTGRES_HOST=postgres
-      - POSTGRES_USER=cloud-agent
-      - POSTGRES_PASSWORD=cloud-agent
+      - POSTGRES_USER=didcomm-mediator
+      - POSTGRES_PASSWORD=didcomm-mediator
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
       #- MPR_WS_URL=ws://192.168.10.13:3100
       #- MAX_RECEIVE_BYTES=1000000
@@ -47,12 +47,12 @@ services:
     environment:
       #- AGENT_PUBLIC_DID=did:web:10.82.14.176%3A4000
       #- AGENT_ENDPOINTS=ws://10.82.14.176:4000
-      - AGENT_NAME=2060 Cloud Agent - Dev
-      - WALLET_NAME=2060-cloud-agent-dev
-      - WALLET_KEY=2060-cloud-agent-dev
+      - AGENT_NAME=2060 DIDComm Mediator - Dev
+      - WALLET_NAME=2060-didcomm-mediator-dev
+      - WALLET_KEY=2060-didcomm-mediator-dev
       - POSTGRES_HOST=postgres
-      - POSTGRES_USER=cloud-agent
-      - POSTGRES_PASSWORD=cloud-agent
+      - POSTGRES_USER=didcomm-mediator
+      - POSTGRES_PASSWORD=didcomm-mediator
       - KEY_DERIVATION_METHOD=ARGON2I_MOD
       #- MPR_WS_URL=ws://192.168.10.13:3100
       #- MAX_RECEIVE_BYTES=1000000

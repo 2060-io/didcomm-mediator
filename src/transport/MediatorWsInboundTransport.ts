@@ -17,7 +17,7 @@ interface ExtWebSocket extends WebSocket {
   isAlive: boolean
 }
 
-export class CloudWsInboundTransport implements InboundTransport {
+export class MediatorWsInboundTransport implements InboundTransport {
   private socketServer: Server
   private logger!: Logger
 

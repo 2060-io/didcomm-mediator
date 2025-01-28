@@ -8,9 +8,9 @@ import { FIREBASE_CFG_FILE } from '../config/constants'
 
 export class LocalFcmNotificationSender implements FcmNotificationSender {
   private fcmApp: FcmApp | null = null
-  private logger: Logger
+  private logger?: Logger
 
-  public constructor(logger: Logger) {
+  public constructor(logger?: Logger) {
     this.logger = logger
 
     try {
@@ -18,9 +18,9 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
       this.fcmApp = initializeApp({
         credential: credential.cert(configPath),
       })
-      this.logger.debug('[LocalFcmNotificationSender] Firebase-admin initialized successfully')
+      this.logger?.debug('[LocalFcmNotificationSender] Firebase-admin initialized successfully')
     } catch (error) {
-      this.logger.warn(
+      this.logger?.warn(
         '[LocalFcmNotificationSender] Failed to initialize Firebase Admin. Notifications will be disabled:',
         error.message
       )
@@ -31,7 +31,7 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
   public async sendMessage(registrationToken: string, messageId: string) {
     try {
       if (!this.fcmApp) {
-        this.logger.warn('Firebase Admin is not initialized. Skipping notification.')
+        this.logger?.warn('Firebase Admin is not initialized. Skipping notification.')
         return false
       }
       const response = await getMessaging(this.fcmApp).send({
@@ -51,10 +51,10 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
         },
         apns: { payload: { aps: { contentAvailable: true } } },
       })
-      this.logger.debug(`Message sent successfully: ${response}`)
+      this.logger?.debug(`Message sent successfully: ${response}`)
       return true
     } catch (error) {
-      this.logger.error('Error while sending notification:', error.message)
+      this.logger?.error('Error while sending notification:', error.message)
       return false
     }
   }
