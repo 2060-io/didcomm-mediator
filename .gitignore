@@ -3,7 +3,5 @@ build
 logs.txt
 /.npmrc
 .afj
-yarn-error.log
 .env
 firebase-cfg.json
-/mongodb-data
