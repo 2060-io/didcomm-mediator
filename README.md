@@ -53,14 +53,15 @@ The DIDComm mediator can be run both locally or containerized.
 
 DIDComm mediator can be built and run on localhost by just setting the corresponding variables and executing:
 
-```
-yarn build
-yarn start
+```bash
+pnpm prepare
+pnpm build
+pnpm start
 ```
 
 Upon a successful start, the following lines should be read in log:
 
-```
+```text
 INFO: DIDComm Mediator Agent initialized OK
 ```
 
@@ -68,13 +69,13 @@ INFO: DIDComm Mediator Agent initialized OK
 
 First of all, a docker image must be created by doing:
 
-```
+```bash
 docker build -t didcomm-mediator:[tag] .
 ```
 
 Then, a container can be created and deployed:
 
-```
+```bash
 docker run -e AGENT_NAME=... -e AGENT_ENDPOINT=... -e AGENT_PUBLIC_DID=yyy -e AGENT_PORT=xxx -p yyy:xxx didcomm-mediator:[tag]
 ```
 
@@ -98,14 +99,14 @@ The purpose is to be able to test DIDComm mediator in a multi-instance environme
 
 1. You should be set IP local in the file nginx.conf locate on ngnix folder a section upstream
 
-```
+```json
 upstream loadbalancer {
 server IP-HOST:4001;
 server IP-HOST:4002;
 }
 ```
 
-2. Execute docker compose with load balancer:
+1. Execute docker compose with load balancer:
 
 ```bash
 docker compose -f docker-compose-lb.yml up --build
