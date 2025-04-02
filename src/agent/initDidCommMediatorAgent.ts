@@ -90,7 +90,7 @@ export const initMediator = async (
     const getConnectionInfo = async (connectionId: string): Promise<ConnectionInfo | undefined> => {
       const connectionRecord = await agent.connections.findById(connectionId)
       return {
-        fcmNotificationToken: connectionRecord?.getTag('device_token') as string | undefined,
+        pushNotificationToken: { type: 'fcm', token: connectionRecord?.getTag('device_token') as string | undefined },
         maxReceiveBytes: config.messagePickupMaxReceiveBytes,
       }
     }
