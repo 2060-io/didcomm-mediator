@@ -8,8 +8,8 @@ Before running the client agent, ensure you have the following prerequisites ins
 
 - Node.js
 - npm (Node Package Manager)
-- Cloud-Agent Build (pnpm build)
-- Cloud-Agent running
+- Mediator agent built (pnpm build)
+- Mediator agent already running
 
 ## Environment Variables
 
