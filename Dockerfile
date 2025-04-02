@@ -1,4 +1,4 @@
-FROM node:18.17-bullseye as base
+FROM node:22-bullseye as base
 
 # Set working directory
 WORKDIR /www
