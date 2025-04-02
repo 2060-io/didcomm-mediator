@@ -32,10 +32,10 @@ import {
 import WebSocket from 'ws'
 import { Socket } from 'net'
 
-import { CloudAgentOptions, createMediator } from './DidCommMediatorAgent'
+import { CloudAgentOptions, createMediator, DidCommMediatorAgent } from './DidCommMediatorAgent'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport'
-import express from 'express'
+import express, { Express } from 'express'
 import cors from 'cors'
 import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notifications'
 import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
@@ -45,7 +45,9 @@ import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repositor
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
 
-export const initMediator = async (config: CloudAgentOptions) => {
+export const initMediator = async (
+  config: CloudAgentOptions
+): Promise<{ app: Express; agent: DidCommMediatorAgent }> => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
 

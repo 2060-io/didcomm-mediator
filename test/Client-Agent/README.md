@@ -8,8 +8,8 @@ Before running the client agent, ensure you have the following prerequisites ins
 
 - Node.js
 - npm (Node Package Manager)
-- Cloud-Agent Build (yarn build)
-- Cloud-Agent running
+- Mediator agent built (pnpm build)
+- Mediator agent already running
 
 ## Environment Variables
 
@@ -25,7 +25,7 @@ To run this project, you will need to send the following environment variables t
 
 `CLIENT_AGENT_BASE_URL` Url to receive invitation of mediator.
 
-'https://ca.dev.2060.io/invitation'
+'<https://ca.dev.2060.io/invitation>'
 
 Only use if you run Multiple-Agents
 
@@ -45,31 +45,27 @@ If you need run multiple Client-Agent you may use the Multiple_Agents script, ru
   CLIENT_QTY_OPEN= 5 node build/test/Multiple_agents.js
 ```
 
-## Endpoints
+### Endpoints
 
-1. Invitation
+1. **Invitation**  
+   **Endpoint**: `/invitation`  
+   **Method**: `GET`  
+   **Description**: Generates and returns an invitation URL for establishing connections.
 
-- Endpoint: /invitation
-- Method: GET
-- Description: Generates and returns an invitation URL for establishing connections.
+1. **Connection List**  
+   **Endpoint**: `/connections`  
+   **Method**: `GET`  
+   **Description**: Retrieves a simplified list of all connections.
 
-2. Connection List
+1. **Receive Invitation**  
+   **Endpoint**: `/receive-invitation`  
+   **Method**: `POST`  
+   **Description**: Accepts an invitation URL, establishes a connection, and returns connection details.
 
-- Endpoint: /connections
-- Method: GET
-- Description: Retrieves a simplified list of all connections.
-
-3. Receive Invitation
-
-- Endpoint: /receive-invitation
-- Method: POST
-- Description: Accepts an invitation URL, establishes a connection, and returns connection details.
-
-4. Send Message
-
-- Endpoint: /send-message
-- Method: POST
-- Description: Sends a message to a specified connection.
+1. **Send Message**  
+   **Endpoint**: `/send-message`  
+   **Method**: `POST`  
+   **Description**: Sends a message to a specified connection.
 
 ## Testing Agent Clients procedure
 
@@ -83,5 +79,5 @@ After run clientAgents you select 2 connections that are connected with diferent
 ## Notes
 
 - The client agent automatically accepts incoming connections (autoAcceptConnections is set to true).
-- Mediation is initiated if no default mediator is found. The mediator's - - invitation URL is fetched from http://localhost:4000/invitation. You can change this url to that of the didcomm-mediator locate to cloud an connect with Mobile Agent.
+- Mediation is initiated if no default mediator is found. The mediator's - - invitation URL is fetched from <http://localhost:4000/invitation>. You can change this url to that of the didcomm-mediator locate to cloud an connect with Mobile Agent.
 - The agent utilizes WebSocket (WsOutboundTransport) for outbound transport.
