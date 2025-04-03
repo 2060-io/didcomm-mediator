@@ -6,7 +6,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ~/data/dm/postgres:/var/lib/postgresql/data
+      - ~/data/didcomm-mediator/postgres:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=didcomm-mediator
       - POSTGRES_USER=didcomm-mediator

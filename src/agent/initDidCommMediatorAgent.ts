@@ -43,7 +43,7 @@ import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePicku
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
-import { PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
+import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
 
 export const initMediator = async (
   config: CloudAgentOptions
@@ -69,6 +69,7 @@ export const initMediator = async (
         postgresUser,
         postgresPassword,
         postgresHost,
+        postgresDatabaseName: 'messagepickuprepository',
       })
     } else {
       return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
@@ -118,27 +119,61 @@ export const initMediator = async (
   } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
     messageRepository.setAgent(agent)
   } else if (messageRepository instanceof PostgresMessagePickupRepository) {
-    // Define function that use to send push notification.
+    logger.info('[PostgresMessagePickupRepository] Initializing repository and notification sender')
 
     const localFcmNotificationSender = new LocalFcmNotificationSender(logger)
 
-    const connectionInfoCallback = async (connectionId: string) => {
-      const connectionRecord = await agent.connections.findById(connectionId)
-
-      const token = connectionRecord?.getTag('device_token') as string | null
-
-      return {
-        sendPushNotification:
-          token && localFcmNotificationSender.isInitialized()
-            ? async (messageId: string) => {
-                await localFcmNotificationSender.sendMessage(token, messageId)
-              }
-            : undefined,
-      }
+    // Check if localFcmNotificationSender is initialized
+    if (!localFcmNotificationSender.isInitialized()) {
+      logger.error('[PostgresMessagePickupRepository] FCM Notification Sender is not initialized')
+      throw new Error('FCM Notification Sender initialization failed')
     }
-    await messageRepository.initialize({
-      agent,
-      connectionInfoCallback,
+    logger.debug('[PostgresMessagePickupRepository] FCM Notification Sender initialized')
+
+    await messageRepository.initialize({ agent })
+    logger.info('[PostgresMessagePickupRepository] Repository initialization completed')
+
+    // Register the listener for the MessageQueued event
+    agent.events.on('MessagePickupRepositoryMessageQueued', async ({ payload }) => {
+      const messageQueuedEvent = payload as unknown as MessageQueuedEvent
+      logger.debug(`[MessagePickupRepositoryMessageQueued] received: ${JSON.stringify(messageQueuedEvent, null, 2)}`)
+
+      // If the session is present, skip processing
+      if (messageQueuedEvent.session) {
+        logger.debug(
+          `[MessagePickupRepositoryMessageQueued] Skipping processing because session is present for connectionId: ${messageQueuedEvent.message.connectionId}`
+        )
+        return
+      }
+
+      try {
+        // Find the connection record associated with the message
+        const connectionRecord = await agent.connections.findById(messageQueuedEvent.message.connectionId)
+        if (!connectionRecord) {
+          logger.warn(
+            `[MessagePickupRepositoryMessageQueued] No connection record found for connectionId: ${messageQueuedEvent.message.connectionId}`
+          )
+          return
+        }
+
+        const token = connectionRecord.getTag('device_token') as string | null
+        if (!token) {
+          logger.warn(
+            `[MessagePickupRepositoryMessageQueued] No device token found for connectionId: ${messageQueuedEvent.message.connectionId}`
+          )
+          return
+        }
+
+        logger.debug(
+          `[MessagePickupRepositoryMessageQueued] Sending message with ID ${messageQueuedEvent.message.id} to device token: ${token}`
+        )
+        await localFcmNotificationSender.sendMessage(token, messageQueuedEvent.message.id)
+        logger.info(
+          `[MessagePickupRepositoryMessageQueued] Message ${messageQueuedEvent.message.id} notification sent successfully`
+        )
+      } catch (error) {
+        logger.error(`[MessagePickupRepositoryMessageQueued] Error processing event: ${error}`)
+      }
     })
   }
 
