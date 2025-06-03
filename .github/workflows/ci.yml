@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout didcomm-mediator
         uses: actions/checkout@v4
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
 
       - name: Setup Node.js v22
         uses: actions/setup-node@v4
@@ -35,3 +38,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Validate Helm chart
+        run: helm lint ./charts
