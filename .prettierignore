@@ -5,3 +5,6 @@ logs.txt
 .afj
 .env
 firebase-cfg.json
+.github/
+charts/
+CHANGELOG.md

@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Checkout didcomm-mediator
         uses: actions/checkout@v4
-      
+
       - name: Setup Helm
         uses: azure/setup-helm@v3
 

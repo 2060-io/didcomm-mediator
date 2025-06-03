@@ -21,7 +21,7 @@ This Helm chart deploys the didcomm-mediator application along with the necessar
 Ensure the chart is correctly formatted:
 
 ```bash
-helm lint ./charts 
+helm lint ./charts
 ```
 
 ### 2. Render Templates
@@ -48,9 +48,9 @@ If the target namespace already exists, ensure `createNamespace` is set to `fals
 helm install mi-release ./charts  --namespace <your-namespace>
 ```
 
-**Note:**  
+**Note:**
 
-- `<release-name>` is a name you assign to this deployment instance. It helps Helm track and manage the release.  
+- `<release-name>` is a name you assign to this deployment instance. It helps Helm track and manage the release.
 - Example: If deploying in production, you might use:
 
   ```bash
