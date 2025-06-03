@@ -1,4 +1,3 @@
-{{- if .Values.deployment.first }}
 {{/* Service resource definition */}}
 apiVersion: v1
 kind: Service
@@ -8,8 +7,7 @@ metadata:
   namespace: {{ .Values.namespace.name }}
 spec:
   selector:
-    app: {{ .Values.app.name }}-{{ .Values.deployment.color }}
-    color: {{ .Values.deployment.color }}
+    app: {{ .Values.app.name }}
   ports:
     - name: http
       port: 80
@@ -41,26 +39,23 @@ spec:
                 name: {{ .Values.service.name }}
                 port:
                   number: 80
-{{- end }}                  
 ---
 {{/* StatefulSet resource definition */}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.statefulset.name }}-{{ .Values.deployment.color }}
+  name: {{ .Values.statefulset.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
   serviceName: {{ .Values.statefulset.serviceName }}
   replicas: {{ .Values.statefulset.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.app.name }}-{{ .Values.deployment.color }}
-      color: {{ .Values.deployment.color }}
+      app: {{ .Values.app.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.app.name }}-{{ .Values.deployment.color }}
-        color: {{ .Values.deployment.color }}
+        app: {{ .Values.app.name }}
     spec:
       restartPolicy: Always
       containers:
