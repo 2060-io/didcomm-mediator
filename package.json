@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "packageManager": "pnpm@9.15.3",
   "scripts": {
-    "prettier": "prettier --ignore-path .gitignore .prettierignore '**/*.+(js|json|ts|md|yml|yaml)'",
+    "prettier": "prettier '**/*.+(js|json|ts|md|yml|yaml)'",
     "format": "pnpm prettier --write",
     "check-types": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "check-format": "pnpm prettier --list-different",

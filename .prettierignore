@@ -1,3 +1,7 @@
-.github/
-charts/
-CHANGELOG.md
+node_modules
+build
+logs.txt
+/.npmrc
+.afj
+.env
+firebase-cfg.json
