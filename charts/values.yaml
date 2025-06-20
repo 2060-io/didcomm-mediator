@@ -1,0 +1,49 @@
+namespace:
+  name: default
+
+# Service configuration
+service:
+  name: didcomm-mediator-service
+
+# Ingress configuration
+ingress:
+  name: didcomm-mediator-ingress
+  host: ca.example.io
+  tlsSecret: ca.example.io-cert
+
+# Application name used in labels
+app:
+  name: didcomm-mediator
+
+# StatefulSet configuration (used instead of Deployment)
+statefulset:
+  name: didcomm-mediator
+  serviceName: "didcomm-mediator-service-service"
+  replicas: 2
+  containerName: didcomm-mediator-service-container
+  image:
+    repository: io2060/didcomm-mediator
+    tag: dev
+    pullPolicy: Always
+  storage: 1Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"
+
+# Environment variables for the container
+env:
+  AGENT_LOG_LEVEL: "0"
+  AGENT_ENDPOINTS: "wss://ca.example.io,https://ca.example.io"
+  AGENT_NAME: "2060 Cloud Agent - dev"
+  WALLET_NAME: "2060-cloud-agent-dev"
+  WALLET_KEY: "2060-cloud-agent-dev"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_USER: "user"
+  POSTGRES_PASSWORD: "password"
+  AGENT_PUBLIC_DID: "did:web:ca.example.io"
+  KEY_DERIVATION_METHOD: "ARGON2I_MOD"
+  FIREBASE_CFG_FILE: /config/firebase-cfg.json
