@@ -49,7 +49,13 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
           priority: 'high',
           notification: { tag: 'generic-new-messages', icon: 'ic_notification' },
         },
-        apns: { payload: { aps: { contentAvailable: true } } },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+            'apns-collapse-id': 'generic-new-messages',
+          },
+          payload: { aps: { contentAvailable: true } },
+        },
       })
       this.logger?.debug(`Message sent successfully: ${response}`)
       return true
