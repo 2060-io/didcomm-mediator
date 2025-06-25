@@ -2,12 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.service.name }}
-  # Use the release namespace provided via --namespace
-  namespace: {{ .Values.namespace.name }}
+  name: {{ include "didcomm-mediator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "didcomm-mediator.labels" . | nindent 4 }}
 spec:
   selector:
-    app: {{ .Values.app.name }}
+    {{ include "didcomm-mediator.selectorLabels" . | nindent 4 }}
   ports:
     - name: http
       port: 80
@@ -18,25 +19,27 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.ingress.name }}
-  namespace: {{ .Values.namespace.name }}
+  name: {{ include "didcomm-mediator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "didcomm-mediator.labels" . | nindent 4 }}
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: {{ .Values.ingress.tlsSecret }}
+        - {{ tpl .Values.ingress.host . }}
+      secretName: {{ tpl .Values.ingress.tlsSecret . }}
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: {{ tpl .Values.ingress.host . }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: {{ include "didcomm-mediator.fullname" . }}
                 port:
                   number: 80
 ---
@@ -44,47 +47,33 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.statefulset.name }}
-  namespace: {{ .Values.namespace.name }}
+  name: {{ include "didcomm-mediator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "didcomm-mediator.labels" . | nindent 4 }}
 spec:
   serviceName: {{ .Values.statefulset.serviceName }}
   replicas: {{ .Values.statefulset.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.app.name }}
+      {{ include "didcomm-mediator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ .Values.app.name }}
+        {{ include "didcomm-mediator.selectorLabels" . | nindent 8 }}
     spec:
       restartPolicy: Always
       containers:
         - name: {{ .Values.statefulset.containerName }}
           image: "{{ .Values.statefulset.image.repository }}:{{ .Values.statefulset.image.tag }}"
           imagePullPolicy: {{ .Values.statefulset.image.pullPolicy }}
+          ports:
+            - containerPort: 4000
           env:
-            - name: AGENT_LOG_LEVEL
-              value: '{{ .Values.env.AGENT_LOG_LEVEL }}'
-            - name: AGENT_ENDPOINTS
-              value: '{{ .Values.env.AGENT_ENDPOINTS }}'
-            - name: AGENT_NAME
-              value: '{{ .Values.env.AGENT_NAME }}'
-            - name: WALLET_NAME
-              value: '{{ .Values.env.WALLET_NAME }}'
-            - name: WALLET_KEY
-              value: '{{ .Values.env.WALLET_KEY }}'
-            - name: POSTGRES_HOST
-              value: '{{ .Values.env.POSTGRES_HOST }}'
-            - name: POSTGRES_USER
-              value: '{{ .Values.env.POSTGRES_USER }}'
-            - name: POSTGRES_PASSWORD
-              value: '{{ .Values.env.POSTGRES_PASSWORD }}'
-            - name: AGENT_PUBLIC_DID
-              value: '{{ .Values.env.AGENT_PUBLIC_DID }}'
-            - name: KEY_DERIVATION_METHOD
-              value: '{{ .Values.env.KEY_DERIVATION_METHOD }}'
-            - name: FIREBASE_CFG_FILE
-              value: '{{ .Values.env.FIREBASE_CFG_FILE }}'
+            {{- range $key, $val := .Values.statefulset.env }}
+            - name: {{ $key }}
+              value: {{ tpl (printf "%q" $val) $ }}
+            {{- end }}
           resources:
             requests:
               memory: {{ .Values.statefulset.resources.requests.memory | quote }}
@@ -92,14 +81,12 @@ spec:
             limits:
               memory: {{ .Values.statefulset.resources.limits.memory | quote }}
               cpu: {{ .Values.statefulset.resources.limits.cpu | quote }}
-          ports:
-            - containerPort: 4000
           volumeMounts:
             - name: cloud-agent-wallet-pv
               mountPath: /root/.afj
             - name: firebase-config-volume
               mountPath: /config
-              readOnly: false  
+              readOnly: false
       volumes:
         - name: firebase-config-volume
           configMap:
