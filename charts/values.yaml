@@ -1,24 +1,28 @@
-namespace:
-  name: default
+# Base domain used for ingress host and public identifiers
+global:
+  domain: dev.example.io  
 
-# Service configuration
-service:
-  name: didcomm-mediator-service
-
-# Ingress configuration
-ingress:
-  name: didcomm-mediator-ingress
-  host: ca.example.io
-  tlsSecret: ca.example.io-cert
-
-# Application name used in labels
 app:
   name: didcomm-mediator
+
+ingress:
+  enabled: true
+  name: didcomm-mediator-ingress
+  host: ca.{{ .Values.global.domain }}
+  tlsSecret: ca.{{ .Values.global.domain }}-cert
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod  # Required for TLS via cert-manager
+
+service:
+  name: didcomm-mediator-service
+  ports:
+    http: 80
 
 # StatefulSet configuration (used instead of Deployment)
 statefulset:
   name: didcomm-mediator
-  serviceName: "didcomm-mediator-service-service"
+  serviceName: didcomm-mediator-service-service
   replicas: 2
   containerName: didcomm-mediator-service-container
   image:
@@ -33,17 +37,15 @@ statefulset:
     limits:
       memory: "512Mi"
       cpu: "250m"
-
-# Environment variables for the container
-env:
-  AGENT_LOG_LEVEL: "0"
-  AGENT_ENDPOINTS: "wss://ca.example.io,https://ca.example.io"
-  AGENT_NAME: "2060 Cloud Agent - dev"
-  WALLET_NAME: "2060-cloud-agent-dev"
-  WALLET_KEY: "2060-cloud-agent-dev"
-  POSTGRES_HOST: "postgres-service"
-  POSTGRES_USER: "user"
-  POSTGRES_PASSWORD: "password"
-  AGENT_PUBLIC_DID: "did:web:ca.example.io"
-  KEY_DERIVATION_METHOD: "ARGON2I_MOD"
-  FIREBASE_CFG_FILE: /config/firebase-cfg.json
+  env:
+    AGENT_LOG_LEVEL: "0"
+    AGENT_ENDPOINTS: "wss://ca.{{ .Values.global.domain }},https://ca.{{ .Values.global.domain }}"
+    AGENT_NAME: "2060 Cloud Agent - dev"
+    WALLET_NAME: "2060-cloud-agent-dev"
+    WALLET_KEY: "2060-cloud-agent-dev"
+    POSTGRES_HOST: "postgres-service-core-dev"
+    POSTGRES_USER: "cloud-agent"
+    POSTGRES_PASSWORD: "cloud-agent"
+    AGENT_PUBLIC_DID: "did:web:ca.{{ .Values.global.domain }}"
+    KEY_DERIVATION_METHOD: "ARGON2I_MOD"
+    FIREBASE_CFG_FILE: /config/firebase-cfg.json
