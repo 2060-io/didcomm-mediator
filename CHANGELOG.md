@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/2060-io/didcomm-mediator/compare/v1.1.0...v1.1.1) (2025-07-02)
+
+
+### Bug Fixes
+
+* Fix image with chart version and remove unnecessary variables ([#28](https://github.com/2060-io/didcomm-mediator/issues/28)) ([167800d](https://github.com/2060-io/didcomm-mediator/commit/167800de5951b9c6867d1383c7b1e97540f14044))
+* use exact packaged filename for Helm OCI push ([#30](https://github.com/2060-io/didcomm-mediator/issues/30)) ([91c902a](https://github.com/2060-io/didcomm-mediator/commit/91c902a5006afebe44cabc9f3cc2b87f06685348))
+
 ## [1.1.0](https://github.com/2060-io/didcomm-mediator/compare/v1.0.0...v1.1.0) (2025-07-01)
 
 
