@@ -10,9 +10,6 @@ ingress:
   name: didcomm-mediator-ingress
   host: ca.{{ .Values.global.domain }}
   tlsSecret: ca.{{ .Values.global.domain }}-cert
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod  # Required for TLS via cert-manager
 
 service:
   name: didcomm-mediator-service
@@ -26,8 +23,6 @@ statefulset:
   replicas: 2
   containerName: didcomm-mediator-service-container
   image:
-    repository: io2060/didcomm-mediator
-    tag: dev
     pullPolicy: Always
   storage: 1Gi
   resources:
