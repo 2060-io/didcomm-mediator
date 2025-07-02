@@ -1,5 +1,5 @@
 apiVersion: v2
-name: didcomm-mediator
+name: didcomm-mediator-chart
 description: Helm chart for deploying didcomm-mediator
 type: application
 version: 0.0.5
