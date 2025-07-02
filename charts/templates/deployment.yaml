@@ -65,7 +65,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Values.statefulset.containerName }}
-          image: "{{ .Values.statefulset.image.repository }}:{{ .Values.statefulset.image.tag }}"
+          image: "io2060/didcomm-mediator:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.statefulset.image.pullPolicy }}
           ports:
             - containerPort: 4000
@@ -91,8 +91,6 @@ spec:
         - name: firebase-config-volume
           configMap:
             name: firebase-config
-      imagePullSecrets:
-        - name: registry-credentials
   volumeClaimTemplates:
     - metadata:
         name: cloud-agent-wallet-pv
