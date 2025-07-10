@@ -65,7 +65,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: {{ .Values.statefulset.containerName }}
-          image: "io2060/didcomm-mediator:{{ .Chart.AppVersion }}"
+          image: io2060/didcomm-mediator:{{ .Chart.Version }}
           imagePullPolicy: {{ .Values.statefulset.image.pullPolicy }}
           ports:
             - containerPort: 4000
