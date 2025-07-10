@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/2060-io/didcomm-mediator/compare/v1.2.1...v1.3.0) (2025-07-10)
+
+
+### Features
+
+* Update message pickup repository postgres 0.0.15 ([#34](https://github.com/2060-io/didcomm-mediator/issues/34)) ([6ec19b1](https://github.com/2060-io/didcomm-mediator/commit/6ec19b1b8c0ad9a83c63ab7364ffb787035611dd))
+
 ## [1.2.1](https://github.com/2060-io/didcomm-mediator/compare/v1.2.0...v1.2.1) (2025-07-10)
 
 
