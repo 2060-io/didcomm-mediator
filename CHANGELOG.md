@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/2060-io/didcomm-mediator/compare/v1.2.0...v1.2.1) (2025-07-10)
+
+
+### Bug Fixes
+
+* Fix image charts template with Chart.Version ([#32](https://github.com/2060-io/didcomm-mediator/issues/32)) ([e5d3d47](https://github.com/2060-io/didcomm-mediator/commit/e5d3d47b5f578b1f2b8ee6697c6fd6a84fc263b0))
+
 ## [1.2.0](https://github.com/2060-io/didcomm-mediator/compare/v1.1.0...v1.2.0) (2025-07-09)
 
 
