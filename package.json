@@ -82,7 +82,6 @@
     "@credo-ts/askar": "0.5.17",
     "@credo-ts/core": "0.5.17",
     "@credo-ts/node": "0.5.17",
-    "@hyperledger/anoncreds-nodejs": "0.2.4",
     "@hyperledger/aries-askar-nodejs": "0.2.3",
     "ws": "^8.13.0",
     "@types/ws": "^8.5.13",
