@@ -15,6 +15,7 @@
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
     "outDir": "./build" /* Redirect output structure to the directory. */,
     "useUnknownInCatchVariables": false,
+    "skipLibCheck": true,
 
     // "rootDir": "./",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     // "composite": true,                     /* Enable project compilation */
