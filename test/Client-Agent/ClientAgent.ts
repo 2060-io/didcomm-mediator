@@ -1,5 +1,3 @@
-import dotenv from 'dotenv'
-dotenv.config()
 import { AskarModule } from '@credo-ts/askar'
 import {
   Agent,
@@ -14,6 +12,13 @@ import { agentDependencies } from '@credo-ts/node'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import cors from 'cors'
 import express from 'express'
+import {
+  DidCommShortenUrlEventTypes,
+  DidCommShortenedUrlReceivedEvent,
+  DidCommShortenUrlModule,
+  ShortenUrlRole,
+  DidCommShortenUrlRepository,
+} from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
 const CLIENT_WALLET_ID = process.env.CLIENT_WALLET_ID || 'client-agent'
@@ -36,6 +41,9 @@ async function run() {
         mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2LiveMode,
       }),
       connections: new ConnectionsModule({ autoAcceptConnections: true }),
+      shortenUrl: new DidCommShortenUrlModule({
+        roles: [ShortenUrlRole.LongUrlProvider],
+      }),
     },
   })
 
@@ -46,6 +54,18 @@ async function run() {
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
   app.set('json spaces', 2)
+  const shortenUrlResponses: DidCommShortenedUrlReceivedEvent['payload'][] = []
+  const repository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
+
+  agent.events.on<DidCommShortenedUrlReceivedEvent>(
+    DidCommShortenUrlEventTypes.DidCommShortenedUrlReceived,
+    async (event) => {
+      logger.info(
+        `[ShortenUrl] shortened url received for connection ${event.payload.connectionId}: ${event.payload.shortenedUrl}`
+      )
+      shortenUrlResponses.push(event.payload)
+    }
+  )
   app.listen(port, async () => {
     await agent.initialize()
     logger.info(`Client Agent initialized OK ${CLIENT_MEDIATOR_DID_URL}`)
@@ -121,6 +141,34 @@ async function run() {
     logger.info(`connectionId: ${connectionId}; message: ${message}`)
     await agent.basicMessages.sendMessage(connectionId, message)
     res.end()
+  })
+
+  app.post('/shorten-url/request', async (req, res) => {
+    const { connectionId, url, goalCode, requestedValiditySeconds, shortUrlSlug } = req.body
+
+    if (!connectionId || !url || !goalCode || !requestedValiditySeconds) {
+      return res.status(400).json({
+        error:
+          'connectionId, url, goalCode and requestedValiditySeconds are required to request a shortened URL via DIDComm',
+      })
+    }
+
+    try {
+      const result = await agent.modules.shortenUrl.requestShortenedUrl({
+        connectionId,
+        url,
+        goalCode,
+        requestedValiditySeconds: Number(requestedValiditySeconds),
+        shortUrlSlug,
+      })
+
+      logger.info(`[ShortenUrl] request sent for connection ${connectionId} (message id ${result.messageId})`)
+
+      return res.json(result)
+    } catch (error) {
+      logger.error(`[ShortenUrl] failed to send request: ${error}`)
+      return res.status(500).json({ error: 'Failed to send request-shortened-url message' })
+    }
   })
 }
 

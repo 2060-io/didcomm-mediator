@@ -33,10 +33,16 @@ Only use if you run Multiple-Agents
 
 ## Running Tests
 
-To run tests, run the following command
+Build the project first (`pnpm build`). Then you can start the client agent with the dedicated script:
 
 ```bash
-  CLIENT_MEDIATOR_DID_URL=true CLIENT_AGENT_PORT=3001 CLIENT_WALLET_ID=client-001 node ./build/test/Client-Agent/ClientAgent.js
+CLIENT_AGENT_PORT=3001 CLIENT_WALLET_ID=client-001 pnpm test:agent
+```
+
+If you prefer to execute the compiled file directly, the previous command keeps working:
+
+```bash
+CLIENT_MEDIATOR_DID_URL=true CLIENT_AGENT_PORT=3001 CLIENT_WALLET_ID=client-001 node ./build/test/Client-Agent/ClientAgent.js
 ```
 
 If you need run multiple Client-Agent you may use the Multiple_Agents script, run following command
@@ -66,6 +72,21 @@ If you need run multiple Client-Agent you may use the Multiple_Agents script, ru
    **Endpoint**: `/send-message`  
    **Method**: `POST`  
    **Description**: Sends a message to a specified connection.
+
+1. **Request Shortened URL**  
+   **Endpoint**: `/shorten-url/request`  
+   **Method**: `POST`  
+   **Description**: Sends a DIDComm `request-shortened-url` message using the `@2060.io/credo-ts-didcomm-shorten-url` module. Requires `connectionId`, `url`, `goalCode` and `requestedValiditySeconds` in the payload. Example:
+
+   ```json
+   {
+     "connectionId": "28529f0b-b509-4b06-821a-9b2c8c7098ae",
+     "url": "https://2060.io/i?oob=eyJAdHlwZSI6I",
+     "goalCode": "share_link",
+     "requestedValiditySeconds": 60000,
+     "shortUrlSlug": "summer-2025"
+   }
+   ```
 
 ## Testing Agent Clients procedure
 
