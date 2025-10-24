@@ -109,8 +109,6 @@ export const initMediator = async (
         url,
       })
 
-      //const shortUrlRecord = candidates.find((record) => record.url === url)
-
       logger.debug(
         `[ShortenUrl] found record ${JSON.stringify(shortUrlRecord, null, 2)} for connection ${connectionId}`
       )
