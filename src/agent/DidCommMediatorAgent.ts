@@ -13,6 +13,7 @@ import '@hyperledger/aries-askar-nodejs'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { PushNotificationsFcmModule } from '@credo-ts/push-notifications'
 import { MessageForwardingStrategy } from '@credo-ts/core/build/modules/routing/MessageForwardingStrategy'
+import { DidCommShortenUrlModule, ShortenUrlRole } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 type DidCommMediatorAgentModules = {
   askar: AskarModule
@@ -20,6 +21,7 @@ type DidCommMediatorAgentModules = {
   mediator: MediatorModule
   messagePickup: MessagePickupModule
   pushNotifications: PushNotificationsFcmModule
+  shortenUrl: DidCommShortenUrlModule
 }
 
 interface AgentOptions<Modules> {
@@ -54,6 +56,7 @@ export interface CloudAgentOptions {
   postgresPassword?: string
   postgresHost?: string
   messagePickupPostgresDatabaseName?: string
+  shortenInvitationBaseUrl?: string
 }
 
 export const createMediator = (
@@ -72,6 +75,9 @@ export const createMediator = (
         }),
         messagePickup: new MessagePickupModule({ messagePickupRepository }),
         pushNotifications: new PushNotificationsFcmModule(),
+        shortenUrl: new DidCommShortenUrlModule({
+          roles: [ShortenUrlRole.UrlShortener],
+        }),
       },
     },
     options.did

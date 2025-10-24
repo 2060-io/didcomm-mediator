@@ -19,6 +19,7 @@ import {
   POSTGRES_PASSWORD,
   POSTGRES_USER,
   MPR_POSTGRES_DATABASE_NAME,
+  SHORTEN_INVITATION_BASE_URL,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 
@@ -52,6 +53,7 @@ async function run() {
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
+      shortenInvitationBaseUrl: SHORTEN_INVITATION_BASE_URL,
     })
   } catch (error) {
     logger.error(`${error}`)
