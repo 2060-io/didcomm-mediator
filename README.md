@@ -26,8 +26,17 @@ At the moment, all configuration is done by environment variables. All of them a
 | MPR_WS_URL              | Message Pickup Repository server WebSocket URL. If not defined, it will use internal Message Pickup management (for single-instance, local development only).                                                                                                                                                                                                                            | none                    |
 | MPR_MAX_RECEIVE_BYTES   | Message Pickup Repository Optional byte size limit for retrieving messages                                                                                                                                                                                                                                                                                                               | none                    |
 | FIREBASE_CFG_FILE       | Defines the path to the Firebase project configuration file used to initialize the Firebase Admin SDK. This file must be a JSON file containing the service account credentials for the Firebase project. If the variable is not set, Firebase-based notifications will be disabled. This applies to both the PostgresMessagePickupRepository and InMemoryMessagePickupRepository modes. | `./firebase.cfg.json`   |
-
+| SHORTEN_INVITATION_BASE_URL | Base URL used when generating the public shorten-url link returned to clients. endpoint.                                                                                                                                                                                                                                                                                                 | <https://hologram.zone> |
+  
 These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
+
+### Shorten URL support
+
+The mediator can act as a DIDComm [shorten-url protocol](https://didcomm.org/shorten-url/1.0/) provider through the library ([@2060.io/credo-ts-didcomm-shorten-url](https://github.com/2060-io/credo-ts-didcomm-ext/tree/main/packages/shorten-url)).
+
+- Set `SHORTEN_INVITATION_BASE_URL` to the publicly reachable origin that will host the `/s` endpoint (for example, the domain behind a reverse proxy). The mediator appends `/s?id=<recordId>` to this base when returning shortened links to clients.
+- The `/s` endpoint resolves the stored long URL and issues an HTTP 302 redirect by default. When the request includes `Accept: application/json`, the mediator attempts to parse DIDComm invitation URLs and returns the invitation payload as JSON; non-invitation URLs are returned as `{ "url": "<longUrl>" }`.
+- Shorten-url requests received from connected agents are stored once and then published through the DIDComm event system so that the shortened link can be delivered back to the requesting agent.
 
 ### Message Pickup modes
 
