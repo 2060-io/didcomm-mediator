@@ -32,4 +32,4 @@ export const MPR_WS_URL = process.env.MPR_WS_URL
 export const MPR_MAX_RECEIVE_BYTES = Number(process.env.MPR_MAX_RECEIVE_BYTES)
 
 //shorten url config
-export const SHORTEN_INVITATION_BASE_URL = process.env.SHORTEN_INVITATION_BASE_URL || 'https://hologram.zone'
+export const SHORTEN_INVITATION_BASE_URL = process.env.SHORTEN_INVITATION_BASE_URL || 'https://localhost:3000'
