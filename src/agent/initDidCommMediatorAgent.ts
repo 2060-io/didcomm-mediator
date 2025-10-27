@@ -56,7 +56,6 @@ import {
   deleteShortUrlRecord,
   isShortenUrRecordExpired,
   startShortenUrlRecordsCleanupMonitor,
-  cleanupExpiredOrInvalidShortenUrlRecords,
 } from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
@@ -345,19 +344,6 @@ export const initMediator = async (
 
   await agent.initialize()
   logger.info('agent initialized')
-
-  // Start periodic cleanup monitor for shorten-url records if configured
-  if (config.shortenUrlCleanupIntervalMs !== undefined) {
-    const stopper = startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalMs)
-    if (config.shortenUrlCleanupIntervalMs > 0) {
-      logger.info(
-        `[ShortenUrlCleanup] Shorten URL cleanup monitor started with interval ${config.shortenUrlCleanupIntervalMs}ms`
-      )
-    } else {
-      // monitor disabled; stopper is a no-op
-      logger.info('[ShortenUrlCleanup] Shorten URL background monitor disabled by configuration')
-    }
-  }
 
   agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
     logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)

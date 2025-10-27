@@ -17,7 +17,6 @@ import {
   DidCommShortenedUrlReceivedEvent,
   DidCommShortenUrlModule,
   ShortenUrlRole,
-  DidCommShortenUrlRepository,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
