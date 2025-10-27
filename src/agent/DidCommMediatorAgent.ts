@@ -57,6 +57,7 @@ export interface CloudAgentOptions {
   postgresHost?: string
   messagePickupPostgresDatabaseName?: string
   shortenInvitationBaseUrl?: string
+  shortenUrlCleanupIntervalMs?: number
 }
 
 export const createMediator = (

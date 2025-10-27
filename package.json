@@ -15,7 +15,7 @@
     "start": "node ./build/index.js",
     "vdrproxy": "node ./build/vdrproxy/index.js",
     "test": "jest --verbose",
-    "test:agent": "node ./build/test/Client-Agent/ClientAgent.js",
+    "test:agent": "ts-node ./test/Client-Agent/ClientAgent.ts",
     "postinstall": "patch-package",
     "prepare": "corepack enable"
   },

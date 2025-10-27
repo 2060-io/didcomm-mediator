@@ -52,6 +52,12 @@ import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificatio
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
+import {
+  deleteShortUrlRecord,
+  isShortenUrRecordExpired,
+  startShortenUrlRecordsCleanupMonitor,
+  cleanupExpiredOrInvalidShortenUrlRecords,
+} from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
   config: CloudAgentOptions
@@ -94,11 +100,19 @@ export const initMediator = async (
 
   const repository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
+  // Cleanup expired or invalid shorten-url records on startup
+  startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalMs)
+  logger.info(`[ShortenUrlCleanup] Cleanup on startup completed`)
+
   // Handle shorten URL requests
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
       const { connectionId, url, requestedValiditySeconds } = payload
+
+      // Ensure connection exists
+      if (!agent.connections.findById(connectionId))
+        logger.error(`[ShortenUrl] No connection found for id ${connectionId}`)
 
       logger.debug(`[ShortenUrl] request-shortened-url received for connection ${JSON.stringify(payload, null, 2)}`)
 
@@ -143,14 +157,8 @@ export const initMediator = async (
         `[ShortenUrl] invalidate-shortened-url received for connection ${payload.connectionId} (${payload.shortenedUrl})`
       )
       try {
-        // Since the current provider does not support invalidation, just send a notification back
-        await agent.modules.shortenUrl.invalidateShortenedUrl({
-          connectionId,
-          shortenedUrl,
-        })
-        logger.info(
-          `[ShortenUrl] shorten url invalidation notification sent for connection ${connectionId} (${shortenedUrl})`
-        )
+        await deleteShortUrlRecord(agent.context, { connectionId, shortenedUrl })
+        logger.info(`[ShortenUrl] shortened url record deleted for connection ${connectionId})`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
       }
@@ -282,16 +290,10 @@ export const initMediator = async (
         logger.warn('[ShortenUrl] /s endpoint received unknown UUID', { id })
         return res.status(404).json({ error: 'Shortened URL not found' })
       }
-      // Check expiration
-      const ttlRecord = Number(shortUrlRecord.requestedValiditySeconds)
-      if (ttlRecord > 0) {
-        const baseTs = new Date(shortUrlRecord.updatedAt ?? shortUrlRecord.createdAt).getTime()
-        const expiresAt = baseTs + ttlRecord
-        if (Date.now() >= expiresAt) {
-          await repository.deleteById(agent.context, id)
-          logger.info('[ShortenUrl] shortened URL has expired', { id })
-          return res.status(410).json({ error: 'Shortened URL has expired' })
-        }
+      // Check if the shortened URL is expired
+      if (await isShortenUrRecordExpired(shortUrlRecord)) {
+        logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
+        return res.status(410).json({ error: 'Shortened URL has expired' })
       }
 
       if (req.accepts('json')) {
@@ -343,6 +345,19 @@ export const initMediator = async (
 
   await agent.initialize()
   logger.info('agent initialized')
+
+  // Start periodic cleanup monitor for shorten-url records if configured
+  if (config.shortenUrlCleanupIntervalMs !== undefined) {
+    const stopper = startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalMs)
+    if (config.shortenUrlCleanupIntervalMs > 0) {
+      logger.info(
+        `[ShortenUrlCleanup] Shorten URL cleanup monitor started with interval ${config.shortenUrlCleanupIntervalMs}ms`
+      )
+    } else {
+      // monitor disabled; stopper is a no-op
+      logger.info('[ShortenUrlCleanup] Shorten URL background monitor disabled by configuration')
+    }
+  }
 
   agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
     logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
