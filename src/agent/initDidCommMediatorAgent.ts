@@ -289,8 +289,8 @@ export const initMediator = async (
         const expiresAt = baseTs + ttlRecord
         if (Date.now() >= expiresAt) {
           await repository.deleteById(agent.context, id)
-          logger.info('[ShortenUrl] shortened URL has expired and delete', { id })
-          return res.status(410).json({ error: 'Shortened URL has expired and delete' })
+          logger.info('[ShortenUrl] shortened URL has expired', { id })
+          return res.status(410).json({ error: 'Shortened URL has expired' })
         }
       }
 
