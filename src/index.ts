@@ -23,12 +23,17 @@ import {
   SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
+import { deriveShortenBaseFromPublicDid } from './util/invitationBase'
 
 const logger = new ConsoleLogger(AGENT_LOG_LEVEL)
 
 async function run() {
   logger.info(`Cloud Agent started on port ${AGENT_PORT}`)
   try {
+    const computedShortenBase = SHORTEN_INVITATION_BASE_URL
+      ? SHORTEN_INVITATION_BASE_URL
+      : (await deriveShortenBaseFromPublicDid(AGENT_PUBLIC_DID)) || 'http://localhost:4000'
+    logger.info(`Using shorten invitation base URL: ${computedShortenBase}`)
     await initMediator({
       config: {
         label: AGENT_NAME,
@@ -54,7 +59,7 @@ async function run() {
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
-      shortenInvitationBaseUrl: SHORTEN_INVITATION_BASE_URL,
+      shortenInvitationBaseUrl: computedShortenBase,
       shortenUrlCleanupIntervalMs: SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS,
     })
   } catch (error) {
