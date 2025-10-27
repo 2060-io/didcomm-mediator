@@ -55,7 +55,6 @@ async function run() {
   app.use(express.urlencoded({ extended: true }))
   app.set('json spaces', 2)
   const shortenUrlResponses: DidCommShortenedUrlReceivedEvent['payload'][] = []
-  const repository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
   agent.events.on<DidCommShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommShortenedUrlReceived,
