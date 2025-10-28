@@ -20,7 +20,7 @@ import {
   POSTGRES_USER,
   MPR_POSTGRES_DATABASE_NAME,
   SHORTEN_INVITATION_BASE_URL,
-  SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS,
+  SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 import { deriveShortenBaseFromPublicDid } from './util/invitationBase'
@@ -60,7 +60,7 @@ async function run() {
       postgresHost: POSTGRES_HOST,
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
       shortenInvitationBaseUrl: computedShortenBase,
-      shortenUrlCleanupIntervalMs: SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS,
+      shortenUrlCleanupIntervalSeconds: SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
     })
   } catch (error) {
     logger.error(`${error}`)

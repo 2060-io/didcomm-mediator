@@ -101,14 +101,14 @@ export const initMediator = async (
   const repository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
   // Cleanup expired or invalid shorten-url records on startup
-  startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalMs)
+  startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalSeconds)
   logger.info(`[ShortenUrlCleanup] Cleanup on startup completed`)
 
   // Handle shorten URL requests
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, url, requestedValiditySeconds, threadId } = payload
+      const { connectionId, url, requestedValiditySeconds } = payload
 
       const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
       const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)

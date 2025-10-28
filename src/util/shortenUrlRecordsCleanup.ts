@@ -121,12 +121,14 @@ export async function cleanupExpiredOrInvalidShortenUrlRecords(
  *
  * Default interval: 5 minutes.
  */
-export function startShortenUrlRecordsCleanupMonitor(
-  agentContext: AgentContext,
-  intervalMs = 5 * 60 * 1000
-): () => void {
+export function startShortenUrlRecordsCleanupMonitor(agentContext: AgentContext, intervalSecond = 300): () => void {
   const logger = agentContext.config.logger
-  logger.info(`[ShortenUrlCleanup] Starting periodic cleanup every ${intervalMs}ms`)
+  if (intervalSecond !== undefined && intervalSecond <= 0) {
+    return () => {
+      logger.debug('[ShortenUrlCleanup] Cleanup monitor already disabled')
+    }
+  }
+  logger.info(`[ShortenUrlCleanup] Starting periodic cleanup every ${intervalSecond} seconds`)
 
   const timer = setInterval(async () => {
     try {
@@ -135,7 +137,7 @@ export function startShortenUrlRecordsCleanupMonitor(
     } catch (error) {
       logger.error(`[ShortenUrlCleanup] Periodic cleanup errored: ${error}`)
     }
-  }, intervalMs)
+  }, intervalSecond * 1000)
 
   return () => {
     clearInterval(timer)

@@ -31,8 +31,7 @@ export const FIREBASE_CFG_FILE = process.env.FIREBASE_CFG_FILE || './firebase-cf
 export const MPR_WS_URL = process.env.MPR_WS_URL
 export const MPR_MAX_RECEIVE_BYTES = Number(process.env.MPR_MAX_RECEIVE_BYTES)
 
-//shorten url config
+// shorten url config
 export const SHORTEN_INVITATION_BASE_URL = process.env.SHORTEN_INVITATION_BASE_URL
-export const SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS = Number(
-  process.env.SHORTEN_URL_CLEANUP_RECORDS_INTERVAL_MS || 5 * 60 * 1000
-)
+
+export const SHORTEN_URL_CLEANUP_INTERVAL_SECONDS = Number(process.env.SHORTEN_URL_CLEANUP_INTERVAL_SECONDS) || 86400
