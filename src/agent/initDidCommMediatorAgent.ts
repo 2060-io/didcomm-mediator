@@ -28,6 +28,7 @@ import {
   HangupMessage,
   MessagePickupRepository,
   utils,
+  MediationRepository,
 } from '@credo-ts/core'
 import {
   DidCommInvalidateShortenedUrlReceivedEvent,
@@ -107,11 +108,14 @@ export const initMediator = async (
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, url, requestedValiditySeconds } = payload
+      const { connectionId, url, requestedValiditySeconds, threadId } = payload
 
-      // Ensure connection exists
-      if (!agent.connections.findById(connectionId))
-        logger.error(`[ShortenUrl] No connection found for id ${connectionId}`)
+      const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
+      const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
+      if (!mediationRecord) {
+        logger.warn(`[ShortenUrl] Connection ${connectionId} is not mediated. Skipping shorten-url response.`)
+        return
+      }
 
       logger.debug(`[ShortenUrl] request-shortened-url received for connection ${JSON.stringify(payload, null, 2)}`)
 
