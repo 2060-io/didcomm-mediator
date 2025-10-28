@@ -35,8 +35,6 @@ import {
   DidCommRequestShortenedUrlReceivedEvent,
   DidCommShortenUrlEventTypes,
   DidCommShortenUrlRepository,
-  ShortenUrlRole,
-  ShortenUrlState,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 import WebSocket from 'ws'
 import { Socket } from 'net'
@@ -53,11 +51,7 @@ import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificatio
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
-import {
-  deleteShortUrlRecord,
-  isShortenUrRecordExpired,
-  startShortenUrlRecordsCleanupMonitor,
-} from '../util/shortenUrlRecordsCleanup'
+import { isShortenUrRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
   config: CloudAgentOptions
@@ -108,7 +102,7 @@ export const initMediator = async (
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, url, requestedValiditySeconds } = payload
+      const { connectionId, requestedValiditySeconds } = payload
 
       const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
       const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
@@ -119,28 +113,12 @@ export const initMediator = async (
 
       logger.debug(`[ShortenUrl] request-shortened-url received for connection ${JSON.stringify(payload, null, 2)}`)
 
-      const shortUrlRecord = await repository.findSingleByQuery(agent.context, {
-        connectionId,
-        role: ShortenUrlRole.UrlShortener,
-        state: ShortenUrlState.RequestReceived,
-        url,
-      })
-
-      logger.debug(
-        `[ShortenUrl] found record ${JSON.stringify(shortUrlRecord, null, 2)} for connection ${connectionId}`
-      )
-
-      if (!shortUrlRecord) {
-        logger.error(`[ShortenUrl] no record found for connection ${connectionId}`)
-        return
-      }
-
-      const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${shortUrlRecord.id}`
+      const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
 
       try {
         await agent.modules.shortenUrl.sendShortenedUrl({
           connectionId,
-          threadId: shortUrlRecord.id,
+          threadId: payload.shortenUrlRecord.id,
           shortenedUrl,
           expiresTime: requestedValiditySeconds,
         })
@@ -155,12 +133,12 @@ export const initMediator = async (
   agent.events.on<DidCommInvalidateShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommInvalidateShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, shortenedUrl } = payload
+      const { connectionId } = payload
       logger.info(
         `[ShortenUrl] invalidate-shortened-url received for connection ${payload.connectionId} (${payload.shortenedUrl})`
       )
       try {
-        await deleteShortUrlRecord(agent.context, { connectionId, shortenedUrl })
+        await repository.deleteById(agent.context, payload.shortenUrlRecord.id)
         logger.info(`[ShortenUrl] shortened url record deleted for connection ${connectionId})`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)

@@ -78,6 +78,7 @@ export const createMediator = (
         pushNotifications: new PushNotificationsFcmModule(),
         shortenUrl: new DidCommShortenUrlModule({
           roles: [ShortenUrlRole.UrlShortener],
+          maximumRequestedValiditySeconds: 1 * 24 * 60 * 60,
         }),
       },
     },

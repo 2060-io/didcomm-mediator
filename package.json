@@ -26,7 +26,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@2060.io/credo-ts-didcomm-shorten-url": "0.0.4",
+    "@2060.io/credo-ts-didcomm-shorten-url": "0.0.5",
     "@2060.io/credo-ts-message-pickup-repository-pg": "0.0.15",
     "@2060.io/message-pickup-repository-client": "0.0.8",
     "@credo-ts/askar": "0.5.17",

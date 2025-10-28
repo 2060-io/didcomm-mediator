@@ -2,68 +2,10 @@ import { AgentContext, ConsoleLogger, LogLevel } from '@credo-ts/core'
 import {
   DidCommShortenUrlRecord,
   DidCommShortenUrlRepository,
-  ShortenUrlRole,
   ShortenUrlState,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const defaultLogger = new ConsoleLogger(LogLevel.off)
-
-/**
- * Delete a single shorten-url record when an explicit invalidation is received.
- * It filters by connectionId + shortenedUrl and by UrlShortener role (mediator side).
- *
- * @returns true if a record was found and deleted; false otherwise.
- */
-export async function deleteShortUrlRecord(
-  agentContext: AgentContext,
-  options: { connectionId?: string; shortenedUrl?: string; id?: string }
-): Promise<boolean> {
-  const logger = agentContext.config.logger ?? defaultLogger
-  const repository = agentContext.dependencyManager.resolve(DidCommShortenUrlRepository)
-  const { connectionId, shortenedUrl, id } = options
-  let record
-
-  try {
-    if (id) {
-      record = await repository.findById(agentContext, id)
-      if (!record) {
-        logger.debug(`[ShortenUrlCleanup] No record found for id=${id}`)
-        return false
-      }
-
-      await repository.deleteById(agentContext, record.id)
-      logger.info(`[ShortenUrlCleanup] Deleted record id=${record.id}`)
-      return true
-    } else {
-      if (!connectionId || !shortenedUrl) {
-        logger.error(
-          `[ShortenUrlCleanup] Missing parameters to delete record by connectionId and shortenedUrl: connectionId=${connectionId} shortenedUrl=${shortenedUrl}`
-        )
-        return false
-      }
-      record = await repository.findSingleByQuery(agentContext, {
-        connectionId,
-        shortenedUrl,
-        role: ShortenUrlRole.UrlShortener,
-      })
-
-      if (!record) {
-        logger.debug(
-          `[ShortenUrlCleanup] No record found for shortenedUrl=${shortenedUrl} connectionId=${connectionId}`
-        )
-        return false
-      }
-
-      await repository.deleteById(agentContext, record.id)
-      logger.info(`[ShortenUrlCleanup] Deleted record id=${record.id}`)
-    }
-
-    return true
-  } catch (error) {
-    logger.error(`[ShortenUrlCleanup] Failed deleting record: ${error}`)
-    return false
-  }
-}
 
 /**
  * Scan shorten-url records and delete those that are:
@@ -98,7 +40,7 @@ export async function cleanupExpiredOrInvalidShortenUrlRecords(
       logger.debug(`[ShortenUrlCleanup] Record id=${rec.id} invalidated=${isInvalidated} expired=${isExpired}`)
 
       if (isInvalidated || isExpired) {
-        await deleteShortUrlRecord(agentContext, { id: rec.id })
+        await repository.deleteById(agentContext, rec.id)
         deleted++
       }
     } catch (e) {
