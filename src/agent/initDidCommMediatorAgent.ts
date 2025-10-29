@@ -28,7 +28,14 @@ import {
   HangupMessage,
   MessagePickupRepository,
   utils,
+  MediationRepository,
 } from '@credo-ts/core'
+import {
+  DidCommInvalidateShortenedUrlReceivedEvent,
+  DidCommRequestShortenedUrlReceivedEvent,
+  DidCommShortenUrlEventTypes,
+  DidCommShortenUrlRepository,
+} from '@2060.io/credo-ts-didcomm-shorten-url'
 import WebSocket from 'ws'
 import { Socket } from 'net'
 
@@ -44,6 +51,7 @@ import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificatio
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
+import { isShortenUrRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
   config: CloudAgentOptions
@@ -83,6 +91,60 @@ export const initMediator = async (
   }
 
   const agent = createMediator(config, messageRepository)
+
+  const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
+
+  // Cleanup expired or invalid shorten-url records on startup
+  startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalSeconds)
+  logger.info(`[ShortenUrlCleanup] Cleanup on startup completed`)
+
+  // Handle shorten URL requests
+  agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
+    DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
+    async ({ payload }) => {
+      const { connectionId, requestedValiditySeconds } = payload
+
+      const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
+      const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
+      if (!mediationRecord) {
+        logger.warn(`[ShortenUrl] Connection ${connectionId} is not mediated. Skipping shorten-url response.`)
+        return
+      }
+
+      logger.debug(`[ShortenUrl] request-shortened-url received for connection ${JSON.stringify(payload, null, 2)}`)
+
+      const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
+
+      try {
+        await agent.modules.shortenUrl.sendShortenedUrl({
+          connectionId,
+          threadId: payload.shortenUrlRecord.id,
+          shortenedUrl,
+          expiresTime: requestedValiditySeconds,
+        })
+
+        logger.info(`[ShortenUrl] shortened url generated and sent for connection ${connectionId}`)
+      } catch (error) {
+        logger.error(`[ShortenUrl] failed to process shorten url request: ${error}`)
+      }
+    }
+  )
+  // Handle invalidate shortened URL requests
+  agent.events.on<DidCommInvalidateShortenedUrlReceivedEvent>(
+    DidCommShortenUrlEventTypes.DidCommInvalidateShortenedUrlReceived,
+    async ({ payload }) => {
+      const { connectionId } = payload
+      logger.info(
+        `[ShortenUrl] invalidate-shortened-url received for connection ${payload.connectionId} (${payload.shortenedUrl})`
+      )
+      try {
+        await shortenUrlRepository.deleteById(agent.context, payload.shortenUrlRecord.id)
+        logger.info(`[ShortenUrl] shortened url record deleted for connection ${connectionId})`)
+      } catch (error) {
+        logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
+      }
+    }
+  )
 
   if (messageRepository instanceof MessagePickupRepositoryClient) {
     await messageRepository.connect()
@@ -184,6 +246,48 @@ export const initMediator = async (
   app.use(express.urlencoded({ extended: true }))
 
   app.set('json spaces', 2)
+
+  app.get('/s', async (req, res) => {
+    const id = req.query.id
+    try {
+      if (typeof id !== 'string') {
+        logger.warn('[ShortenUrl] /s endpoint called without id query parameter')
+        return res.status(400).json({ error: 'Query parameter "id" is required' })
+      }
+      logger.debug(`[ShortenUrl] /s endpoint called with id ${id}`)
+
+      const shortUrlRecord = await shortenUrlRepository.findById(agent.context, id)
+      logger.debug(`[ShortenUrl] /s endpoint found record: ${JSON.stringify(shortUrlRecord, null, 2)}`)
+
+      if (!shortUrlRecord) {
+        logger.warn('[ShortenUrl] /s endpoint received unknown id', { id })
+        return res.status(404).json({ error: 'Shortened URL not found' })
+      }
+      const longUrl = shortUrlRecord.url
+
+      logger.debug(`[ShortenUrl] /s endpoint retrieved longUrl: ${longUrl}`)
+
+      if (!longUrl) {
+        logger.warn('[ShortenUrl] /s endpoint received unknown UUID', { id })
+        return res.status(404).json({ error: 'Shortened URL not found' })
+      }
+      // Check if the shortened URL is expired
+      if (await isShortenUrRecordExpired(shortUrlRecord)) {
+        logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
+        return res.status(410).json({ error: 'Shortened URL has expired' })
+      }
+
+      if (req.accepts('json')) {
+        const invitationUrl = await agent.oob.parseInvitation(longUrl)
+        res.send(invitationUrl.toJSON()).end()
+      } else {
+        res.status(302).location(longUrl).end()
+      }
+    } catch (error) {
+      logger.error(`[ShortenUrl] failed to retrieve shortened url for id ${id}: ${error}`)
+      res.status(500).send('Internal Server Error')
+    }
+  })
 
   let webSocketServer: WebSocket.Server
   let httpInboundTransport: HttpInboundTransport | undefined

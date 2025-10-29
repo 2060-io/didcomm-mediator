@@ -15,6 +15,7 @@
     "start": "node ./build/index.js",
     "vdrproxy": "node ./build/vdrproxy/index.js",
     "test": "jest --verbose",
+    "test:agent": "ts-node ./test/Client-Agent/ClientAgent.ts",
     "postinstall": "patch-package",
     "prepare": "corepack enable"
   },
@@ -25,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@2060.io/credo-ts-didcomm-shorten-url": "0.0.5",
     "@2060.io/credo-ts-message-pickup-repository-pg": "0.0.15",
     "@2060.io/message-pickup-repository-client": "0.0.8",
     "@credo-ts/askar": "0.5.17",
