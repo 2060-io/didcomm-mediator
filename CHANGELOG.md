@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/2060-io/didcomm-mediator/compare/v1.3.0...v1.4.0) (2025-10-29)
+
+
+### Features
+
+* Add integration [@2060](https://github.com/2060).io/credo-ts-didcomm-shorten-url package ([#39](https://github.com/2060-io/didcomm-mediator/issues/39)) ([0ccf976](https://github.com/2060-io/didcomm-mediator/commit/0ccf976cbe193adbd8a0cc6784c18a14a77fd547))
+
 ## [1.3.0](https://github.com/2060-io/didcomm-mediator/compare/v1.2.1...v1.3.0) (2025-07-16)
 
 
