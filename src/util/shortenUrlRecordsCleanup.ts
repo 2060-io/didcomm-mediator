@@ -18,11 +18,11 @@ export async function cleanupExpiredOrInvalidShortenUrlRecords(
   agentContext: AgentContext
 ): Promise<{ scanned: number; deleted: number }> {
   const logger = agentContext.config.logger ?? defaultLogger
-  const repository = agentContext.dependencyManager.resolve(DidCommShortenUrlRepository)
+  const shortenUrlRepository = agentContext.dependencyManager.resolve(DidCommShortenUrlRepository)
   let records: DidCommShortenUrlRecord[] = []
 
   try {
-    records = await repository.getAll(agentContext)
+    records = await shortenUrlRepository.getAll(agentContext)
   } catch (error) {
     logger.error(`[ShortenUrlCleanup] Failed to list records: ${error}`)
     return { scanned: 0, deleted: 0 }
@@ -40,7 +40,7 @@ export async function cleanupExpiredOrInvalidShortenUrlRecords(
       logger.debug(`[ShortenUrlCleanup] Record id=${rec.id} invalidated=${isInvalidated} expired=${isExpired}`)
 
       if (isInvalidated || isExpired) {
-        await repository.deleteById(agentContext, rec.id)
+        await shortenUrlRepository.deleteById(agentContext, rec.id)
         deleted++
       }
     } catch (e) {

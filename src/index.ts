@@ -30,9 +30,8 @@ const logger = new ConsoleLogger(AGENT_LOG_LEVEL)
 async function run() {
   logger.info(`Cloud Agent started on port ${AGENT_PORT}`)
   try {
-    const computedShortenBase = SHORTEN_INVITATION_BASE_URL
-      ? SHORTEN_INVITATION_BASE_URL
-      : (await deriveShortenBaseFromPublicDid(AGENT_PUBLIC_DID)) || 'http://localhost:4000'
+    const computedShortenBase =
+      SHORTEN_INVITATION_BASE_URL ?? (await deriveShortenBaseFromPublicDid(AGENT_PUBLIC_DID)) ?? 'http://localhost:4000'
     logger.info(`Using shorten invitation base URL: ${computedShortenBase}`)
     await initMediator({
       config: {

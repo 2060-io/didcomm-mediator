@@ -92,7 +92,7 @@ export const initMediator = async (
 
   const agent = createMediator(config, messageRepository)
 
-  const repository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
+  const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
   // Cleanup expired or invalid shorten-url records on startup
   startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalSeconds)
@@ -138,7 +138,7 @@ export const initMediator = async (
         `[ShortenUrl] invalidate-shortened-url received for connection ${payload.connectionId} (${payload.shortenedUrl})`
       )
       try {
-        await repository.deleteById(agent.context, payload.shortenUrlRecord.id)
+        await shortenUrlRepository.deleteById(agent.context, payload.shortenUrlRecord.id)
         logger.info(`[ShortenUrl] shortened url record deleted for connection ${connectionId})`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
@@ -256,7 +256,7 @@ export const initMediator = async (
       }
       logger.debug(`[ShortenUrl] /s endpoint called with id ${id}`)
 
-      const shortUrlRecord = await repository.findById(agent.context, id)
+      const shortUrlRecord = await shortenUrlRepository.findById(agent.context, id)
       logger.debug(`[ShortenUrl] /s endpoint found record: ${JSON.stringify(shortUrlRecord, null, 2)}`)
 
       if (!shortUrlRecord) {
