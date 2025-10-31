@@ -20,8 +20,8 @@ importers:
   .:
     dependencies:
       '@2060.io/credo-ts-didcomm-shorten-url':
-        specifier: 0.0.5
-        version: 0.0.5(@credo-ts/core@0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
+        specifier: 0.0.6
+        version: 0.0.6(@credo-ts/core@0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
       '@2060.io/credo-ts-message-pickup-repository-pg':
         specifier: 0.0.15
         version: 0.0.15(@credo-ts/core@0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
@@ -175,9 +175,9 @@ packages:
       graphql:
         optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.5':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.6':
     resolution:
-      { integrity: sha512-jJT2ZM/uB74XkJmpHlVi87nAkGQkT/5rd9nXogyEJJ6jRXNGchEXe5B2t/FumupIEGZOtlFO7LyI/ROrPZ2pRQ== }
+      { integrity: sha512-yEhcJdrlOZiqAqtNHja8lZmGtA7k9njsyncvyniKr2czRs9DYP8pJR27IEe/SDQfkunKRCkxbYlPRM2p5d+pZQ== }
     peerDependencies:
       '@credo-ts/core': 0.5.17
 
@@ -2406,9 +2406,9 @@ packages:
       { integrity: sha512-ir1UPr3dkwexU7FdV8qBBbNDRUhMmIekYMFZfi+C/sLNnRESKPl23nB9b2pltqfOQNnGzsDdId90AEtG5tCx4A== }
     engines: { node: '>=6.0.0' }
 
-  baseline-browser-mapping@2.8.20:
+  baseline-browser-mapping@2.8.22:
     resolution:
-      { integrity: sha512-JMWsdF+O8Orq3EMukbUN1QfbLK9mX2CkUmQBcW2T0s8OmdAUL5LLM/6wFwSrqXzlXB13yhyK9gTKS1rIizOduQ== }
+      { integrity: sha512-/tk9kky/d8T8CTXIQYASLyhAxR5VwL3zct1oAoVTaOUHwrmsGnfbRwNdEq+vOl2BN8i3PcDdP0o4Q+jjKQoFbQ== }
     hasBin: true
 
   better-opn@3.0.2:
@@ -2545,9 +2545,9 @@ packages:
       { integrity: sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA== }
     engines: { node: '>=10' }
 
-  caniuse-lite@1.0.30001751:
+  caniuse-lite@1.0.30001752:
     resolution:
-      { integrity: sha512-A0QJhug0Ly64Ii3eIqHu5X51ebln3k4yTUkY1j8drqpWHVreg/VLijN48cZ1bYPiqOQuqpkIKnzr/Ul8V+p6Cw== }
+      { integrity: sha512-vKUk7beoukxE47P5gcVNKkDRzXdVofotshHwfR9vmpeFKxmI5PBpgOMC18LUJUA/DvJ70Y7RveasIBraqsyO/g== }
 
   canonicalize@1.0.8:
     resolution:
@@ -3004,9 +3004,9 @@ packages:
     resolution:
       { integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow== }
 
-  electron-to-chromium@1.5.241:
+  electron-to-chromium@1.5.244:
     resolution:
-      { integrity: sha512-ILMvKX/ZV5WIJzzdtuHg8xquk2y0BOGlFOxBVwTpbiXqWIH0hamG45ddU4R3PQ0gYu+xgo0vdHXHli9sHIGb4w== }
+      { integrity: sha512-OszpBN7xZX4vWMPJwB9illkN/znA8M36GQqQxi6MNy9axWxhOfJyZZJtSLQCpEFLHP2xK33BiWx9aIuIEXVCcw== }
 
   emittery@0.8.1:
     resolution:
@@ -4908,9 +4908,9 @@ packages:
       { integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg== }
     engines: { node: '>=6' }
 
-  minimatch@10.0.3:
+  minimatch@10.1.1:
     resolution:
-      { integrity: sha512-IPZ167aShDZZUMdRk66cyQAW3qr0WzbHkPdMYa8bzZhlHhO3jALbKdxcaak7W9FfT2rZNpQuUu4Od7ILEpXSaw== }
+      { integrity: sha512-enIvLvRAFZYXJzkCYG5RKmPfrFArdLv+R+lbQ53BmIMLIry74bjKzX6iHAm8WYamJkhSSEabrWN5D97XnKObjQ== }
     engines: { node: 20 || >=22 }
 
   minimatch@3.1.2:
@@ -5066,9 +5066,9 @@ packages:
     resolution:
       { integrity: sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw== }
 
-  node-releases@2.0.26:
+  node-releases@2.0.27:
     resolution:
-      { integrity: sha512-S2M9YimhSjBSvYnlr5/+umAnPHE++ODwt5e2Ij6FoX45HA/s4vHdkDx1eax2pAPeAOqu4s9b7ppahsyEFdVqQA== }
+      { integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA== }
 
   nopt@5.0.0:
     resolution:
@@ -6152,9 +6152,9 @@ packages:
       { integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w== }
     engines: { node: '>= 0.4' }
 
-  swagger-ui-dist@5.30.0:
+  swagger-ui-dist@5.30.1:
     resolution:
-      { integrity: sha512-BoiDSeT9PCtHfDYMgX5UpB/qTQy44UoSFRmzHqvhGfgxzEVPHxIW78a+HMLUIHnSFu3z63wjtbq6L6+Rto20Rw== }
+      { integrity: sha512-4mNAUM31sr52K3JcK9qiGbfsFKNh/dm3PkEe+F9FAM31YY/NoRYUgsR/L6d7LLFn6PgZXtBG2ygp8+7UnpUIPg== }
 
   swagger-ui-express@4.6.3:
     resolution:
@@ -6172,9 +6172,9 @@ packages:
       { integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A== }
     engines: { node: '>=10' }
 
-  tar@7.5.1:
+  tar@7.5.2:
     resolution:
-      { integrity: sha512-nlGpxf+hv0v7GkWBK2V9spgactGOp0qvfWRxUMjqHyzrt3SgwE48DIv/FhqPHJYLHpgW1opq3nERbz5Anq7n1g== }
+      { integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg== }
     engines: { node: '>=18' }
 
   teeny-request@8.0.3:
@@ -6808,7 +6808,7 @@ snapshots:
   '@0no-co/graphql.web@1.2.0':
     optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.5(@credo-ts/core@0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.6(@credo-ts/core@0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
     dependencies:
       '@credo-ts/core': 0.5.17(expo@54.0.21(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3)
       class-transformer: 0.5.1
@@ -7897,7 +7897,7 @@ snapshots:
       source-map-support: 0.5.21
       stacktrace-parser: 0.1.11
       structured-headers: 0.4.1
-      tar: 7.5.1
+      tar: 7.5.2
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
@@ -9718,7 +9718,7 @@ snapshots:
 
   base64url@3.0.1: {}
 
-  baseline-browser-mapping@2.8.20: {}
+  baseline-browser-mapping@2.8.22: {}
 
   better-opn@3.0.2:
     dependencies:
@@ -9794,10 +9794,10 @@ snapshots:
 
   browserslist@4.27.0:
     dependencies:
-      baseline-browser-mapping: 2.8.20
-      caniuse-lite: 1.0.30001751
-      electron-to-chromium: 1.5.241
-      node-releases: 2.0.26
+      baseline-browser-mapping: 2.8.22
+      caniuse-lite: 1.0.30001752
+      electron-to-chromium: 1.5.244
+      node-releases: 2.0.27
       update-browserslist-db: 1.1.4(browserslist@4.27.0)
 
   bs-logger@0.2.6:
@@ -9848,7 +9848,7 @@ snapshots:
 
   camelcase@6.3.0: {}
 
-  caniuse-lite@1.0.30001751: {}
+  caniuse-lite@1.0.30001752: {}
 
   canonicalize@1.0.8: {}
 
@@ -10193,7 +10193,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.241: {}
+  electron-to-chromium@1.5.244: {}
 
   emittery@0.8.1: {}
 
@@ -10878,7 +10878,7 @@ snapshots:
     dependencies:
       foreground-child: 3.3.1
       jackspeak: 4.1.1
-      minimatch: 10.0.3
+      minimatch: 10.1.1
       minipass: 7.1.2
       package-json-from-dist: 1.0.1
       path-scurry: 2.0.0
@@ -12507,7 +12507,7 @@ snapshots:
 
   mimic-fn@2.1.0: {}
 
-  minimatch@10.0.3:
+  minimatch@10.1.1:
     dependencies:
       '@isaacs/brace-expansion': 5.0.0
     optional: true
@@ -12611,7 +12611,7 @@ snapshots:
 
   node-int64@0.4.0: {}
 
-  node-releases@2.0.26: {}
+  node-releases@2.0.27: {}
 
   nopt@5.0.0:
     dependencies:
@@ -13618,14 +13618,14 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  swagger-ui-dist@5.30.0:
+  swagger-ui-dist@5.30.1:
     dependencies:
       '@scarf/scarf': 1.4.0
 
   swagger-ui-express@4.6.3(express@4.21.2):
     dependencies:
       express: 4.21.2
-      swagger-ui-dist: 5.30.0
+      swagger-ui-dist: 5.30.1
 
   symbol-tree@3.2.4: {}
 
@@ -13638,7 +13638,7 @@ snapshots:
       mkdirp: 1.0.4
       yallist: 4.0.0
 
-  tar@7.5.1:
+  tar@7.5.2:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0

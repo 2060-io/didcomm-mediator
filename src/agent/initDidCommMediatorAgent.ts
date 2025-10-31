@@ -102,7 +102,7 @@ export const initMediator = async (
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, requestedValiditySeconds } = payload
+      const { connectionId } = payload
 
       const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
       const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
@@ -115,12 +115,16 @@ export const initMediator = async (
 
       const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
 
+      logger.debug(`[ShortenUrl] threadId=${payload.shortenUrlRecord.threadId}`)
       try {
+        if (!payload.shortenUrlRecord.threadId) {
+          throw new Error('shortenUrlRecord.threadId is required but was undefined')
+        }
+
         await agent.modules.shortenUrl.sendShortenedUrl({
           connectionId,
-          threadId: payload.shortenUrlRecord.id,
+          threadId: payload.shortenUrlRecord.threadId,
           shortenedUrl,
-          expiresTime: requestedValiditySeconds,
         })
 
         logger.info(`[ShortenUrl] shortened url generated and sent for connection ${connectionId}`)

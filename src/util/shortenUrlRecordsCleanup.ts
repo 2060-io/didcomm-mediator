@@ -93,11 +93,8 @@ export function startShortenUrlRecordsCleanupMonitor(agentContext: AgentContext,
  * @returns true if expired; false otherwise.
  */
 export async function isShortenUrRecordExpired(shortUrlRecord: DidCommShortenUrlRecord): Promise<boolean> {
-  const ttlSeconds = Number(shortUrlRecord.requestedValiditySeconds ?? shortUrlRecord.expiresTime ?? 0)
-  if (ttlSeconds > 0) {
-    const baseTs = new Date(shortUrlRecord.updatedAt ?? shortUrlRecord.createdAt).getTime()
-    const expiresAt = baseTs + ttlSeconds * 1000
-    if (Date.now() >= expiresAt) {
+  if (shortUrlRecord.expiresTime) {
+    if (Date.now() >= new Date(shortUrlRecord.expiresTime).getTime()) {
       return true
     }
   }
