@@ -35,7 +35,7 @@ export async function cleanupExpiredOrInvalidShortenUrlRecords(
         rec.state === ShortenUrlState.InvalidationReceived || rec.state === ShortenUrlState.InvalidationSent
 
       // Check absolute expiration time
-      const isExpired = await isShortenUrRecordExpired(rec)
+      const isExpired = await isShortenUrlRecordExpired(rec)
 
       logger.debug(`[ShortenUrlCleanup] Record id=${rec.id} invalidated=${isInvalidated} expired=${isExpired}`)
 
@@ -92,7 +92,7 @@ export function startShortenUrlRecordsCleanupMonitor(agentContext: AgentContext,
  * @param shortUrlRecord
  * @returns true if expired; false otherwise.
  */
-export async function isShortenUrRecordExpired(shortUrlRecord: DidCommShortenUrlRecord): Promise<boolean> {
+export async function isShortenUrlRecordExpired(shortUrlRecord: DidCommShortenUrlRecord): Promise<boolean> {
   if (shortUrlRecord.expiresTime) {
     if (Date.now() >= new Date(shortUrlRecord.expiresTime).getTime()) {
       return true

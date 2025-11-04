@@ -51,7 +51,7 @@ import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificatio
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
-import { isShortenUrRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
+import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
   config: CloudAgentOptions
