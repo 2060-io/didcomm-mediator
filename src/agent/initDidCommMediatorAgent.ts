@@ -276,7 +276,7 @@ export const initMediator = async (
         return res.status(404).json({ error: 'Shortened URL not found' })
       }
       // Check if the shortened URL is expired
-      if (await isShortenUrRecordExpired(shortUrlRecord)) {
+      if (await isShortenUrlRecordExpired(shortUrlRecord)) {
         shortenUrlRepository.deleteById(agent.context, id)
         logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
         return res.status(410).json({ error: 'Shortened URL has expired' })
