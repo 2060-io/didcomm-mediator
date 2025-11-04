@@ -51,7 +51,7 @@ import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificatio
 import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
 import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
 import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
-import { isShortenUrRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
+import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
 
 export const initMediator = async (
   config: CloudAgentOptions
@@ -102,7 +102,7 @@ export const initMediator = async (
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId, requestedValiditySeconds } = payload
+      const { connectionId } = payload
 
       const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
       const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
@@ -115,12 +115,16 @@ export const initMediator = async (
 
       const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
 
+      logger.debug(`[ShortenUrl] threadId=${payload.shortenUrlRecord.threadId}`)
       try {
+        if (!payload.shortenUrlRecord.threadId) {
+          throw new Error('shortenUrlRecord.threadId is required but was undefined')
+        }
+
         await agent.modules.shortenUrl.sendShortenedUrl({
           connectionId,
-          threadId: payload.shortenUrlRecord.id,
+          threadId: payload.shortenUrlRecord.threadId,
           shortenedUrl,
-          expiresTime: requestedValiditySeconds,
         })
 
         logger.info(`[ShortenUrl] shortened url generated and sent for connection ${connectionId}`)
@@ -272,7 +276,8 @@ export const initMediator = async (
         return res.status(404).json({ error: 'Shortened URL not found' })
       }
       // Check if the shortened URL is expired
-      if (await isShortenUrRecordExpired(shortUrlRecord)) {
+      if (await isShortenUrlRecordExpired(shortUrlRecord)) {
+        shortenUrlRepository.deleteById(agent.context, id)
         logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
         return res.status(410).json({ error: 'Shortened URL has expired' })
       }
