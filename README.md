@@ -1,5 +1,11 @@
 # DIDComm Mediator
 
+## Prerequisites
+
+- Node.js 22
+- pnpm 9 (installable via `corepack enable`)
+- Docker/Docker Compose if you plan to run the containerized setup
+
 ## Configuration
 
 ### Environment variables
