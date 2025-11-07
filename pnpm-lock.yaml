@@ -20,8 +20,8 @@ importers:
   .:
     dependencies:
       '@2060.io/credo-ts-didcomm-shorten-url':
-        specifier: 0.0.8
-        version: 0.0.8(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
+        specifier: 0.0.9
+        version: 0.0.9(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
       '@2060.io/credo-ts-message-pickup-repository-pg':
         specifier: 0.0.15
         version: 0.0.15(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
@@ -175,9 +175,9 @@ packages:
       graphql:
         optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.8':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.9':
     resolution:
-      { integrity: sha512-x8XDkHDLBHrGg24jrQUDFXKdvRB9ifGlez3dpIwi6KJ3PCWJW6OQghwNyWvXLRjIcCO0UAnwqeubG8WG86RXxg== }
+      { integrity: sha512-yMEIDr4FB3C10v0ejSV1RZqStu8RbLjx6CuVTVwjOw/swXS0PtuuA7p8VqZiZF+PejyfCF+66Sswsdz8D2pCLQ== }
     peerDependencies:
       '@credo-ts/core': 0.5.17
 
@@ -3004,9 +3004,9 @@ packages:
     resolution:
       { integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow== }
 
-  electron-to-chromium@1.5.246:
+  electron-to-chromium@1.5.248:
     resolution:
-      { integrity: sha512-CKp2enkTcw94o8p7P+nb3in3yILO7jAIoERSmkIhGazMuK2eLnPSVUH/dxUveGN8ulJJDjYUv0vV7y2e2AZ0nA== }
+      { integrity: sha512-zsur2yunphlyAO4gIubdJEXCK6KOVvtpiuDfCIqbM9FjcnMYiyn0ICa3hWfPr0nc41zcLWobgy1iL7VvoOyA2Q== }
 
   emittery@0.8.1:
     resolution:
@@ -4422,9 +4422,9 @@ packages:
       { integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ== }
     engines: { node: '>= 0.8.0' }
 
-  libphonenumber-js@1.12.25:
+  libphonenumber-js@1.12.26:
     resolution:
-      { integrity: sha512-u90tUu/SEF8b+RaDKCoW7ZNFDakyBtFlX1ex3J+VH+ElWes/UaitJLt/w4jGu8uAE41lltV/s+kMVtywcMEg7g== }
+      { integrity: sha512-MagMOuqEXB2Pa90cWE+BoCmcKJx+de5uBIicaUkQ+uiEslZ0OBMNOkSZT/36syXNHu68UeayTxPm3DYM2IHoLQ== }
 
   lighthouse-logger@1.4.2:
     resolution:
@@ -6808,7 +6808,7 @@ snapshots:
   '@0no-co/graphql.web@1.2.0':
     optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.8(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.9(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
     dependencies:
       '@credo-ts/core': 0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3)
       class-transformer: 0.5.1
@@ -9796,7 +9796,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.8.25
       caniuse-lite: 1.0.30001754
-      electron-to-chromium: 1.5.246
+      electron-to-chromium: 1.5.248
       node-releases: 2.0.27
       update-browserslist-db: 1.1.4(browserslist@4.27.0)
 
@@ -9909,7 +9909,7 @@ snapshots:
   class-validator@0.14.1:
     dependencies:
       '@types/validator': 13.15.4
-      libphonenumber-js: 1.12.25
+      libphonenumber-js: 1.12.26
       validator: 13.15.20
 
   cli-cursor@2.1.0:
@@ -10193,7 +10193,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.246: {}
+  electron-to-chromium@1.5.248: {}
 
   emittery@0.8.1: {}
 
@@ -11902,7 +11902,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libphonenumber-js@1.12.25: {}
+  libphonenumber-js@1.12.26: {}
 
   lighthouse-logger@1.4.2:
     dependencies:

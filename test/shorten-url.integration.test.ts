@@ -129,7 +129,6 @@ describe('Shorten URL integration', () => {
     await new Promise((resolve) => setImmediate(resolve))
     // Allow async event handlers to complete
     expect(sendSpy).toHaveBeenCalledWith({
-      connectionId: CONNECTION_ID,
       recordId: shortenUrlRecord.id,
       shortenedUrl: `${SHORT_BASE}/s?id=${shortenUrlRecord.id}`,
     })
