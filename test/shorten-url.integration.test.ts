@@ -117,11 +117,6 @@ describe('Shorten URL integration', () => {
     agent.events.emit(agent.context, {
       type: DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
       payload: {
-        connectionId: CONNECTION_ID,
-        threadId: THREAD_ID,
-        url: shortenUrlRecord.url,
-        goalCode: 'share_link',
-        requestedValiditySeconds: shortenUrlRecord.requestedValiditySeconds,
         shortenUrlRecord,
       },
     })

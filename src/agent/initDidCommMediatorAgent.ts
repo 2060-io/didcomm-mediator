@@ -102,12 +102,14 @@ export const initMediator = async (
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId } = payload
+      const { shortenUrlRecord } = payload
 
       const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
-      const mediationRecord = await mediationRepository.getByConnectionId(agent.context, connectionId)
+      const mediationRecord = await mediationRepository.getByConnectionId(agent.context, shortenUrlRecord.connectionId)
       if (!mediationRecord) {
-        logger.warn(`[ShortenUrl] Connection ${connectionId} is not mediated. Skipping shorten-url response.`)
+        logger.warn(
+          `[ShortenUrl] Connection ${shortenUrlRecord.connectionId} is not mediated. Skipping shorten-url response.`
+        )
         return
       }
 
@@ -121,7 +123,7 @@ export const initMediator = async (
           shortenedUrl,
         })
 
-        logger.info(`[ShortenUrl] shortened url generated and sent for connection ${connectionId}`)
+        logger.info(`[ShortenUrl] shortened url generated and sent for connection ${shortenUrlRecord.connectionId}`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process shorten url request: ${error}`)
       }
@@ -131,13 +133,13 @@ export const initMediator = async (
   agent.events.on<DidCommInvalidateShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommInvalidateShortenedUrlReceived,
     async ({ payload }) => {
-      const { connectionId } = payload
+      const { shortenUrlRecord } = payload
       logger.info(
-        `[ShortenUrl] invalidate-shortened-url received for connection ${payload.connectionId} (${payload.shortenedUrl})`
+        `[ShortenUrl] invalidate-shortened-url received for connection ${shortenUrlRecord.connectionId} (${shortenUrlRecord.shortenedUrl})`
       )
       try {
         await shortenUrlRepository.deleteById(agent.context, payload.shortenUrlRecord.id)
-        logger.info(`[ShortenUrl] shortened url record deleted for connection ${connectionId})`)
+        logger.info(`[ShortenUrl] shortened url record deleted for connection ${shortenUrlRecord.connectionId})`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
       }
