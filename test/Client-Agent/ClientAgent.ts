@@ -205,8 +205,11 @@ async function run() {
     }
 
     try {
+      // Find record by id
+      const findRecord = await shortenUrlRepository.getSingleByQuery(agent.context, { threadId: id })
+      // Send invalidate message
       const result = await shorteUrlApi.invalidateShortenedUrl({
-        recordId: id,
+        recordId: findRecord.id,
       })
       logger.info(`[ShortenUrl] invalidate request sent for record id ${id} (message id ${result.messageId})`)
 

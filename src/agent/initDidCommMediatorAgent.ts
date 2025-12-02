@@ -119,7 +119,7 @@ export const initMediator = async (
 
       try {
         await agent.modules.shortenUrl.sendShortenedUrl({
-          recordId: payload.shortenUrlRecord.threadId,
+          recordId: payload.shortenUrlRecord.id,
           shortenedUrl,
         })
 
