@@ -17,9 +17,13 @@ import {
   DidCommShortenedUrlReceivedEvent,
   DidCommShortenUrlModule,
   ShortenUrlRole,
+  DidCommShortenUrlRepository,
+  DidCommShortenUrlApi,
+  DidCommShortenedUrlInvalidatedEvent,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
+const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST
 const CLIENT_WALLET_ID = process.env.CLIENT_WALLET_ID || 'client-agent'
 const CLIENT_WALLET_KEY = process.env.CLIENT_WALLET_KEY || 'client-agent'
 const CLIENT_MEDIATOR_DID_URL = Boolean(process.env.CLIENT_MEDIATOR_DID_URL) || false
@@ -48,23 +52,40 @@ async function run() {
 
   agent.registerOutboundTransport(new WsOutboundTransport())
 
+  const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
+  const shorteUrlApi = agent.dependencyManager.resolve(DidCommShortenUrlApi)
+
   const app = express()
   app.use(cors())
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
   app.set('json spaces', 2)
-  const shortenUrlResponses: DidCommShortenedUrlReceivedEvent['payload'][] = []
 
+  // Handle shortened URL responses
   agent.events.on<DidCommShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommShortenedUrlReceived,
     async (event) => {
       logger.info(
-        `[ShortenUrl] shortened url received for connection ${event.payload.connectionId}: ${event.payload.shortenedUrl}`
+        `[ShortenUrl] shortened url received for connection ${event.payload.shortenUrlRecord.connectionId}: ${event.payload.shortenUrlRecord.shortenedUrl}****`
       )
-      shortenUrlResponses.push(event.payload)
     }
   )
-  app.listen(port, async () => {
+
+  // Handle invalidate shortened URL responses
+  agent.events.on<DidCommShortenedUrlInvalidatedEvent>(
+    DidCommShortenUrlEventTypes.DidCommShortenedUrlInvalidated,
+    async ({ payload }) => {
+      const { shortenUrlRecord } = payload
+      logger.info(
+        `[ShortenUrl] shortened-url-invalidated event received for connection ${shortenUrlRecord.connectionId} (${payload.shortenUrlRecord.shortenedUrl})`
+      )
+      await shortenUrlRepository.deleteById(agent.context, shortenUrlRecord.id).catch((error) => {
+        logger.error(`[ShortenUrl] failed to delete shortened url record: ${error}`)
+      })
+    }
+  )
+
+  const onListen = async () => {
     await agent.initialize()
     logger.info(`Client Agent initialized OK ${CLIENT_MEDIATOR_DID_URL}`)
     // If no default mediator, request mediation from configured
@@ -104,7 +125,13 @@ async function run() {
     } else {
       logger.debug('Mediation already set up')
     }
-  })
+  }
+
+  if (CLIENT_AGENT_HOST) {
+    app.listen(port, CLIENT_AGENT_HOST, onListen)
+  } else {
+    app.listen(port, onListen)
+  }
 
   // Create invitation
   app.get('/invitation', async (req, res) => {
@@ -152,7 +179,7 @@ async function run() {
     }
 
     try {
-      const result = await agent.modules.shortenUrl.requestShortenedUrl({
+      const result = await shorteUrlApi.requestShortenedUrl({
         connectionId,
         url,
         goalCode,
@@ -161,6 +188,27 @@ async function run() {
       })
 
       logger.info(`[ShortenUrl] request sent for connection ${connectionId} (message id ${result.messageId})`)
+      return res.json(result)
+    } catch (error) {
+      logger.error(`[ShortenUrl] failed to send request: ${error}`)
+      return res.status(500).json({ error: 'Failed to send request-shortened-url message' })
+    }
+  })
+
+  app.post('/shorten-url/invalidate', async (req, res) => {
+    const { id } = req.body
+
+    if (!id) {
+      return res.status(400).json({
+        error: 'id is required to invalidate a shortened URL via DIDComm',
+      })
+    }
+
+    try {
+      const result = await shorteUrlApi.invalidateShortenedUrl({
+        recordId: id,
+      })
+      logger.info(`[ShortenUrl] invalidate request sent for record id ${id} (message id ${result.messageId})`)
 
       return res.json(result)
     } catch (error) {

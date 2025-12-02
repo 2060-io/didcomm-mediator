@@ -20,8 +20,8 @@ importers:
   .:
     dependencies:
       '@2060.io/credo-ts-didcomm-shorten-url':
-        specifier: 0.0.9
-        version: 0.0.9(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
+        specifier: 0.0.10
+        version: 0.0.10(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
       '@2060.io/credo-ts-message-pickup-repository-pg':
         specifier: 0.0.15
         version: 0.0.15(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))
@@ -175,9 +175,9 @@ packages:
       graphql:
         optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.9':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.10':
     resolution:
-      { integrity: sha512-yMEIDr4FB3C10v0ejSV1RZqStu8RbLjx6CuVTVwjOw/swXS0PtuuA7p8VqZiZF+PejyfCF+66Sswsdz8D2pCLQ== }
+      { integrity: sha512-M0dbXXjk2strngEGn9czAx9fzARdtl7XgyDhVwfJpyxK2TN6KLLcGZqrsYaQ31rUEInJwTsJJBgk3Mqr7EImZw== }
     peerDependencies:
       '@credo-ts/core': 0.5.17
 
@@ -1694,6 +1694,7 @@ packages:
   '@sphereon/kmp-mdl-mdoc@0.2.0-SNAPSHOT.22':
     resolution:
       { integrity: sha512-uAZZExVy+ug9JLircejWa5eLtAZ7bnBP6xb7DO2+86LRsHNLh2k2jMWJYxp+iWtGHTsh6RYsZl14ScQLvjiQ/A== }
+    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution:
@@ -6808,7 +6809,7 @@ snapshots:
   '@0no-co/graphql.web@1.2.0':
     optional: true
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.9(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.10(@credo-ts/core@0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3))':
     dependencies:
       '@credo-ts/core': 0.5.17(expo@54.0.22(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(utf-8-validate@5.0.10))(react-native@0.82.1(@babel/core@7.28.5)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(web-streams-polyfill@3.3.3)
       class-transformer: 0.5.1
