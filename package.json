@@ -1,6 +1,6 @@
 {
   "name": "didcomm-mediator",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "2060 DIDComm Mediator",
   "main": "build/index.js",
   "packageManager": "pnpm@9.15.3",
