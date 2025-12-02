@@ -117,11 +117,6 @@ describe('Shorten URL integration', () => {
     agent.events.emit(agent.context, {
       type: DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
       payload: {
-        connectionId: CONNECTION_ID,
-        threadId: THREAD_ID,
-        url: shortenUrlRecord.url,
-        goalCode: 'share_link',
-        requestedValiditySeconds: shortenUrlRecord.requestedValiditySeconds,
         shortenUrlRecord,
       },
     })
@@ -129,7 +124,7 @@ describe('Shorten URL integration', () => {
     await new Promise((resolve) => setImmediate(resolve))
     // Allow async event handlers to complete
     expect(sendSpy).toHaveBeenCalledWith({
-      recordId: shortenUrlRecord.id,
+      recordId: shortenUrlRecord.threadId,
       shortenedUrl: `${SHORT_BASE}/s?id=${shortenUrlRecord.id}`,
     })
 
