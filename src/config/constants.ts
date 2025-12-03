@@ -26,6 +26,7 @@ export const MPR_POSTGRES_DATABASE_NAME = process.env.MPR_POSTGRES_DATABASE_NAME
 //FIREBASE CONFIG FILE
 
 export const FIREBASE_CFG_FILE = process.env.FIREBASE_CFG_FILE || './firebase-cfg.json'
+export const ENABLE_SILENT_FCM_NOTIFICATIONS = process.env.ENABLE_SILENT_FCM_NOTIFICATIONS === 'true'
 
 // Message Pickup Repository Client
 export const MPR_WS_URL = process.env.MPR_WS_URL

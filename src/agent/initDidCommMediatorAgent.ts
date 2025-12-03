@@ -80,7 +80,11 @@ export const initMediator = async (
         postgresDatabaseName: 'messagepickuprepository',
       })
     } else {
-      return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
+      return new InMemoryMessagePickupRepository(
+        new LocalFcmNotificationSender(logger),
+        logger,
+        config.silentFcmNotificationsEnabled
+      )
     }
   }
 
@@ -229,7 +233,11 @@ export const initMediator = async (
         logger.debug(
           `[MessagePickupRepositoryMessageQueued] Sending message with ID ${messageQueuedEvent.message.id} to device token: ${token}`
         )
-        await localFcmNotificationSender.sendMessage(token, messageQueuedEvent.message.id)
+        await localFcmNotificationSender.sendMessage(
+          token,
+          messageQueuedEvent.message.id,
+          config.silentFcmNotificationsEnabled
+        )
         logger.info(
           `[MessagePickupRepositoryMessageQueued] Message ${messageQueuedEvent.message.id} notification sent successfully`
         )
