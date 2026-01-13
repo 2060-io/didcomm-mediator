@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/2060-io/didcomm-mediator/compare/v1.3.0...v1.4.0) (2025-12-02)
+
+
+### Features
+
+* Add integration [@2060](https://github.com/2060).io/credo-ts-didcomm-shorten-url package ([#39](https://github.com/2060-io/didcomm-mediator/issues/39)) ([0ccf976](https://github.com/2060-io/didcomm-mediator/commit/0ccf976cbe193adbd8a0cc6784c18a14a77fd547))
+* release updated shorten-url integration ([#43](https://github.com/2060-io/didcomm-mediator/issues/43)) ([d7e6216](https://github.com/2060-io/didcomm-mediator/commit/d7e621682be41c74e8c7243b58c6ec6b7f34066f))
+* Upgrade shorten-url package 0.0.11 ([#44](https://github.com/2060-io/didcomm-mediator/issues/44)) ([dced779](https://github.com/2060-io/didcomm-mediator/commit/dced77998781338bc5f933eb4fd808af3e9485e8))
+
+
+### Bug Fixes
+
+* handle expiration records in seconds and delete if expire ([#41](https://github.com/2060-io/didcomm-mediator/issues/41)) ([e4c18ef](https://github.com/2060-io/didcomm-mediator/commit/e4c18efbfb396a448c02d1bf496b95f25175a6d8))
+
 ## [1.3.0](https://github.com/2060-io/didcomm-mediator/compare/v1.2.1...v1.3.0) (2025-07-16)
 
 
