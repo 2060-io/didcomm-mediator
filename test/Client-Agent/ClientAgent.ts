@@ -1,17 +1,19 @@
-import { AskarModule } from '@credo-ts/askar'
+import { Agent, ConsoleLogger, LogLevel, utils } from '@credo-ts/core'
 import {
-  Agent,
-  ConnectionsModule,
-  ConsoleLogger,
-  LogLevel,
-  MediationRecipientModule,
-  MediatorPickupStrategy,
-  WsOutboundTransport,
-} from '@credo-ts/core'
-import { agentDependencies } from '@credo-ts/node'
-import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
+  DidCommMediatorPickupStrategy,
+  DidCommModule,
+  DidCommMimeType,
+  DidCommWsOutboundTransport,
+} from '@credo-ts/didcomm'
+import { agentDependencies, DidCommWsInboundTransport } from '@credo-ts/node'
+import { askarNodeJS } from '@openwallet-foundation/askar-nodejs'
 import cors from 'cors'
 import express from 'express'
+import { createRequire } from 'module'
+import { Socket } from 'net'
+import path from 'path'
+import fs from 'fs'
+import { WebSocketServer } from 'ws'
 import {
   DidCommShortenUrlEventTypes,
   DidCommShortenedUrlReceivedEvent,
@@ -23,34 +25,76 @@ import {
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
-const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST
+const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST || '192.168.10.20'
+const CLIENT_AGENT_WS_ENDPOINT = process.env.CLIENT_AGENT_WS_ENDPOINT
 const CLIENT_WALLET_ID = process.env.CLIENT_WALLET_ID || 'client-agent'
-const CLIENT_WALLET_KEY = process.env.CLIENT_WALLET_KEY || 'client-agent'
+const CLIENT_WALLET_KEY = process.env.CLIENT_WALLET_KEY || 'client-agent-key'
+const CLIENT_AGENT_DB_PATH =
+  process.env.CLIENT_AGENT_DB_PATH || path.join(process.cwd(), 'data', `${CLIENT_WALLET_ID || 'client-agent'}.db`)
 const CLIENT_MEDIATOR_DID_URL = Boolean(process.env.CLIENT_MEDIATOR_DID_URL) || false
 const CLIENT_AGENT_BASE_URL = process.env.CLIENT_AGENT_URL || 'http://localhost:4000/invitation'
 
+const cjsRequire = createRequire(import.meta.url)
+const { registerAskar } = cjsRequire('@openwallet-foundation/askar-shared')
+
+registerAskar?.({ askar: askarNodeJS })
+const askar = askarNodeJS
+
 const logger = new ConsoleLogger(LogLevel.debug)
 const port = Number(CLIENT_AGENT_PORT)
+const wsEndpoint = CLIENT_AGENT_WS_ENDPOINT ?? `ws://${CLIENT_AGENT_HOST ?? 'localhost'}:${port}`
 
 async function run() {
   logger.info(`Client Agent started on port ${port}`)
+  fs.mkdirSync(path.dirname(CLIENT_AGENT_DB_PATH), { recursive: true })
+
+  const { AskarModule } = await import('@credo-ts/askar')
+  const inboundTransports = []
+  const outboundTransports = [new DidCommWsOutboundTransport()]
+  const webSocketServer = new WebSocketServer({ noServer: true })
+  inboundTransports.push(new DidCommWsInboundTransport({ server: webSocketServer }))
 
   const agent = new Agent({
-    config: { label: CLIENT_WALLET_ID, walletConfig: { id: CLIENT_WALLET_ID, key: CLIENT_WALLET_KEY }, logger },
+    config: { logger },
     dependencies: agentDependencies,
     modules: {
-      askar: new AskarModule({ ariesAskar }),
-      mediationRecipient: new MediationRecipientModule({
-        mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2LiveMode,
+      askar: new AskarModule({
+        askar,
+        store: {
+          id: CLIENT_WALLET_ID,
+          key: CLIENT_WALLET_KEY,
+          keyDerivationMethod: 'kdf:argon2i:mod',
+          database: {
+            type: 'sqlite',
+            config: {
+              inMemory: false,
+              path: CLIENT_AGENT_DB_PATH,
+            },
+          },
+        },
+        enableKms: true,
+        enableStorage: true,
       }),
-      connections: new ConnectionsModule({ autoAcceptConnections: true }),
+      didcomm: new DidCommModule({
+        didCommMimeType: DidCommMimeType.V0,
+        transports: {
+          inbound: inboundTransports,
+          outbound: outboundTransports,
+        },
+        connections: { autoAcceptConnections: true },
+        mediator: false,
+        credentials: false,
+        proofs: false,
+        mediationRecipient: {
+          mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,
+        },
+        endpoints: [wsEndpoint],
+      }),
       shortenUrl: new DidCommShortenUrlModule({
         roles: [ShortenUrlRole.LongUrlProvider],
       }),
     },
   })
-
-  agent.registerOutboundTransport(new WsOutboundTransport())
 
   const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
   const shorteUrlApi = agent.dependencyManager.resolve(DidCommShortenUrlApi)
@@ -88,8 +132,7 @@ async function run() {
   const onListen = async () => {
     await agent.initialize()
     logger.info(`Client Agent initialized OK ${CLIENT_MEDIATOR_DID_URL}`)
-    // If no default mediator, request mediation from configured
-    if (!(await agent.mediationRecipient.findDefaultMediator())) {
+    if (!(await agent.didcomm.mediationRecipient?.findDefaultMediator())) {
       logger.debug('No default mediator. Connecting...')
 
       let invitationUrl
@@ -106,37 +149,54 @@ async function run() {
       }
 
       const { connectionRecord } = await (!CLIENT_MEDIATOR_DID_URL
-        ? agent.oob.receiveInvitationFromUrl(invitationUrl, {
+        ? agent.didcomm.oob.receiveInvitationFromUrl(invitationUrl, {
+            label: CLIENT_WALLET_ID,
             autoAcceptConnection: true,
             autoAcceptInvitation: true,
           })
-        : agent.oob.receiveImplicitInvitation({
+        : agent.didcomm.oob.receiveImplicitInvitation({
             did: 'did:web:ca.core.dev.2060.io',
+            label: CLIENT_WALLET_ID,
             autoAcceptConnection: true,
             autoAcceptInvitation: true,
           }))
 
       if (!connectionRecord) throw new Error('Cannot create connetion record')
-      const mediatorConnection = await agent.connections.returnWhenIsConnected(connectionRecord.id, { timeoutMs: 5000 })
-      const mediationRecord = await agent.mediationRecipient.requestAndAwaitGrant(mediatorConnection)
+      const mediatorConnection = await agent.didcomm.connections.returnWhenIsConnected(connectionRecord.id, {
+        timeoutMs: 5000,
+      })
+      const mediationRecord = await agent.didcomm.mediationRecipient?.requestAndAwaitGrant(mediatorConnection)
       logger.debug('Mediation granted. Initializing mediator recipient module.')
-      await agent.mediationRecipient.setDefaultMediator(mediationRecord)
-      await agent.mediationRecipient.initialize()
+      if (mediationRecord) await agent.didcomm.mediationRecipient?.setDefaultMediator(mediationRecord)
     } else {
       logger.debug('Mediation already set up')
     }
   }
 
   if (CLIENT_AGENT_HOST) {
-    app.listen(port, CLIENT_AGENT_HOST, onListen)
+    const server = app.listen(port, CLIENT_AGENT_HOST, onListen)
+    server.on('upgrade', (request, socket, head) => {
+      webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
+        const socketId = utils.uuid()
+        webSocketServer.emit('connection', socketParam, request, socketId)
+      })
+    })
   } else {
-    app.listen(port, onListen)
+    const server = app.listen(port, onListen)
+    server.on('upgrade', (request, socket, head) => {
+      webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
+        const socketId = utils.uuid()
+        webSocketServer.emit('connection', socketParam, request, socketId)
+      })
+    })
   }
 
   // Create invitation
   app.get('/invitation', async (req, res) => {
     logger?.info(`Invitation requested`)
-    const outOfBandInvitation = (await agent.oob.createInvitation({ autoAcceptConnection: true })).outOfBandInvitation
+    const outOfBandInvitation = (
+      await agent.didcomm.oob.createInvitation({ autoAcceptConnection: true, label: CLIENT_WALLET_ID })
+    ).outOfBandInvitation
     res.send({
       url: outOfBandInvitation.toUrl({ domain: process.env.AGENT_INVITATION_BASE_URL ?? 'https://2060.io/i' }),
     })
@@ -145,14 +205,15 @@ async function run() {
   // Get a simplified list of all connections
   app.get('/connections', async (req, res) => {
     logger?.info(`Connection list requested`)
-    const connections = await agent.connections.getAll()
+    const connections = await agent.didcomm.connections.getAll()
     res.send(JSON.stringify(connections))
   })
 
   app.post('/receive-invitation', async (req, res) => {
     const invitationUrl = req.body.url
     logger.info(`invitationUrl: ${invitationUrl}`)
-    const connection = await agent.oob.receiveInvitationFromUrl(invitationUrl, {
+    const connection = await agent.didcomm.oob.receiveInvitationFromUrl(invitationUrl, {
+      label: CLIENT_WALLET_ID,
       acceptInvitationTimeoutMs: 5000,
       autoAcceptConnection: true,
       autoAcceptInvitation: true,
@@ -164,7 +225,7 @@ async function run() {
     const connectionId = req.body.connectionId
     const message = req.body.message
     logger.info(`connectionId: ${connectionId}; message: ${message}`)
-    await agent.basicMessages.sendMessage(connectionId, message)
+    await agent.didcomm.basicMessages.sendMessage(connectionId, message)
     res.end()
   })
 
@@ -205,9 +266,7 @@ async function run() {
     }
 
     try {
-      // Find record by id
       const findRecord = await shortenUrlRepository.getSingleByQuery(agent.context, { threadId: id })
-      // Send invalidate message
       const result = await shorteUrlApi.invalidateShortenedUrl({
         recordId: findRecord.id,
       })

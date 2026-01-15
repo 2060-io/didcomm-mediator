@@ -1,28 +1,20 @@
+import type { AgentDependencies } from '@credo-ts/core'
+import { Agent, DependencyManager, InitConfig } from '@credo-ts/core'
+import { askarNodeJS } from '@openwallet-foundation/askar-nodejs'
+import { createRequire } from 'module'
 import {
-  Agent,
-  AgentDependencies,
-  ConnectionsModule,
-  DependencyManager,
-  InitConfig,
-  MediatorModule,
-  MessagePickupModule,
-  MessagePickupRepository,
-} from '@credo-ts/core'
-import { AskarModule } from '@credo-ts/askar'
-import '@hyperledger/aries-askar-nodejs'
-import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
-import { PushNotificationsFcmModule } from '@credo-ts/push-notifications'
-import { MessageForwardingStrategy } from '@credo-ts/core/build/modules/routing/MessageForwardingStrategy'
+  DidCommHttpOutboundTransport,
+  DidCommMessageForwardingStrategy,
+  DidCommMimeType,
+  DidCommModule,
+  type DidCommOutboundTransport,
+  DidCommWsOutboundTransport,
+  type DidCommInboundTransport,
+  type DidCommQueueTransportRepository,
+  DidCommMediatorPickupStrategy,
+} from '@credo-ts/didcomm'
+import { PushNotificationsFcmModule } from '@credo-ts/didcomm-push-notifications'
 import { DidCommShortenUrlModule, ShortenUrlRole } from '@2060.io/credo-ts-didcomm-shorten-url'
-
-type DidCommMediatorAgentModules = {
-  askar: AskarModule
-  connections: ConnectionsModule
-  mediator: MediatorModule
-  messagePickup: MessagePickupModule
-  pushNotifications: PushNotificationsFcmModule
-  shortenUrl: DidCommShortenUrlModule
-}
 
 interface AgentOptions<Modules> {
   config: InitConfig
@@ -30,11 +22,11 @@ interface AgentOptions<Modules> {
   dependencies: AgentDependencies
 }
 
-export class DidCommMediatorAgent extends Agent<DidCommMediatorAgentModules> {
+export class DidCommMediatorAgent extends Agent {
   public did?: string
 
   public constructor(
-    options: AgentOptions<DidCommMediatorAgentModules>,
+    options: AgentOptions<Record<string, unknown>>,
     did?: string,
     dependencyManager?: DependencyManager
   ) {
@@ -45,36 +37,87 @@ export class DidCommMediatorAgent extends Agent<DidCommMediatorAgentModules> {
 
 export interface CloudAgentOptions {
   config: InitConfig
+  endpoints: string[]
   port: number
   did?: string
   enableHttp?: boolean
   enableWs?: boolean
   dependencies: AgentDependencies
-  messagePickupRepositoryWebSocketUrl?: string
-  messagePickupMaxReceiveBytes?: number
-  postgresUser?: string
-  postgresPassword?: string
-  postgresHost?: string
-  messagePickupPostgresDatabaseName?: string
-  shortenInvitationBaseUrl?: string
-  shortenUrlCleanupIntervalSeconds?: number
+  inboundTransports: DidCommInboundTransport[]
+  outboundTransports: DidCommOutboundTransport[]
+  queueTransportRepository: DidCommQueueTransportRepository
+  wallet: {
+    id: string
+    key: string
+    keyDerivationMethod?: 'kdf:argon2i:int' | 'kdf:argon2i:mod' | 'raw'
+    storage?: unknown
+  }
 }
 
-export const createMediator = (
-  options: CloudAgentOptions,
-  messagePickupRepository: MessagePickupRepository
-): DidCommMediatorAgent => {
+type AskarPostgresStorageConfig = {
+  type: 'postgres'
+  config: {
+    host: string
+    connectTimeout?: number
+    idleTimeout?: number
+    maxConnections?: number
+    minConnections?: number
+  }
+  credentials: { account: string; password: string; adminAccount?: string; adminPassword?: string }
+}
+
+const cjsRequire = createRequire(import.meta.url)
+const askarShared = cjsRequire('@openwallet-foundation/askar-shared')
+askarShared.registerAskar?.({ askar: askarNodeJS })
+const askarModulePromise = import('@credo-ts/askar')
+
+export const createMediator = async (options: CloudAgentOptions): Promise<DidCommMediatorAgent> => {
+  options.config.logger?.debug?.(`Askar backend registered: ${Boolean(askarShared.askar)}`)
+  const { AskarModule } = await askarModulePromise
+  const askar = askarNodeJS
+
   return new DidCommMediatorAgent(
     {
-      config: options.config,
+      config: {
+        ...options.config,
+      },
       dependencies: options.dependencies,
       modules: {
-        askar: new AskarModule({ ariesAskar }),
-        connections: new ConnectionsModule({ autoAcceptConnections: true }),
-        mediator: new MediatorModule({
-          messageForwardingStrategy: MessageForwardingStrategy.QueueOnly,
+        askar: new AskarModule({
+          askar,
+          store: {
+            id: options.wallet.id,
+            key: options.wallet.key,
+            keyDerivationMethod: options.wallet.keyDerivationMethod,
+            database: options.wallet.storage as AskarPostgresStorageConfig | undefined,
+          },
+          enableKms: true,
+          enableStorage: true,
         }),
-        messagePickup: new MessagePickupModule({ messagePickupRepository }),
+        didcomm: new DidCommModule({
+          didCommMimeType: DidCommMimeType.V1,
+          transports: {
+            inbound: options.inboundTransports,
+            outbound: options.outboundTransports.length
+              ? options.outboundTransports
+              : [new DidCommWsOutboundTransport(), new DidCommHttpOutboundTransport()],
+          },
+          connections: {
+            autoAcceptConnections: true,
+          },
+          mediator: {
+            autoAcceptMediationRequests: true,
+            messageForwardingStrategy: DidCommMessageForwardingStrategy.QueueOnly,
+          },
+          mediationRecipient: {
+            mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,
+          },
+          basicMessages: false,
+          credentials: false,
+          proofs: false,
+          queueTransportRepository: options.queueTransportRepository,
+          endpoints: options.endpoints,
+        }),
         pushNotifications: new PushNotificationsFcmModule(),
         shortenUrl: new DidCommShortenUrlModule({
           roles: [ShortenUrlRole.UrlShortener],
