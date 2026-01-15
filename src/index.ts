@@ -1,7 +1,7 @@
-import { ConsoleLogger, KeyDerivationMethod } from '@credo-ts/core'
-import { initMediator } from './agent/initDidCommMediatorAgent'
+import { ConsoleLogger } from '@credo-ts/core'
+import { initMediator } from './agent/initDidCommMediatorAgent.js'
 import { agentDependencies } from '@credo-ts/node'
-import { AgentLogger } from './config/logger'
+import { AgentLogger } from './config/logger.js'
 import {
   AGENT_ENDPOINTS,
   AGENT_LOG_LEVEL,
@@ -21,9 +21,9 @@ import {
   MPR_POSTGRES_DATABASE_NAME,
   SHORTEN_INVITATION_BASE_URL,
   SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
-} from './config/constants'
-import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
-import { deriveShortenBaseFromPublicDid } from './util/invitationBase'
+} from './config/constants.js'
+import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet.js'
+import { deriveShortenBaseFromPublicDid } from './util/invitationBase.js'
 
 const logger = new ConsoleLogger(AGENT_LOG_LEVEL)
 
@@ -35,31 +35,27 @@ async function run() {
     logger.info(`Using shorten invitation base URL: ${computedShortenBase}`)
     await initMediator({
       config: {
-        label: AGENT_NAME,
-        endpoints: AGENT_ENDPOINTS,
-        walletConfig: {
-          id: WALLET_NAME,
-          key: WALLET_KEY,
-          keyDerivationMethod: keyDerivationMethodMap[KEY_DERIVATION_METHOD ?? KeyDerivationMethod.Argon2IMod],
-          storage: POSTGRES_HOST ? askarPostgresConfig : undefined,
-        },
-        autoUpdateStorageOnStartup: true,
-        backupBeforeStorageUpdate: false,
         logger: new AgentLogger(AGENT_LOG_LEVEL),
+        autoUpdateStorageOnStartup: true,
+      },
+      wallet: {
+        id: WALLET_NAME,
+        key: WALLET_KEY,
+        keyDerivationMethod: keyDerivationMethodMap[KEY_DERIVATION_METHOD ?? 'ARGON2I_MOD'],
+        storage: POSTGRES_HOST ? askarPostgresConfig : undefined,
       },
       did: AGENT_PUBLIC_DID,
       port: AGENT_PORT,
       enableWs: WS_SUPPORT,
       enableHttp: HTTP_SUPPORT,
       dependencies: agentDependencies,
-      messagePickupRepositoryWebSocketUrl: MPR_WS_URL,
-      messagePickupMaxReceiveBytes: MPR_MAX_RECEIVE_BYTES,
       postgresUser: POSTGRES_USER,
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
       shortenInvitationBaseUrl: computedShortenBase,
       shortenUrlCleanupIntervalSeconds: SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
+      endpoints: AGENT_ENDPOINTS,
     })
   } catch (error) {
     logger.error(`${error}`)
