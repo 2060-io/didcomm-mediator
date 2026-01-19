@@ -72,15 +72,15 @@ export const initMediator = async (
 
   const queueTransportRepository =
     config.postgresHost && config.postgresUser && config.postgresPassword
-      ? new PostgresQueueTransportRepository(
+      ? new DidCommTransportQueuePostgres(
           {
             logger,
             postgresUser: config.postgresUser,
             postgresPassword: config.postgresPassword,
             postgresHost: config.postgresHost,
             postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
-          },
-          localFcmNotificationSender
+          }
+          //localFcmNotificationSender FIXME after testing
         )
       : new InMemoryQueueTransportRepository(localFcmNotificationSender)
 
@@ -156,6 +156,9 @@ export const initMediator = async (
   agent.events.on<DidCommMediationStateChangedEvent>(
     DidCommRoutingEventTypes.MediationStateChanged,
     async ({ payload }) => {
+      logger.info(
+        `Mediation state changed to ${payload.mediationRecord.state} for record ${payload.mediationRecord.id}`
+      )
       if (payload.mediationRecord.state === DidCommMediationState.Requested) {
         await didcommApi.mediator?.grantRequestedMediation(payload.mediationRecord.id)
       }

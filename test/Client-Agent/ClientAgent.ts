@@ -30,7 +30,8 @@ const CLIENT_AGENT_WS_ENDPOINT = process.env.CLIENT_AGENT_WS_ENDPOINT
 const CLIENT_WALLET_ID = process.env.CLIENT_WALLET_ID || 'client-agent'
 const CLIENT_WALLET_KEY = process.env.CLIENT_WALLET_KEY || 'client-agent-key'
 const CLIENT_AGENT_DB_PATH =
-  process.env.CLIENT_AGENT_DB_PATH || path.join(process.cwd(), 'data', `${CLIENT_WALLET_ID || 'client-agent'}.db`)
+  process.env.CLIENT_AGENT_DB_PATH ||
+  path.join(process.cwd(), `.afj/data/${CLIENT_WALLET_ID}`, `${CLIENT_WALLET_ID || 'client-agent'}.db`)
 const CLIENT_MEDIATOR_DID_URL = Boolean(process.env.CLIENT_MEDIATOR_DID_URL) || false
 const CLIENT_AGENT_BASE_URL = process.env.CLIENT_AGENT_URL || 'http://localhost:4000/invitation'
 
@@ -72,19 +73,14 @@ async function run() {
             },
           },
         },
-        enableKms: true,
-        enableStorage: true,
       }),
       didcomm: new DidCommModule({
-        didCommMimeType: DidCommMimeType.V0,
+        didCommMimeType: DidCommMimeType.V1,
         transports: {
           inbound: inboundTransports,
           outbound: outboundTransports,
         },
         connections: { autoAcceptConnections: true },
-        mediator: false,
-        credentials: false,
-        proofs: false,
         mediationRecipient: {
           mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,
         },
@@ -167,7 +163,14 @@ async function run() {
       })
       const mediationRecord = await agent.didcomm.mediationRecipient?.requestAndAwaitGrant(mediatorConnection)
       logger.debug('Mediation granted. Initializing mediator recipient module.')
-      if (mediationRecord) await agent.didcomm.mediationRecipient?.setDefaultMediator(mediationRecord)
+      if (mediationRecord) {
+        await agent.didcomm.mediationRecipient?.setDefaultMediator(mediationRecord)
+        // Start live mode pickup to register a live session on the mediator (required for Postgres queue repo)
+        await agent.didcomm.mediationRecipient?.initiateMessagePickup(
+          mediationRecord,
+          DidCommMediatorPickupStrategy.PickUpV2LiveMode
+        )
+      }
     } else {
       logger.debug('Mediation already set up')
     }

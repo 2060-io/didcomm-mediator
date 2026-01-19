@@ -18,7 +18,10 @@ export class MediatorWsInboundTransport implements DidCommInboundTransport {
   private logger!: Logger
   private socketIds: Record<string, unknown> = {}
 
-  public constructor({ server, port }: { server: WebSocketServer; port?: undefined } | { server?: undefined; port: number }) {
+  public constructor({
+    server,
+    port,
+  }: { server: WebSocketServer; port?: undefined } | { server?: undefined; port: number }) {
     this.socketServer = server ?? new WebSocketServer({ port })
   }
 

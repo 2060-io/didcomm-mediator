@@ -1,6 +1,6 @@
 import type { AgentDependencies } from '@credo-ts/core'
 import { Agent, DependencyManager, InitConfig } from '@credo-ts/core'
-import { askarNodeJS } from '@openwallet-foundation/askar-nodejs'
+import { askarNodeJS, KdfMethod } from '@openwallet-foundation/askar-nodejs'
 import { createRequire } from 'module'
 import {
   DidCommHttpOutboundTransport,
@@ -49,7 +49,7 @@ export interface CloudAgentOptions {
   wallet: {
     id: string
     key: string
-    keyDerivationMethod?: 'kdf:argon2i:int' | 'kdf:argon2i:mod' | 'raw'
+    keyDerivationMethod?: `${KdfMethod.Argon2IInt}` | `${KdfMethod.Argon2IMod}` | `${KdfMethod.Raw}`
     storage?: unknown
   }
 }
