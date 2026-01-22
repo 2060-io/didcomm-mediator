@@ -31,7 +31,12 @@ export class HttpInboundTransport implements DidCommInboundTransport {
     path,
     port,
     processedMessageListenerTimeoutMs,
-  }: { app?: Express; path?: string; port: number; processedMessageListenerTimeoutMs?: number }) {
+  }: {
+    app?: Express
+    path?: string
+    port: number
+    processedMessageListenerTimeoutMs?: number
+  }) {
     this.port = port
     this.processedMessageListenerTimeoutMs = processedMessageListenerTimeoutMs ?? 10000
 
@@ -81,7 +86,10 @@ export class HttpInboundTransport implements DidCommInboundTransport {
           res.status(200).end()
         }
       } catch (error) {
-        agentContext.config.logger.error(`Error processing inbound message: ${error instanceof Error ? error.message : error}`, error)
+        agentContext.config.logger.error(
+          `Error processing inbound message: ${error instanceof Error ? error.message : error}`,
+          error
+        )
 
         if (!res.headersSent) {
           res.status(500).send('Error processing message')
@@ -123,7 +131,7 @@ export class HttpTransportSession implements DidCommTransportSession {
     }
 
     const didCommConfig = agentContext.dependencyManager.resolve(DidCommModuleConfig)
-    let responseMimeType = didCommConfig.didCommMimeType as string
+    let responseMimeType = didCommConfig.didCommMimeType
 
     const requestMimeType = this.req.headers['content-type']
     if (requestMimeType && supportedContentTypes.includes(requestMimeType)) {

@@ -1,9 +1,15 @@
 import { Agent, ConsoleLogger, LogLevel, utils } from '@credo-ts/core'
 import {
-  DidCommMediatorPickupStrategy,
   DidCommModule,
   DidCommMimeType,
   DidCommWsOutboundTransport,
+  DidCommLiveDeliveryChangeV2Message,
+  DidCommOutboundMessageContext,
+  DidCommMessageSender,
+  DidCommStatusRequestV2Message,
+  DidCommTransportService,
+  ReturnRouteTypes,
+  type DidCommConnectionRecord,
 } from '@credo-ts/didcomm'
 import { agentDependencies, DidCommWsInboundTransport } from '@credo-ts/node'
 import { askarNodeJS } from '@openwallet-foundation/askar-nodejs'
@@ -46,7 +52,7 @@ const port = Number(CLIENT_AGENT_PORT)
 const wsEndpoint = CLIENT_AGENT_WS_ENDPOINT ?? `ws://${CLIENT_AGENT_HOST ?? 'localhost'}:${port}`
 
 async function run() {
-  logger.info(`Client Agent started on port ${port}`)
+  logger.info(`Client Agent live started on port ${port}`)
   fs.mkdirSync(path.dirname(CLIENT_AGENT_DB_PATH), { recursive: true })
 
   const { AskarModule } = await import('@credo-ts/askar')
@@ -61,6 +67,8 @@ async function run() {
     modules: {
       askar: new AskarModule({
         askar,
+        enableKms: true,
+        enableStorage: true,
         store: {
           id: CLIENT_WALLET_ID,
           key: CLIENT_WALLET_KEY,
@@ -76,14 +84,15 @@ async function run() {
       }),
       didcomm: new DidCommModule({
         didCommMimeType: DidCommMimeType.V1,
+        useDidKeyInProtocols: false,
         transports: {
           inbound: inboundTransports,
           outbound: outboundTransports,
         },
         connections: { autoAcceptConnections: true },
-        mediationRecipient: {
-          mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,
-        },
+        proofs: false,
+        credentials: false,
+        mediator: false,
         endpoints: [wsEndpoint],
       }),
       shortenUrl: new DidCommShortenUrlModule({
@@ -165,18 +174,20 @@ async function run() {
       logger.debug('Mediation granted. Initializing mediator recipient module.')
       if (mediationRecord) {
         await agent.didcomm.mediationRecipient?.setDefaultMediator(mediationRecord)
-        // Start live mode pickup to register a live session on the mediator (required for Postgres queue repo)
-        await agent.didcomm.mediationRecipient?.initiateMessagePickup(
-          mediationRecord,
-          DidCommMediatorPickupStrategy.PickUpV2LiveMode
-        )
+        await startLivePickup(agent, mediatorConnection)
       }
     } else {
       logger.debug('Mediation already set up')
+      const mediator = await agent.didcomm.mediationRecipient?.findDefaultMediator()
+      if (mediator) {
+        const mediatorConnection = await agent.didcomm.connections.getById(mediator.connectionId)
+        await startLivePickup(agent, mediatorConnection)
+      }
     }
   }
 
   if (CLIENT_AGENT_HOST) {
+    logger.debug(`Listening on ${CLIENT_AGENT_HOST}:${port}`)
     const server = app.listen(port, CLIENT_AGENT_HOST, onListen)
     server.on('upgrade', (request, socket, head) => {
       webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
@@ -185,6 +196,7 @@ async function run() {
       })
     })
   } else {
+    logger.debug(`Listening on port ${port}`)
     const server = app.listen(port, onListen)
     server.on('upgrade', (request, socket, head) => {
       webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
@@ -281,6 +293,50 @@ async function run() {
       return res.status(500).json({ error: 'Failed to send request-shortened-url message' })
     }
   })
+}
+
+let livePickupStarted = false
+
+// Function to start live pickup with return routing
+async function startLivePickup(agent: Agent, mediatorConnection: DidCommConnectionRecord) {
+  if (livePickupStarted) return
+  logger.debug('Starting live pickup...')
+  livePickupStarted = true
+
+  const transportService = agent.dependencyManager.resolve(DidCommTransportService)
+  const existingSession = transportService.findSessionByConnectionId(mediatorConnection.id)
+  if (existingSession) {
+    transportService.removeSession(existingSession)
+    logger.debug('Cleared existing return-route session before live pickup', {
+      sessionId: existingSession.id,
+    })
+  }
+
+  const messageSender = agent.dependencyManager.resolve(DidCommMessageSender)
+
+  const statusRequest = new DidCommStatusRequestV2Message({})
+  statusRequest.setReturnRouting(ReturnRouteTypes.all)
+  await messageSender.sendMessage(
+    new DidCommOutboundMessageContext(statusRequest, {
+      agentContext: agent.context,
+      connection: mediatorConnection,
+    }),
+    { transportPriority: { schemes: ['wss', 'ws'], restrictive: true } }
+  )
+  logger.debug('Status request sent with return routing enabled')
+
+  const liveDeliveryChange = new DidCommLiveDeliveryChangeV2Message({ liveDelivery: true })
+  liveDeliveryChange.setReturnRouting(ReturnRouteTypes.all)
+  await messageSender.sendMessage(
+    new DidCommOutboundMessageContext(liveDeliveryChange, {
+      agentContext: agent.context,
+      connection: mediatorConnection,
+    }),
+    { transportPriority: { schemes: ['wss', 'ws'], restrictive: true } }
+  )
+  logger.debug('Live delivery change sent with return routing enabled')
+
+  logger.debug('Live pickup started with return routing enabled')
 }
 
 run()

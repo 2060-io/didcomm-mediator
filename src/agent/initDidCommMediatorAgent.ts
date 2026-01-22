@@ -12,11 +12,9 @@ import {
   TypedArrayEncoder,
   convertPublicKeyToX25519,
   utils,
-  Agent,
 } from '@credo-ts/core'
 import {
   DidCommApi,
-  DidCommMessagePickupEventTypes,
   DidCommRoutingEventTypes,
   DidCommMediationStateChangedEvent,
   DidCommMediationState,
@@ -30,14 +28,12 @@ import {
   DidCommShortenUrlEventTypes,
   DidCommShortenUrlRepository,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
-import type { DidCommMessagePickupLiveSessionSavedEvent, MessagePickupLiveSessionRemovedEvent } from '@credo-ts/didcomm'
 import cors from 'cors'
 import express from 'express'
 import { WebSocketServer } from 'ws'
 import { Socket } from 'net'
 import { DidCommHttpOutboundTransport, DidCommWsOutboundTransport } from '@credo-ts/didcomm'
 
-import { AgentLogger } from '../config/logger.js'
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender.js'
 import {
   InMemoryQueueTransportRepository,
@@ -72,15 +68,15 @@ export const initMediator = async (
 
   const queueTransportRepository =
     config.postgresHost && config.postgresUser && config.postgresPassword
-      ? new DidCommTransportQueuePostgres(
+      ? new PostgresQueueTransportRepository(
           {
             logger,
             postgresUser: config.postgresUser,
             postgresPassword: config.postgresPassword,
             postgresHost: config.postgresHost,
             postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
-          }
-          //localFcmNotificationSender FIXME after testing
+          },
+          localFcmNotificationSender 
         )
       : new InMemoryQueueTransportRepository(localFcmNotificationSender)
 

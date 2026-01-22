@@ -107,7 +107,7 @@ export const createMediator = async (options: CloudAgentOptions): Promise<DidCom
           },
           mediator: {
             autoAcceptMediationRequests: true,
-            messageForwardingStrategy: DidCommMessageForwardingStrategy.QueueOnly,
+            messageForwardingStrategy: DidCommMessageForwardingStrategy.QueueAndLiveModeDelivery,
           },
           mediationRecipient: {
             mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,

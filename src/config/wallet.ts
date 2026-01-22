@@ -2,7 +2,13 @@ import { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST } from './constants.js'
 
 type AskarPostgresStorageConfig = {
   type: 'postgres'
-  config: { host: string; connectTimeout?: number; idleTimeout?: number; maxConnections?: number; minConnections?: number }
+  config: {
+    host: string
+    connectTimeout?: number
+    idleTimeout?: number
+    maxConnections?: number
+    minConnections?: number
+  }
   credentials: { account: string; password: string; adminAccount?: string; adminPassword?: string }
 }
 
