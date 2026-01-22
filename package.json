@@ -15,7 +15,7 @@
     "build": "tsc",
     "start": "node ./build/index.js",
     "vdrproxy": "node ./build/vdrproxy/index.js",
-    "test": "jest --verbose",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose --config jest.config.cjs",
     "test:agent": "node --loader ts-node/esm ./test/Client-Agent/ClientAgent.ts",
     "postinstall": "patch-package",
     "prepare": "corepack enable"

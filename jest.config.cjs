@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testEnvironment: 'node',
   testPathIgnorePatterns: ['/node_modules/'],
@@ -18,6 +18,7 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  transformIgnorePatterns: ['/node_modules/(?!@credo-ts|@2060.io|@openwallet-foundation)/'],
   collectCoverageFrom: ['src/**/*.{js,jsx,tsx,ts}'],
   coveragePathIgnorePatterns: ['/node_modules/', '/__tests__/'],
   testTimeout: 60000,
