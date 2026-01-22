@@ -76,7 +76,7 @@ export const initMediator = async (
             postgresHost: config.postgresHost,
             postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
           },
-          localFcmNotificationSender 
+          localFcmNotificationSender
         )
       : new InMemoryQueueTransportRepository(localFcmNotificationSender)
 
