@@ -1,135 +1,144 @@
+import type { IncomingMessage } from 'http'
+import type { Express } from 'express'
+
 import {
   ConsoleLogger,
-  LogLevel,
-  AgentMessageProcessedEvent,
-  AgentEventTypes,
-  ConnectionEventTypes,
-  ConnectionStateChangedEvent,
-  DidExchangeState,
-  DidDocumentBuilder,
-  KeyType,
-  TypedArrayEncoder,
-  convertPublicKeyToX25519,
   DidCommV1Service,
+  DidDocumentBuilder,
   DidDocumentRole,
   DidRecord,
   DidRepository,
-  WsOutboundTransport,
-  HttpOutboundTransport,
-  ConnectionService,
-  OutOfBandInvitation,
-  HandshakeProtocol,
-  MessagePickupEventTypes,
-  MessagePickupLiveSessionRemovedEvent,
-  MessagePickupLiveSessionSavedEvent,
-  MediationState,
-  MediationStateChangedEvent,
-  RoutingEventTypes,
-  HangupMessage,
-  MessagePickupRepository,
+  LogLevel,
+  TypedArrayEncoder,
+  convertPublicKeyToX25519,
   utils,
-  MediationRepository,
 } from '@credo-ts/core'
+import {
+  DidCommApi,
+  DidCommConnectionService,
+  DidCommRoutingEventTypes,
+  DidCommMediationStateChangedEvent,
+  DidCommMediationState,
+  DidCommConnectionEventTypes,
+  type DidCommConnectionStateChangedEvent,
+  DidCommDidExchangeState,
+  DidCommEventTypes,
+  type DidCommMessageProcessedEvent,
+  DidCommHangupMessage,
+} from '@credo-ts/didcomm'
 import {
   DidCommInvalidateShortenedUrlReceivedEvent,
   DidCommRequestShortenedUrlReceivedEvent,
   DidCommShortenUrlEventTypes,
   DidCommShortenUrlRepository,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
-import WebSocket from 'ws'
-import { Socket } from 'net'
-
-import { CloudAgentOptions, createMediator, DidCommMediatorAgent } from './DidCommMediatorAgent'
-import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport'
-import { HttpInboundTransport } from '../transport/HttpInboundTransport'
-import express, { Express } from 'express'
 import cors from 'cors'
-import { PushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/push-notifications'
-import { tryParseDid } from '@credo-ts/core/build/modules/dids/domain/parse'
-import { InMemoryMessagePickupRepository } from '../storage/InMemoryMessagePickupRepository'
-import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender'
-import { MessagePickupRepositoryClient } from '@2060.io/message-pickup-repository-client'
-import { ConnectionInfo } from '@2060.io/message-pickup-repository-client/build/interfaces'
-import { MessageQueuedEvent, PostgresMessagePickupRepository } from '@2060.io/credo-ts-message-pickup-repository-pg'
-import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup'
+import express from 'express'
+import { WebSocketServer } from 'ws'
+import { Socket } from 'net'
+import { DidCommHttpOutboundTransport, DidCommWsOutboundTransport } from '@credo-ts/didcomm'
+
+import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender.js'
+import {
+  InMemoryQueueTransportRepository,
+  PostgresQueueTransportRepository,
+} from '../storage/QueueTransportRepository.js'
+import { DidCommPushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/didcomm-push-notifications'
+import { createMediator, type CloudAgentOptions, DidCommMediatorAgent } from './DidCommMediatorAgent.js'
+import { deriveShortenBaseFromPublicDid } from '../util/invitationBase.js'
+import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup.js'
+import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
+import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
+import { DidCommTransportQueuePostgres } from '@credo-ts/didcomm-transport-queue-postgres'
+import { log } from 'console'
 
 export const initMediator = async (
-  config: CloudAgentOptions
+  config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
+    shortenInvitationBaseUrl?: string
+    shortenUrlCleanupIntervalSeconds?: number
+    messagePickupMaxReceiveBytes?: number
+    postgresUser?: string
+    postgresPassword?: string
+    postgresHost?: string
+    messagePickupPostgresDatabaseName?: string
+    did?: string
+  }
 ): Promise<{ app: Express; agent: DidCommMediatorAgent }> => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
   const publicDid = config.did
+  const shortenInvitationBaseUrl =
+    config.shortenInvitationBaseUrl ??
+    (config.did ? await deriveShortenBaseFromPublicDid(config.did) : undefined) ??
+    'http://localhost:4000'
+  const localFcmNotificationSender = new LocalFcmNotificationSender(logger)
 
-  const createMessagePickupRepository = (): MessagePickupRepository => {
-    if (config.messagePickupRepositoryWebSocketUrl) {
-      return new MessagePickupRepositoryClient({
-        url: config.messagePickupRepositoryWebSocketUrl,
-      })
-    } else if (config.postgresHost) {
-      const { postgresUser, postgresPassword, postgresHost } = config
-
-      if (!postgresUser || !postgresPassword) {
-        throw new Error(
-          '[createMessagePickupRepository] Both postgresUser and postgresPassword are required when using PostgresMessagePickupRepository.'
+  const queueTransportRepository =
+    config.postgresHost && config.postgresUser && config.postgresPassword
+      ? new PostgresQueueTransportRepository(
+          {
+            logger,
+            postgresUser: config.postgresUser,
+            postgresPassword: config.postgresPassword,
+            postgresHost: config.postgresHost,
+            postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
+          },
+          localFcmNotificationSender
         )
-      }
-      return new PostgresMessagePickupRepository({
-        logger: logger,
-        postgresUser,
-        postgresPassword,
-        postgresHost,
-        postgresDatabaseName: 'messagepickuprepository',
-      })
-    } else {
-      return new InMemoryMessagePickupRepository(new LocalFcmNotificationSender(logger), logger)
-    }
+      : new InMemoryQueueTransportRepository(localFcmNotificationSender)
+
+  const app = express()
+  app.use(cors())
+  app.use(express.json())
+  app.use(express.urlencoded({ extended: true }))
+  app.set('json spaces', 2)
+
+  const inboundTransports = []
+  const outboundTransports = [new DidCommWsOutboundTransport(), new DidCommHttpOutboundTransport()]
+
+  let webSocketServer: WebSocketServer | undefined
+  if (config.enableHttp) {
+    inboundTransports.push(new HttpInboundTransport({ app, port: config.port }))
+  }
+  if (config.enableWs) {
+    webSocketServer = new WebSocketServer({ noServer: true })
+    inboundTransports.push(new MediatorWsInboundTransport({ server: webSocketServer }))
   }
 
-  const messageRepository = createMessagePickupRepository()
+  const agent = await createMediator({
+    ...config,
+    endpoints: config.endpoints ?? [],
+    inboundTransports,
+    outboundTransports,
+    queueTransportRepository,
+  })
 
-  if (!config.enableHttp && !config.enableWs) {
-    throw new Error('No transport has been enabled. Set at least one of HTTP and WS')
-  }
-
-  const agent = createMediator(config, messageRepository)
-
+  const didcommApi = agent.dependencyManager.resolve(DidCommApi)
   const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
-  // Cleanup expired or invalid shorten-url records on startup
+  if (queueTransportRepository instanceof DidCommTransportQueuePostgres) {
+    await queueTransportRepository.initialize(agent)
+  }
+
   startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalSeconds)
   logger.info(`[ShortenUrlCleanup] Cleanup on startup completed`)
 
-  // Handle shorten URL requests
   agent.events.on<DidCommRequestShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommRequestShortenedUrlReceived,
     async ({ payload }) => {
       const { shortenUrlRecord } = payload
-
-      const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
-      const mediationRecord = await mediationRepository.getByConnectionId(agent.context, shortenUrlRecord.connectionId)
-      if (!mediationRecord) {
-        logger.warn(
-          `[ShortenUrl] Connection ${shortenUrlRecord.connectionId} is not mediated. Skipping shorten-url response.`
-        )
-        return
-      }
-
-      logger.debug(`[ShortenUrl] request-shortened-url received for connection ${JSON.stringify(payload, null, 2)}`)
-
-      const shortenedUrl = `${config.shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
-
+      const shortenedUrl = `${shortenInvitationBaseUrl}/s?id=${payload.shortenUrlRecord.id}`
       try {
         await agent.modules.shortenUrl.sendShortenedUrl({
           recordId: payload.shortenUrlRecord.id,
           shortenedUrl,
         })
-
         logger.info(`[ShortenUrl] shortened url generated and sent for connection ${shortenUrlRecord.connectionId}`)
       } catch (error) {
         logger.error(`[ShortenUrl] failed to process shorten url request: ${error}`)
       }
     }
   )
-  // Handle invalidate shortened URL requests
+
   agent.events.on<DidCommInvalidateShortenedUrlReceivedEvent>(
     DidCommShortenUrlEventTypes.DidCommInvalidateShortenedUrlReceived,
     async ({ payload }) => {
@@ -146,106 +155,149 @@ export const initMediator = async (
     }
   )
 
-  if (messageRepository instanceof MessagePickupRepositoryClient) {
-    await messageRepository.connect()
-
-    // Define the generic callback to retrieve ConnectionInfo
-    const getConnectionInfo = async (connectionId: string): Promise<ConnectionInfo | undefined> => {
-      const connectionRecord = await agent.connections.findById(connectionId)
-      return {
-        pushNotificationToken: { type: 'fcm', token: connectionRecord?.getTag('device_token') as string | undefined },
-        maxReceiveBytes: config.messagePickupMaxReceiveBytes,
+  agent.events.on<DidCommMediationStateChangedEvent>(
+    DidCommRoutingEventTypes.MediationStateChanged,
+    async ({ payload }) => {
+      logger.info(
+        `Mediation state changed to ${payload.mediationRecord.state} for record ${payload.mediationRecord.id}`
+      )
+      if (payload.mediationRecord.state === DidCommMediationState.Requested) {
+        await didcommApi.mediator?.grantRequestedMediation(payload.mediationRecord.id)
       }
     }
+  )
 
-    messageRepository.setConnectionInfo(getConnectionInfo)
+  if (publicDid) {
+    app.get('/.well-known/did.json', async (_req, res) => {
+      logger.info(`Public DidDocument requested`)
 
-    messageRepository.messagesReceived(async (data) => {
-      const { connectionId, messages } = data
+      const didRecord = await agent.dependencyManager.resolve(DidRepository).findCreatedDid(agent.context, publicDid)
+      const didDocument = didRecord?.didDocument?.toJSON()
 
-      logger.debug(`[messagesReceived] init with ${connectionId} message to ${JSON.stringify(messages, null, 2)}`)
-
-      const liveSession = await agent.messagePickup.getLiveModeSession({ connectionId })
-
-      if (liveSession) {
-        logger.debug(`[messageReceived] found LiveSession for connectionId ${connectionId}, Delivering Messages`)
-
-        await agent.messagePickup.deliverMessages({
-          pickupSessionId: liveSession.id,
-          messages,
-        })
+      if (didDocument) {
+        res.send(didDocument)
       } else {
-        logger.debug(`[messagesReceived] not found LiveSession for connectionId ${connectionId}`)
+        res.status(404).end()
       }
     })
-  } else if (messageRepository instanceof InMemoryMessagePickupRepository) {
-    messageRepository.setAgent(agent)
-  } else if (messageRepository instanceof PostgresMessagePickupRepository) {
-    logger.info('[PostgresMessagePickupRepository] Initializing repository and notification sender')
 
-    const localFcmNotificationSender = new LocalFcmNotificationSender(logger)
+    agent.events.on<DidCommConnectionStateChangedEvent>(
+      DidCommConnectionEventTypes.DidCommConnectionStateChanged,
+      async ({ payload }) => {
+        const connection = payload.connectionRecord
+        if (connection.outOfBandId && payload.connectionRecord.state === DidCommDidExchangeState.RequestReceived) {
+          const oob = await agent.didcomm.oob.findById(connection.outOfBandId)
+          const invitationId = oob?.outOfBandInvitation?.id ?? oob?.outOfBandInvitation?.invitationId
+          if (invitationId === publicDid) {
+            logger.debug(`Incoming connection request for ${publicDid}`)
+            await agent.didcomm.connections.acceptRequest(connection.id)
+            logger.debug(`Accepted request for ${publicDid}`)
+          }
+        }
+      }
+    )
 
-    // Check if localFcmNotificationSender is initialized
-    if (!localFcmNotificationSender.isInitialized()) {
-      logger.error('[PostgresMessagePickupRepository] FCM Notification Sender is not initialized')
-      throw new Error('FCM Notification Sender initialization failed')
+    agent.events.on<DidCommMessageProcessedEvent>(DidCommEventTypes.DidCommMessageProcessed, async ({ payload }) => {
+      logger.info(
+        `Message processed for connection id ${payload.connection?.id ?? 'unknown'} Type: ${payload.message.type}`
+      )
+
+      const { message, connection } = payload
+      if (!connection) return
+
+      if (message.type === DidCommPushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
+        connection.setTag('device_token', (message as DidCommPushNotificationsFcmSetDeviceInfoMessage).deviceToken)
+        await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connection)
+      }
+
+      if (message.type === DidCommHangupMessage.type.messageTypeUri) {
+        logger.debug(`Hangup received. Connection Id: ${connection.id}`)
+        await agent.didcomm.connections.deleteById(connection.id)
+        logger.debug(`Connection ${connection.id} deleted`)
+      }
+    })
+
+    const didRepository = agent.context.dependencyManager.resolve(DidRepository)
+    const builder = new DidDocumentBuilder(publicDid)
+
+    if (config.endpoints && config.endpoints.length > 0) {
+      const verificationMethodId = `${publicDid}#verkey`
+      const keyAgreementId = `${publicDid}#key-agreement-1`
+
+      const wallet =
+        (
+          agent as unknown as {
+            wallet?: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
+          }
+        ).wallet ??
+        (
+          agent.context as unknown as {
+            wallet?: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
+          }
+        ).wallet
+      const ed25519 = wallet
+        ? await wallet.createKey({ keyType: 'ed25519' })
+        : await (
+            agent.context as unknown as {
+              wallet: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
+            }
+          ).wallet.createKey({
+            keyType: 'ed25519',
+          })
+      const publicKeyX25519 = TypedArrayEncoder.toBase58(
+        convertPublicKeyToX25519(TypedArrayEncoder.fromBase58(ed25519.publicKeyBase58))
+      )
+
+      builder
+        .addContext('https://w3id.org/security/suites/ed25519-2018/v1')
+        .addContext('https://w3id.org/security/suites/x25519-2019/v1')
+        .addVerificationMethod({
+          controller: publicDid,
+          id: verificationMethodId,
+          publicKeyBase58: ed25519.publicKeyBase58,
+          type: 'Ed25519VerificationKey2018',
+        })
+        .addVerificationMethod({
+          controller: publicDid,
+          id: keyAgreementId,
+          publicKeyBase58: publicKeyX25519,
+          type: 'X25519KeyAgreementKey2019',
+        })
+        .addAuthentication(verificationMethodId)
+        .addAssertionMethod(verificationMethodId)
+        .addKeyAgreement(keyAgreementId)
+
+      for (let index = 0; index < config.endpoints.length; index++) {
+        builder.addService(
+          new DidCommV1Service({
+            id: `${publicDid}#did-communication-${index + 1}`,
+            serviceEndpoint: config.endpoints[index],
+            priority: index,
+            routingKeys: [],
+            recipientKeys: [keyAgreementId],
+            accept: ['didcomm/aip2;env=rfc19'],
+          })
+        )
+      }
     }
-    logger.debug('[PostgresMessagePickupRepository] FCM Notification Sender initialized')
 
-    await messageRepository.initialize({ agent })
-    logger.info('[PostgresMessagePickupRepository] Repository initialization completed')
-
-    // Register the listener for the MessageQueued event
-    agent.events.on('MessagePickupRepositoryMessageQueued', async ({ payload }) => {
-      const messageQueuedEvent = payload as unknown as MessageQueuedEvent
-      logger.debug(`[MessagePickupRepositoryMessageQueued] received: ${JSON.stringify(messageQueuedEvent, null, 2)}`)
-
-      // If the session is present, skip processing
-      if (messageQueuedEvent.session) {
-        logger.debug(
-          `[MessagePickupRepositoryMessageQueued] Skipping processing because session is present for connectionId: ${messageQueuedEvent.message.connectionId}`
-        )
-        return
-      }
-
-      try {
-        // Find the connection record associated with the message
-        const connectionRecord = await agent.connections.findById(messageQueuedEvent.message.connectionId)
-        if (!connectionRecord) {
-          logger.warn(
-            `[MessagePickupRepositoryMessageQueued] No connection record found for connectionId: ${messageQueuedEvent.message.connectionId}`
-          )
-          return
-        }
-
-        const token = connectionRecord.getTag('device_token') as string | null
-        if (!token) {
-          logger.warn(
-            `[MessagePickupRepositoryMessageQueued] No device token found for connectionId: ${messageQueuedEvent.message.connectionId}`
-          )
-          return
-        }
-
-        logger.debug(
-          `[MessagePickupRepositoryMessageQueued] Sending message with ID ${messageQueuedEvent.message.id} to device token: ${token}`
-        )
-        await localFcmNotificationSender.sendMessage(token, messageQueuedEvent.message.id)
-        logger.info(
-          `[MessagePickupRepositoryMessageQueued] Message ${messageQueuedEvent.message.id} notification sent successfully`
-        )
-      } catch (error) {
-        logger.error(`[MessagePickupRepositoryMessageQueued] Error processing event: ${error}`)
-      }
-    })
+    const existingRecord = await didRepository.findCreatedDid(agent.context, publicDid)
+    if (existingRecord) {
+      logger.debug('Public did record already stored. DidDocument updated')
+      existingRecord.didDocument = builder.build()
+      await didRepository.update(agent.context, existingRecord)
+    } else {
+      await didRepository.save(
+        agent.context,
+        new DidRecord({
+          did: publicDid,
+          role: DidDocumentRole.Created,
+          didDocument: builder.build(),
+        })
+      )
+      logger.debug('Public did record saved')
+    }
   }
-
-  const app = express()
-
-  app.use(cors())
-  app.use(express.json())
-  app.use(express.urlencoded({ extended: true }))
-
-  app.set('json spaces', 2)
 
   app.get('/s', async (req, res) => {
     const id = req.query.id
@@ -271,7 +323,6 @@ export const initMediator = async (
         logger.warn('[ShortenUrl] /s endpoint received unknown UUID', { id })
         return res.status(404).json({ error: 'Shortened URL not found' })
       }
-      // Check if the shortened URL is expired
       if (await isShortenUrlRecordExpired(shortUrlRecord)) {
         shortenUrlRepository.deleteById(agent.context, id)
         logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
@@ -279,7 +330,7 @@ export const initMediator = async (
       }
 
       if (req.accepts('json')) {
-        const invitationUrl = await agent.oob.parseInvitation(longUrl)
+        const invitationUrl = await didcommApi.oob.parseInvitation(longUrl)
         res.send(invitationUrl.toJSON()).end()
       } else {
         res.status(302).location(longUrl).end()
@@ -290,36 +341,13 @@ export const initMediator = async (
     }
   })
 
-  let webSocketServer: WebSocket.Server
-  let httpInboundTransport: HttpInboundTransport | undefined
-  if (config.enableHttp) {
-    httpInboundTransport = new HttpInboundTransport({ app, port: config.port })
-    agent.registerInboundTransport(httpInboundTransport)
-    agent.registerOutboundTransport(new HttpOutboundTransport())
-  }
-
-  if (config.enableWs) {
-    webSocketServer = new WebSocket.Server({ noServer: true })
-    agent.registerInboundTransport(new MediatorWsInboundTransport({ server: webSocketServer }))
-    agent.registerOutboundTransport(new WsOutboundTransport())
-  }
-
   app.get('/invitation', async (req, res) => {
     logger.info(`Invitation requested`)
-
-    const outOfBandInvitation = agent.did
-      ? new OutOfBandInvitation({
-          id: agent.did,
-          services: [agent.did],
-          label: agent.config.label,
-          handshakeProtocols: [HandshakeProtocol.DidExchange, HandshakeProtocol.Connections],
-          imageUrl: process.env.AGENT_INVITATION_IMAGE_URL,
-        })
-      : (
-          await agent.oob.createInvitation({
-            imageUrl: process.env.AGENT_INVITATION_IMAGE_URL,
-          })
-        ).outOfBandInvitation
+    const outOfBandInvitation = (
+      await didcommApi.oob.createInvitation({
+        imageUrl: process.env.AGENT_INVITATION_IMAGE_URL,
+      })
+    ).outOfBandInvitation
     res.send({
       url: outOfBandInvitation.toUrl({ domain: process.env.AGENT_INVITATION_BASE_URL ?? 'https://2060.io/i' }),
     })
@@ -328,169 +356,20 @@ export const initMediator = async (
   await agent.initialize()
   logger.info('agent initialized')
 
-  agent.events.on(MessagePickupEventTypes.LiveSessionRemoved, async (data: MessagePickupLiveSessionRemovedEvent) => {
-    logger.debug(`********* Live Mode Session removed for ${data.payload.session.connectionId}`)
-    if (messageRepository instanceof MessagePickupRepositoryClient) {
-      const connectionId = data.payload.session.connectionId
-      await messageRepository.removeLiveSession({ connectionId })
-      logger.debug(`*** removeLiveSession succesfull ${data.payload.session.connectionId} ***`)
-    }
-  })
+  const server =
+    (
+      agent.modules.didcomm.inboundTransports.find(
+        (transport: unknown) => transport instanceof HttpInboundTransport
+      ) as HttpInboundTransport | undefined
+    )?.server ?? app.listen(config.port)
 
-  agent.events.on(MessagePickupEventTypes.LiveSessionSaved, async (data: MessagePickupLiveSessionSavedEvent) => {
-    logger.debug(`********** Live Mode Session for ${data.payload.session.connectionId}`)
-    if (messageRepository instanceof MessagePickupRepositoryClient) {
-      const connectionId = data.payload.session.connectionId
-      const sessionId = data.payload.session.id
-      await messageRepository.addLiveSession({ connectionId, sessionId })
-      logger.debug(`*** addLiveSession successful for ${data.payload.session.connectionId} ***`)
-    }
-  })
-
-  // Handle mediation events
-  agent.events.on<MediationStateChangedEvent>(
-    RoutingEventTypes.MediationStateChanged,
-    async (data: MediationStateChangedEvent) => {
-      const mediationRecord = data.payload.mediationRecord
-
-      if (mediationRecord.state === MediationState.Requested) {
-        await agent.mediator.grantRequestedMediation(mediationRecord.id)
-      }
-    }
-  )
-
-  const server = httpInboundTransport ? httpInboundTransport.server : app.listen(config.port)
-
-  if (config.enableWs) {
-    server?.on('upgrade', (request, socket, head) => {
+  if (config.enableWs && webSocketServer) {
+    server?.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
       webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
         const socketId = utils.uuid()
         webSocketServer.emit('connection', socketParam, request, socketId)
       })
     })
-  }
-
-  agent.events.on<AgentMessageProcessedEvent>(AgentEventTypes.AgentMessageProcessed, async (data) => {
-    logger.info(`Message processed for connection id ${data.payload.connection?.id} Type: ${data.payload.message.type}`)
-
-    const { message, connection } = data.payload
-    if (!connection) return
-
-    if (message.type === PushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
-      connection.setTag('device_token', (message as PushNotificationsFcmSetDeviceInfoMessage).deviceToken)
-      await agent.dependencyManager.resolve(ConnectionService).update(agent.context, connection)
-    }
-
-    // When receiving a hangup, we must delete connection in order to delete any user info
-    if (message.type === HangupMessage.type.messageTypeUri) {
-      logger.debug(`Hangup received. Connection Id: ${connection?.id}`)
-      await agent.connections.deleteById(connection.id)
-      logger.debug(`Connection ${connection?.id} deleted`)
-
-      // TODO: Notify FCM notification sender to cancel any pending notification to connection's device token
-    }
-  })
-
-  if (publicDid) {
-    app.get('/.well-known/did.json', async (req, res) => {
-      logger.info(`Public DidDocument requested`)
-
-      const [didRecord] = await agent.dids.getCreatedDids({ did: agent.did })
-
-      const didDocument = didRecord.didDocument?.toJSON()
-
-      if (didDocument) {
-        res.send(didDocument)
-      } else {
-        res.status(404).end()
-      }
-    })
-
-    // If a public did is specified, check if it's already stored in the wallet. If it's not the case,
-    // create a new one and generate keys for DIDComm (if there are endpoints configured)
-    // TODO: Make DIDComm version, keys, etc. configurable. Keys can also be imported
-
-    // Auto-accept connections that go to the public did
-    agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async (data: ConnectionStateChangedEvent) => {
-      const connection = data.payload.connectionRecord
-      logger.debug(`Incoming connection event: ${connection.state}}`)
-
-      if (connection.outOfBandId) {
-        const oob = await agent.oob.findById(connection.outOfBandId)
-
-        if (!oob) return
-
-        const parsedDid = tryParseDid(oob.outOfBandInvitation.id)
-        if (parsedDid?.did === publicDid && data.payload.connectionRecord.state === DidExchangeState.RequestReceived) {
-          logger.debug(`Incoming connection request for ${publicDid}`)
-          await agent.connections.acceptRequest(data.payload.connectionRecord.id)
-          logger.debug(`Accepted request for ${publicDid}`)
-        }
-      }
-    })
-
-    const didRepository = agent.context.dependencyManager.resolve(DidRepository)
-    const builder = new DidDocumentBuilder(publicDid)
-
-    // Create a set of keys suitable for did communication
-    if (config.config.endpoints && config.config.endpoints.length > 0) {
-      const verificationMethodId = `${publicDid}#verkey`
-      const keyAgreementId = `${publicDid}#key-agreement-1`
-
-      const ed25519 = await agent.context.wallet.createKey({ keyType: KeyType.Ed25519 })
-      const publicKeyX25519 = TypedArrayEncoder.toBase58(
-        convertPublicKeyToX25519(TypedArrayEncoder.fromBase58(ed25519.publicKeyBase58))
-      )
-
-      builder
-        .addContext('https://w3id.org/security/suites/ed25519-2018/v1')
-        .addContext('https://w3id.org/security/suites/x25519-2019/v1')
-        .addVerificationMethod({
-          controller: publicDid,
-          id: verificationMethodId,
-          publicKeyBase58: ed25519.publicKeyBase58,
-          type: 'Ed25519VerificationKey2018',
-        })
-        .addVerificationMethod({
-          controller: publicDid,
-          id: keyAgreementId,
-          publicKeyBase58: publicKeyX25519,
-          type: 'X25519KeyAgreementKey2019',
-        })
-        .addAuthentication(verificationMethodId)
-        .addAssertionMethod(verificationMethodId)
-        .addKeyAgreement(keyAgreementId)
-
-      for (let index = 0; index < agent.config.endpoints.length; index++) {
-        builder.addService(
-          new DidCommV1Service({
-            id: `${publicDid}#did-communication-${index + 1}`,
-            serviceEndpoint: agent.config.endpoints[index],
-            priority: index,
-            routingKeys: [], // TODO: Support mediation
-            recipientKeys: [keyAgreementId],
-            accept: ['didcomm/aip2;env=rfc19'],
-          })
-        )
-      }
-    }
-
-    const existingRecord = await didRepository.findCreatedDid(agent.context, publicDid)
-    if (existingRecord) {
-      logger.debug('Public did record already stored. DidDocument updated')
-      existingRecord.didDocument = builder.build()
-      await didRepository.update(agent.context, existingRecord)
-    } else {
-      await didRepository.save(
-        agent.context,
-        new DidRecord({
-          did: publicDid,
-          role: DidDocumentRole.Created,
-          didDocument: builder.build(),
-        })
-      )
-      logger.debug('Public did record saved')
-    }
   }
 
   return { app, agent }

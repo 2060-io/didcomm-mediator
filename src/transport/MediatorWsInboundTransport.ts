@@ -1,40 +1,37 @@
+import type { AgentContext, Logger } from '@credo-ts/core'
+import { CredoError, EventEmitter, utils } from '@credo-ts/core'
 import {
-  Agent,
-  InboundTransport,
-  Logger,
-  TransportSession,
-  EncryptedMessage,
-  ConnectionRecord,
-  AgentContext,
-  MessageReceiver,
-} from '@credo-ts/core'
+  DidCommEventTypes,
+  DidCommModuleConfig,
+  DidCommTransportService,
+  type DidCommInboundTransport,
+  type DidCommTransportSession,
+} from '@credo-ts/didcomm'
+import WebSocket, { WebSocketServer } from 'ws'
 
-import { CredoError, AgentConfig, TransportService, utils } from '@credo-ts/core'
-import WebSocket, { Server } from 'ws'
-
-// Workaround for types (https://github.com/DefinitelyTyped/DefinitelyTyped/issues/20780)
 interface ExtWebSocket extends WebSocket {
   isAlive: boolean
 }
 
-export class MediatorWsInboundTransport implements InboundTransport {
-  private socketServer: Server
+export class MediatorWsInboundTransport implements DidCommInboundTransport {
+  private socketServer: WebSocketServer
   private logger!: Logger
-
-  // We're using a `socketId` just for the prevention of calling the connection handler twice.
   private socketIds: Record<string, unknown> = {}
 
-  public constructor({ server, port }: { server: Server; port?: undefined } | { server?: undefined; port: number }) {
-    this.socketServer = server ?? new Server({ port })
+  public constructor({
+    server,
+    port,
+  }: { server: WebSocketServer; port?: undefined } | { server?: undefined; port: number }) {
+    this.socketServer = server ?? new WebSocketServer({ port })
   }
 
-  public async start(agent: Agent) {
-    const transportService = agent.dependencyManager.resolve(TransportService)
-    const config = agent.dependencyManager.resolve(AgentConfig)
+  public async start(agentContext: AgentContext) {
+    const transportService = agentContext.dependencyManager.resolve(DidCommTransportService)
+    const didCommConfig = agentContext.dependencyManager.resolve(DidCommModuleConfig)
 
-    this.logger = config.logger
+    this.logger = agentContext.config.logger
 
-    const wsEndpoint = config.endpoints.find((e) => e.startsWith('ws'))
+    const wsEndpoint = didCommConfig.endpoints.find((e) => e.startsWith('ws'))
     this.logger.debug(`Starting WS inbound transport`, {
       endpoint: wsEndpoint,
     })
@@ -47,9 +44,9 @@ export class MediatorWsInboundTransport implements InboundTransport {
         this.logger.debug(`Saving new socket with id ${socketId}.`)
         this.socketIds[socketId] = socket
         const session = new WebSocketTransportSession(socketId, socket, this.logger)
-        this.listenOnWebSocketMessages(agent, socket, session)
+        this.listenOnWebSocketMessages(agentContext, socket, session)
         socket.on('close', () => {
-          this.logger.debug(`Socket closed. Session id: ${session}`)
+          this.logger.debug(`Socket closed. Session id: ${session.id}`)
           transportService.removeSession(session)
         })
       } else {
@@ -75,7 +72,7 @@ export class MediatorWsInboundTransport implements InboundTransport {
   }
 
   private startHeartBeatPing(interval?: number) {
-    interval = interval ?? 3000
+    const pingInterval = interval ?? 3000
 
     setInterval(() => {
       this.socketServer.clients.forEach((ws: WebSocket) => {
@@ -87,21 +84,27 @@ export class MediatorWsInboundTransport implements InboundTransport {
         ;(ws as ExtWebSocket).isAlive = false
         ws.ping(null, undefined)
       })
-    }, interval)
+    }, pingInterval)
   }
 
-  private listenOnWebSocketMessages(agent: Agent, socket: WebSocket, session: WebSocketTransportSession) {
-    const messageReceiver = agent.dependencyManager.resolve(MessageReceiver)
+  private listenOnWebSocketMessages(agentContext: AgentContext, socket: WebSocket, session: WebSocketTransportSession) {
+    const eventEmitter = agentContext.dependencyManager.resolve(EventEmitter)
 
     socket.on('pong', () => {
       ;(socket as ExtWebSocket).isAlive = true
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    socket.addEventListener('message', async (event: any) => {
+    socket.addEventListener('message', async (event) => {
       this.logger.debug('WebSocket message event received.', { session: session.id })
       try {
-        await messageReceiver.receiveMessage(JSON.parse(event.data), { session })
+        const encryptedMessage = JSON.parse((event as { data: string }).data)
+        eventEmitter.emit(agentContext, {
+          type: DidCommEventTypes.DidCommMessageReceived,
+          payload: {
+            message: encryptedMessage,
+            session,
+          },
+        })
       } catch (error) {
         this.logger.error(`Error processing message: ${error}`)
       }
@@ -109,11 +112,10 @@ export class MediatorWsInboundTransport implements InboundTransport {
   }
 }
 
-export class WebSocketTransportSession implements TransportSession {
+export class WebSocketTransportSession implements DidCommTransportSession {
   public id: string
   public readonly type = 'WebSocket'
   public socket: WebSocket
-  public connection?: ConnectionRecord
   public logger: Logger
 
   public constructor(id: string, socket: WebSocket, logger: Logger) {
@@ -122,16 +124,23 @@ export class WebSocketTransportSession implements TransportSession {
     this.logger = logger
   }
 
-  public async send(agentContext: AgentContext, encryptedMessage: EncryptedMessage): Promise<void> {
+  public async send(_agentContext: AgentContext, encryptedMessage: unknown): Promise<void> {
     if (this.socket.readyState !== WebSocket.OPEN) {
       throw new CredoError(`${this.type} transport session has been closed.`)
     }
 
-    this.socket.send(JSON.stringify(encryptedMessage))
+    this.socket.send(JSON.stringify(encryptedMessage), (error) => {
+      if (error != void 0) {
+        this.logger.debug(`Error sending message: ${error}`)
+        throw new CredoError(`${this.type} send message failed.`, { cause: error })
+      }
+      this.logger.debug(`${this.type} sent message successfully.`)
+    })
   }
 
   public async close(): Promise<void> {
-    this.logger.debug(`Web Socket Transport Session close requested. Connection Id: ${this.connection?.id}`)
-    // Do not actually close socket. Leave heartbeat to do its job
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.close()
+    }
   }
 }

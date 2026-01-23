@@ -26,7 +26,7 @@ module.exports = {
       },
     },
     {
-      files: ['jest.config.js', '.eslintrc.js'],
+      files: ['jest.config.cjs', '.eslintrc.cjs'],
       env: {
         node: true,
       },
