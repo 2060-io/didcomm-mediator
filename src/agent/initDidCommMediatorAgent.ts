@@ -15,12 +15,16 @@ import {
 } from '@credo-ts/core'
 import {
   DidCommApi,
+  DidCommConnectionService,
   DidCommRoutingEventTypes,
   DidCommMediationStateChangedEvent,
   DidCommMediationState,
   DidCommConnectionEventTypes,
   type DidCommConnectionStateChangedEvent,
   DidCommDidExchangeState,
+  DidCommEventTypes,
+  type DidCommMessageProcessedEvent,
+  DidCommHangupMessage,
 } from '@credo-ts/didcomm'
 import {
   DidCommInvalidateShortenedUrlReceivedEvent,
@@ -39,12 +43,14 @@ import {
   InMemoryQueueTransportRepository,
   PostgresQueueTransportRepository,
 } from '../storage/QueueTransportRepository.js'
+import { DidCommPushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/didcomm-push-notifications'
 import { createMediator, type CloudAgentOptions, DidCommMediatorAgent } from './DidCommMediatorAgent.js'
 import { deriveShortenBaseFromPublicDid } from '../util/invitationBase.js'
 import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup.js'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
 import { DidCommTransportQueuePostgres } from '@credo-ts/didcomm-transport-queue-postgres'
+import { log } from 'console'
 
 export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
@@ -190,6 +196,26 @@ export const initMediator = async (
         }
       }
     )
+
+    agent.events.on<DidCommMessageProcessedEvent>(DidCommEventTypes.DidCommMessageProcessed, async ({ payload }) => {
+      logger.info(
+        `Message processed for connection id ${payload.connection?.id ?? 'unknown'} Type: ${payload.message.type}`
+      )
+
+      const { message, connection } = payload
+      if (!connection) return
+
+      if (message.type === DidCommPushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
+        connection.setTag('device_token', (message as DidCommPushNotificationsFcmSetDeviceInfoMessage).deviceToken)
+        await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connection)
+      }
+
+      if (message.type === DidCommHangupMessage.type.messageTypeUri) {
+        logger.debug(`Hangup received. Connection Id: ${connection.id}`)
+        await agent.didcomm.connections.deleteById(connection.id)
+        logger.debug(`Connection ${connection.id} deleted`)
+      }
+    })
 
     const didRepository = agent.context.dependencyManager.resolve(DidRepository)
     const builder = new DidDocumentBuilder(publicDid)

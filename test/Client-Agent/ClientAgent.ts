@@ -10,6 +10,7 @@ import {
   DidCommTransportService,
   ReturnRouteTypes,
   type DidCommConnectionRecord,
+  DidCommMediatorPickupStrategy,
 } from '@credo-ts/didcomm'
 import { agentDependencies, DidCommWsInboundTransport } from '@credo-ts/node'
 import { askarNodeJS } from '@openwallet-foundation/askar-nodejs'
@@ -31,7 +32,7 @@ import {
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
-const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST || '192.168.10.20'
+const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST || '192.168.100.84'
 const CLIENT_AGENT_WS_ENDPOINT = process.env.CLIENT_AGENT_WS_ENDPOINT
 const CLIENT_WALLET_ID = process.env.CLIENT_WALLET_ID || 'client-agent'
 const CLIENT_WALLET_KEY = process.env.CLIENT_WALLET_KEY || 'client-agent-key'
@@ -83,13 +84,16 @@ async function run() {
         },
       }),
       didcomm: new DidCommModule({
-        didCommMimeType: DidCommMimeType.V1,
-        useDidKeyInProtocols: false,
+        didCommMimeType: DidCommMimeType.V0,
+        useDidKeyInProtocols: true,
         transports: {
           inbound: inboundTransports,
           outbound: outboundTransports,
         },
         connections: { autoAcceptConnections: true },
+        mediationRecipient: {
+          mediatorPickupStrategy: DidCommMediatorPickupStrategy.PickUpV2LiveMode,
+        },
         proofs: false,
         credentials: false,
         mediator: false,
