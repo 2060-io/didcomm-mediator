@@ -50,7 +50,6 @@ import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from 
 import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
 import { DidCommTransportQueuePostgres } from '@credo-ts/didcomm-transport-queue-postgres'
-import { log } from 'console'
 
 export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
@@ -153,21 +152,7 @@ export const initMediator = async (
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
       }
     }
-  )
-
-  agent.events.on<DidCommMediationStateChangedEvent>(
-    DidCommRoutingEventTypes.MediationStateChanged,
-    async ({ payload }) => {
-      logger.info(
-        `Mediation state changed to ${payload.mediationRecord.state} for record ${payload.mediationRecord.id}`
-      )
-      if (payload.mediationRecord.state === DidCommMediationState.Requested) {
-        await didcommApi.mediator?.grantRequestedMediation(payload.mediationRecord.id)
-      }
-    }
-  )
-
-  if (publicDid) {
+  )  if (publicDid) {
     app.get('/.well-known/did.json', async (_req, res) => {
       logger.info(`Public DidDocument requested`)
 
