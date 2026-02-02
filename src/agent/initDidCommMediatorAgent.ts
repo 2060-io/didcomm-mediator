@@ -152,7 +152,9 @@ export const initMediator = async (
         logger.error(`[ShortenUrl] failed to process invalidate shortened url request: ${error}`)
       }
     }
-  )  if (publicDid) {
+  )
+
+  if (publicDid) {
     app.get('/.well-known/did.json', async (_req, res) => {
       logger.info(`Public DidDocument requested`)
 
