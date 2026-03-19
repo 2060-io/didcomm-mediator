@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout didcomm-mediator
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Helm
         uses: azure/setup-helm@v3
@@ -28,6 +30,20 @@ jobs:
         with:
           node-version: 22
 
+      # Detect if this is an experimental build (manual workflow_dispatch)
+      - name: Detect build mode
+        id: mode
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              echo "ERROR: Experimental builds cannot be triggered on 'main'. Select a feature or dev branch."
+              exit 1
+            fi
+            echo "experimental=true" >> $GITHUB_OUTPUT
+          else
+            echo "experimental=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Enable corepack
         run: corepack enable
 
@@ -35,12 +51,13 @@ jobs:
         run: pnpm install
 
       - uses: codfish/semantic-release-action@v3
+        if: steps.mode.outputs.experimental == 'false'
         id: semantic
         with:
           branches: |
             [
               'release',
-              { 
+              {
                 name: 'main',
                 prerelease: 'dev'
               }
@@ -68,10 +85,37 @@ jobs:
               "@semantic-release/release-notes-generator",
             ]
 
+      # Consolidate outputs for experimental builds (semantic-release handles the normal path)
+      - name: Consolidate release outputs
+        id: release
+        run: |
+          if [[ "${{ steps.mode.outputs.experimental }}" == "true" ]]; then
+            # Base version: last stable tag (no prerelease suffix), e.g. v0.9.4 → strip v to match semantic-release convention
+            BASE_VERSION=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+            VERSION="${BASE_VERSION}-exp.${{ github.run_number }}"
+            # Create and push the tag so it's traceable in git
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+              echo "Tag ${VERSION} already exists, reusing."
+            else
+              git tag "${VERSION}"
+              git push origin "${VERSION}"
+            fi
+            echo "new-release-published=true" >> $GITHUB_OUTPUT
+            echo "experimental=true" >> $GITHUB_OUTPUT
+            echo "RELEASE_VERSION=${VERSION#v}" >> $GITHUB_ENV
+          fi
+
       - name: Log in to Docker Hub
-        if: steps.semantic.outputs.new-release-published == 'true'
         run: |
           echo "$DH_TOKEN" | docker login -u "$DH_USERNAME" --password-stdin
+
+      - name: Build and push Docker image (experimental)
+        if: steps.release.outputs.new-release-published == 'true' && steps.release.outputs.experimental == 'true'
+        run: |
+          docker build -f Dockerfile -t $DH_USERNAME/$IMAGE_NAME:v$RELEASE_VERSION .
+          docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_VERSION
 
       - name: Build Docker image
         if: steps.semantic.outputs.new-release-published == 'true'
@@ -102,12 +146,12 @@ jobs:
           docker push $DH_USERNAME/$IMAGE_NAME:v$RELEASE_MAJOR.$RELEASE_MINOR.${RELEASE_PATCH:0:1}
 
       - name: Log in to Docker Hub Helm Registry
-        if: steps.semantic.outputs.new-release-published == 'true'
+        if: steps.semantic.outputs.new-release-published == 'true' || steps.release.outputs.experimental == 'true'
         run: |
           echo "$DH_TOKEN" | helm registry login -u "$DH_USERNAME" --password-stdin docker.io
 
       - name: Push Helm chart to Docker Hub OCI repo
-        if: steps.semantic.outputs.new-release-published == 'true'
+        if: steps.semantic.outputs.new-release-published == 'true' || steps.mode.outputs.experimental == 'true'
         run: |
           sed -i "s/^version:.*/version: v$RELEASE_VERSION/" ./charts/Chart.yaml
           CHART_NAME=$(grep '^name:' ./charts/Chart.yaml | awk '{print $2}')
