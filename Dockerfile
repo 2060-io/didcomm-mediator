@@ -4,7 +4,8 @@ FROM node:22-bullseye AS base
 WORKDIR /www
 ENV RUN_MODE="docker"
 
-# Enable Corepack 
+# Update and enable Corepack (npm rotated registry keys, bundled corepack may have stale keys)
+RUN npm install -g corepack@latest
 RUN corepack enable
 
 # Copy dependency manifest files

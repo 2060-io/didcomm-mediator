@@ -3,22 +3,13 @@ import type { Express } from 'express'
 
 import {
   ConsoleLogger,
-  DidCommV1Service,
-  DidDocumentBuilder,
-  DidDocumentRole,
-  DidRecord,
   DidRepository,
   LogLevel,
-  TypedArrayEncoder,
-  convertPublicKeyToX25519,
   utils,
 } from '@credo-ts/core'
 import {
   DidCommApi,
   DidCommConnectionService,
-  DidCommRoutingEventTypes,
-  DidCommMediationStateChangedEvent,
-  DidCommMediationState,
   DidCommConnectionEventTypes,
   type DidCommConnectionStateChangedEvent,
   DidCommDidExchangeState,
@@ -50,6 +41,22 @@ import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from 
 import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
 import { DidCommTransportQueuePostgres } from '@credo-ts/didcomm-transport-queue-postgres'
+import { DIDLog } from 'didwebvh-ts'
+
+async function resolveDidDocumentData(agent: DidCommMediatorAgent) {
+  if (!agent.did) return {}
+
+  const [didRecord] = await agent.dids.getCreatedDids({ did: agent.did })
+
+  if (!didRecord) return {}
+
+  const didDocument = didRecord.didDocument
+
+  const didLog = didRecord.metadata.get('log') as DIDLog[] | null
+
+  return { didDocument, didLog: didLog?.map(entry => JSON.stringify(entry)).join('\n') }
+}
+
 
 export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
@@ -156,17 +163,34 @@ export const initMediator = async (
 
   if (publicDid) {
     app.get('/.well-known/did.json', async (_req, res) => {
-      logger.info(`Public DidDocument requested`)
+      logger.info(`Public Did Document requested`)
+     
+      const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
 
-      const didRecord = await agent.dependencyManager.resolve(DidRepository).findCreatedDid(agent.context, publicDid)
-      const didDocument = didRecord?.didDocument?.toJSON()
-
-      if (didDocument) {
-        res.send(didDocument)
+      if (resolvedDidDocument) {
+        res.send(resolvedDidDocument)
       } else {
         res.status(404).end()
       }
     })
+
+    app.get('/.well-known/did.jsonl', async (_req, res) => {
+      logger.info(`Public DID log requested`)
+
+      const didRecord = await agent.dependencyManager.resolve(DidRepository).findCreatedDid(agent.context, publicDid)
+      const didDocument = didRecord?.didDocument?.toJSON()
+
+    const { didLog } = await resolveDidDocumentData(agent)
+
+      if (didLog) {
+        res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.send(didLog)
+      } else {
+        res.status(404).end()
+      }
+    })
+
 
     agent.events.on<DidCommConnectionStateChangedEvent>(
       DidCommConnectionEventTypes.DidCommConnectionStateChanged,
@@ -203,87 +227,6 @@ export const initMediator = async (
         logger.debug(`Connection ${connection.id} deleted`)
       }
     })
-
-    const didRepository = agent.context.dependencyManager.resolve(DidRepository)
-    const builder = new DidDocumentBuilder(publicDid)
-
-    if (config.endpoints && config.endpoints.length > 0) {
-      const verificationMethodId = `${publicDid}#verkey`
-      const keyAgreementId = `${publicDid}#key-agreement-1`
-
-      const wallet =
-        (
-          agent as unknown as {
-            wallet?: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
-          }
-        ).wallet ??
-        (
-          agent.context as unknown as {
-            wallet?: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
-          }
-        ).wallet
-      const ed25519 = wallet
-        ? await wallet.createKey({ keyType: 'ed25519' })
-        : await (
-            agent.context as unknown as {
-              wallet: { createKey: (options: { keyType: string }) => Promise<{ publicKeyBase58: string }> }
-            }
-          ).wallet.createKey({
-            keyType: 'ed25519',
-          })
-      const publicKeyX25519 = TypedArrayEncoder.toBase58(
-        convertPublicKeyToX25519(TypedArrayEncoder.fromBase58(ed25519.publicKeyBase58))
-      )
-
-      builder
-        .addContext('https://w3id.org/security/suites/ed25519-2018/v1')
-        .addContext('https://w3id.org/security/suites/x25519-2019/v1')
-        .addVerificationMethod({
-          controller: publicDid,
-          id: verificationMethodId,
-          publicKeyBase58: ed25519.publicKeyBase58,
-          type: 'Ed25519VerificationKey2018',
-        })
-        .addVerificationMethod({
-          controller: publicDid,
-          id: keyAgreementId,
-          publicKeyBase58: publicKeyX25519,
-          type: 'X25519KeyAgreementKey2019',
-        })
-        .addAuthentication(verificationMethodId)
-        .addAssertionMethod(verificationMethodId)
-        .addKeyAgreement(keyAgreementId)
-
-      for (let index = 0; index < config.endpoints.length; index++) {
-        builder.addService(
-          new DidCommV1Service({
-            id: `${publicDid}#did-communication-${index + 1}`,
-            serviceEndpoint: config.endpoints[index],
-            priority: index,
-            routingKeys: [],
-            recipientKeys: [keyAgreementId],
-            accept: ['didcomm/aip2;env=rfc19'],
-          })
-        )
-      }
-    }
-
-    const existingRecord = await didRepository.findCreatedDid(agent.context, publicDid)
-    if (existingRecord) {
-      logger.debug('Public did record already stored. DidDocument updated')
-      existingRecord.didDocument = builder.build()
-      await didRepository.update(agent.context, existingRecord)
-    } else {
-      await didRepository.save(
-        agent.context,
-        new DidRecord({
-          did: publicDid,
-          role: DidDocumentRole.Created,
-          didDocument: builder.build(),
-        })
-      )
-      logger.debug('Public did record saved')
-    }
   }
 
   app.get('/s', async (req, res) => {

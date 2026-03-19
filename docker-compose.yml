@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   postgres:
     image: postgres:alpine3.19
@@ -16,9 +14,10 @@ services:
     image: didcomm-mediator
     container_name: didcomm-mediator-1
     hostname: didcomm-mediator-1
+    restart: always
     environment:
-      #- AGENT_PUBLIC_DID=did:web:10.82.14.176%3A4000
-      #- AGENT_ENDPOINTS=ws://10.82.14.176:4000
+      - AGENT_PUBLIC_DID=did:webvh:mydomain.ngrok-free.app
+      - AGENT_ENDPOINTS=wss://mydomain.ngrok-free.app
       - AGENT_NAME=2060 DIDComm Mediator - Dev
       - WALLET_NAME=2060-didcomm-mediator-dev
       - WALLET_KEY=2060-didcomm-mediator-dev
