@@ -1,10 +1,10 @@
-import { initializeApp, App as FcmApp } from 'firebase-admin/app'
-import { credential } from 'firebase-admin'
-import { getMessaging } from 'firebase-admin/messaging'
+import type { App as FcmApp } from 'firebase-admin/app'
+import firebaseAdmin from 'firebase-admin'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { Logger } from '@credo-ts/core'
-import { FcmNotificationSender } from './FcmNotificationSender'
-import { FIREBASE_CFG_FILE } from '../config/constants'
+import { FcmNotificationSender } from './FcmNotificationSender.js'
+import { FIREBASE_CFG_FILE } from '../config/constants.js'
 
 export class LocalFcmNotificationSender implements FcmNotificationSender {
   private fcmApp: FcmApp | null = null
@@ -14,9 +14,12 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
     this.logger = logger
 
     try {
-      const configPath = path.resolve(__dirname, FIREBASE_CFG_FILE)
-      this.fcmApp = initializeApp({
-        credential: credential.cert(configPath),
+      const baseDir = path.dirname(fileURLToPath(import.meta.url))
+      const configPath = path.isAbsolute(FIREBASE_CFG_FILE)
+        ? FIREBASE_CFG_FILE
+        : path.resolve(baseDir, '..', '..', FIREBASE_CFG_FILE)
+      this.fcmApp = firebaseAdmin.initializeApp({
+        credential: firebaseAdmin.credential.cert(configPath),
       })
       this.logger?.debug('[LocalFcmNotificationSender] Firebase-admin initialized successfully')
     } catch (error) {
@@ -34,7 +37,7 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
         this.logger?.warn('Firebase Admin is not initialized. Skipping notification.')
         return false
       }
-      const response = await getMessaging(this.fcmApp).send({
+      const response = await firebaseAdmin.messaging(this.fcmApp).send({
         token: registrationToken,
         notification: {
           title: 'Hologram',

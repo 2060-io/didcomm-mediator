@@ -1,13 +1,12 @@
-import { initMediator } from '../src/agent/initDidCommMediatorAgent'
+import { jest } from '@jest/globals'
 import { agentDependencies } from '@credo-ts/node'
+import { ConsoleLogger, LogLevel } from '@credo-ts/core'
 import {
-  ConsoleLogger,
-  LogLevel,
-  MediationRepository,
-  MediationRecord,
-  MediationRole,
-  MediationState,
-} from '@credo-ts/core'
+  DidCommMediationRepository,
+  DidCommMediationRecord,
+  DidCommMediationRole,
+  DidCommMediationState,
+} from '@credo-ts/didcomm'
 import type { DidCommMediatorAgent } from '../src/agent/DidCommMediatorAgent'
 import {
   DidCommShortenUrlRecord,
@@ -18,7 +17,7 @@ import {
 import { log } from 'console'
 
 // Mock LocalFcmNotificationSender to prevent actual FCM initialization during tests
-jest.mock('../src/notifications/LocalFcmNotificationSender', () => ({
+jest.unstable_mockModule('../src/notifications/LocalFcmNotificationSender.js', () => ({
   LocalFcmNotificationSender: class {
     public isInitialized() {
       return false
@@ -30,7 +29,7 @@ jest.mock('../src/notifications/LocalFcmNotificationSender', () => ({
 }))
 
 // Mock HttpInboundTransport to prevent actual server from starting during tests
-jest.mock('../src/transport/HttpInboundTransport', () => ({
+jest.unstable_mockModule('../src/transport/HttpInboundTransport.js', () => ({
   HttpInboundTransport: class {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public app: any
@@ -54,21 +53,18 @@ describe('Shorten URL integration', () => {
   const THREAD_ID = 'thread-001'
 
   let agent: DidCommMediatorAgent
-  let mediationRepository: MediationRepository
+  let mediationRepository: DidCommMediationRepository
 
   beforeAll(async () => {
+    const { initMediator } = await import('../src/agent/initDidCommMediatorAgent.js')
     const result = await initMediator({
       config: {
-        label: 'mediator-test',
-        endpoints: [],
-        walletConfig: {
-          id: 'mediator-test-wallet',
-          key: 'mediator-test-key',
-          storage: { type: 'sqlite', config: { inMemory: true } },
-        },
-        autoUpdateStorageOnStartup: false,
-        backupBeforeStorageUpdate: false,
         logger: new ConsoleLogger(LogLevel.off),
+      },
+      wallet: {
+        id: 'mediator-test-wallet',
+        key: 'mediator-test-key',
+        storage: { type: 'sqlite', config: { inMemory: true } },
       },
       did: 'did:web:tests.example.com',
       port: 0,
@@ -77,10 +73,11 @@ describe('Shorten URL integration', () => {
       dependencies: agentDependencies,
       shortenInvitationBaseUrl: SHORT_BASE,
       shortenUrlCleanupIntervalSeconds: 0,
+      endpoints: [],
     })
 
     agent = result.agent
-    mediationRepository = agent.dependencyManager.resolve(MediationRepository)
+    mediationRepository = agent.dependencyManager.resolve(DidCommMediationRepository)
   })
 
   afterAll(async () => {
@@ -98,11 +95,11 @@ describe('Shorten URL integration', () => {
       requestedValiditySeconds: 600,
     })
 
-    const mediationRecord = new MediationRecord({
+    const mediationRecord = new DidCommMediationRecord({
       connectionId: CONNECTION_ID,
       threadId: 'med-thread-001',
-      state: MediationState.Granted,
-      role: MediationRole.Mediator,
+      state: DidCommMediationState.Granted,
+      role: DidCommMediationRole.Mediator,
       recipientKeys: [],
       routingKeys: [],
     })
