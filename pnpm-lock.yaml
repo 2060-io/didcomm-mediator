@@ -43,6 +43,9 @@ importers:
       '@credo-ts/node':
         specifier: 0.6.4-pr-2704-20260318225938
         version: 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/webvh':
+        specifier: 0.6.4-pr-2704-20260318225938
+        version: 0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
       '@hyperledger/anoncreds-shared':
         specifier: ^0.2.4
         version: 0.2.4
@@ -70,6 +73,9 @@ importers:
       cross-spawn:
         specifier: ^7.0.3
         version: 7.0.6
+      didwebvh-ts:
+        specifier: ^2.7.2
+        version: 2.7.2
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -362,6 +368,11 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
+  '@credo-ts/anoncreds@0.6.4-pr-2704-20260318225938':
+    resolution: {integrity: sha512-hDrTb9ZB9Om2gd6foMQK5Q6puice63fYB5rNEfZrrr3zePmtzt9/38+SsP2KlOUBopf0aB9IAUABjVmPbj/r6g==}
+    peerDependencies:
+      '@hyperledger/anoncreds-shared': ^0.3.4
+
   '@credo-ts/askar@0.6.4-pr-2704-20260318225938':
     resolution: {integrity: sha512-vwlNKxEWe/TMX50X57DFspt9GYVCz9iIScCLZFLLwwyihbAJjfoWUF/zw3eq2213RzAy9qp26VXlkiN+wqUcDg==}
     peerDependencies:
@@ -388,6 +399,9 @@ packages:
   '@credo-ts/node@0.6.4-pr-2704-20260318225938':
     resolution: {integrity: sha512-O0YNJfxSRxYoOBa14HhAidv6Jpx+aPkz6zSbOAG6XqHkyhhK9fuPwJpIvt3UgTt7qgEMZGcA+wmwCXeFgNtUEA==}
     engines: {node: '>=20.19'}
+
+  '@credo-ts/webvh@0.6.4-pr-2704-20260318225938':
+    resolution: {integrity: sha512-UjXXVMlmVOvBEePGorMlGM/SzeypiftLU6uxS/WWDAHIfO3UBMbZB9aB/Y6ww/S4EavfW5hADF6LY9o1JYC7ew==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -806,6 +820,7 @@ packages:
 
   '@sphereon/kmp-mdoc-core@0.2.0-SNAPSHOT.26':
     resolution: {integrity: sha512-QXJ6R8ENiZV2rPMbn06cw5JKwqUYN1kzVRbYfONqE1PEXx1noQ4md7uxr2zSczi0ubKkNcbyYDNtIMTZIhGzmQ==}
+    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution: {integrity: sha512-foFxfLkRwcn/MOp/eht46Q7wsvpQGlO7aowowIIb5Tz9u97kYZ2kz6K2h2ODxWuv5CRA7Q0MY8XUBGE2lfOhOQ==}
@@ -1392,6 +1407,10 @@ packages:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
+  cookie@1.1.1:
+    resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
+    engines: {node: '>=18'}
+
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
@@ -1493,6 +1512,10 @@ packages:
 
   did-resolver@4.1.0:
     resolution: {integrity: sha512-S6fWHvCXkZg2IhS4RcVHxwuyVejPR7c+a4Go0xbQ9ps5kILa8viiYQgrM4gfTyeTjJ0ekgJH9gk/BawTpmkbZA==}
+
+  didwebvh-ts@2.7.2:
+    resolution: {integrity: sha512-aCv+VhsXvczn5qZ235Q6nvnEzwDxrPYTYC1pTioYM7LAit/RcQp6rtpI7H/MOAGwwTM/udxen2NYzgOVEd3rWg==}
+    hasBin: true
 
   diff-sequences@29.6.3:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
@@ -2280,6 +2303,12 @@ packages:
 
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
+
+  json-canonicalize@1.2.0:
+    resolution: {integrity: sha512-TTdjBvqrqJKSADlEsY5rWbx8/1tOrVlTR/aSLU8N2VSInCTffP0p+byYB8Es+OmL4ZOeEftjUdvV+eJeSzJC/Q==}
+
+  json-canonicalize@2.0.0:
+    resolution: {integrity: sha512-yyrnK/mEm6Na3ChbJUWueXdapueW0p380RUyTW87XGb1ww8l8hU0pRrGC3vSWHe9CxrbPHX2fGUOZpNiHR0IIg==}
 
   json-parse-even-better-errors@2.3.1:
     resolution: {integrity: sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==}
@@ -3797,6 +3826,21 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@credo-ts/anoncreds@0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
+    dependencies:
+      '@astronautlabs/jsonpath': 1.1.2
+      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@hyperledger/anoncreds-shared': 0.2.4
+      '@sphereon/pex-models': 2.3.2
+      class-transformer: 0.5.1
+      class-validator: 0.14.3
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+      - typescript
+
   '@credo-ts/askar@0.6.4-pr-2704-20260318225938(@openwallet-foundation/askar-shared@0.4.3)(typescript@5.9.3)':
     dependencies:
       '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
@@ -3903,6 +3947,21 @@ snapshots:
       - supports-color
       - typescript
       - utf-8-validate
+
+  '@credo-ts/webvh@0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
+    dependencies:
+      '@credo-ts/anoncreds': 0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      class-transformer: 0.5.1
+      class-validator: 0.14.3
+      didwebvh-ts: 2.7.2
+      json-canonicalize: 2.0.0
+      tsyringe: 4.8.0
+    transitivePeerDependencies:
+      - '@hyperledger/anoncreds-shared'
+      - encoding
+      - supports-color
+      - typescript
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -4085,13 +4144,11 @@ snapshots:
 
   '@hyperledger/anoncreds-shared@0.2.4': {}
 
-  '@isaacs/balanced-match@4.0.1':
-    optional: true
+  '@isaacs/balanced-match@4.0.1': {}
 
   '@isaacs/brace-expansion@5.0.0':
     dependencies:
       '@isaacs/balanced-match': 4.0.1
-    optional: true
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
@@ -5271,6 +5328,8 @@ snapshots:
 
   cookie@0.7.2: {}
 
+  cookie@1.1.1: {}
+
   cookiejar@2.1.4: {}
 
   cors@2.8.5:
@@ -5362,6 +5421,14 @@ snapshots:
       wrappy: 1.0.2
 
   did-resolver@4.1.0: {}
+
+  didwebvh-ts@2.7.2:
+    dependencies:
+      '@noble/hashes': 1.8.0
+      cookie: 1.1.1
+      glob: 13.0.0
+      js-yaml: 4.1.1
+      json-canonicalize: 1.2.0
 
   diff-sequences@29.6.3: {}
 
@@ -5905,7 +5972,6 @@ snapshots:
       minimatch: 10.1.1
       minipass: 7.1.2
       path-scurry: 2.0.1
-    optional: true
 
   glob@7.2.3:
     dependencies:
@@ -6529,6 +6595,10 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
+  json-canonicalize@1.2.0: {}
+
+  json-canonicalize@2.0.0: {}
+
   json-parse-even-better-errors@2.3.1: {}
 
   json-schema-traverse@0.4.1: {}
@@ -6660,8 +6730,7 @@ snapshots:
   long@5.3.2:
     optional: true
 
-  lru-cache@11.2.4:
-    optional: true
+  lru-cache@11.2.4: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -6757,7 +6826,6 @@ snapshots:
   minimatch@10.1.1:
     dependencies:
       '@isaacs/brace-expansion': 5.0.0
-    optional: true
 
   minimatch@3.1.2:
     dependencies:
@@ -6929,7 +6997,6 @@ snapshots:
     dependencies:
       lru-cache: 11.2.4
       minipass: 7.1.2
-    optional: true
 
   path-to-regexp@0.1.12: {}
 
