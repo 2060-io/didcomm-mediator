@@ -1,5 +1,5 @@
 import type { AgentDependencies } from '@credo-ts/core'
-import { Agent, DependencyManager, InitConfig } from '@credo-ts/core'
+import { Agent, DependencyManager, InitConfig, PeerDidNumAlgo } from '@credo-ts/core'
 import { askarNodeJS, KdfMethod } from '@openwallet-foundation/askar-nodejs'
 import { createRequire } from 'module'
 import {
@@ -95,7 +95,12 @@ export const createMediator = async (options: CloudAgentOptions): Promise<DidCom
           enableStorage: true,
         }),
         didcomm: new DidCommModule({
+          didcommVersions: ['v2'],
           didCommMimeType: DidCommMimeType.V1,
+          peerDidNumAlgoForV2OOB:
+            process.env.PEER_DID_NUM_ALGO === '2'
+              ? PeerDidNumAlgo.MultipleInceptionKeyWithoutDoc
+              : PeerDidNumAlgo.ShortFormAndLongForm,
           transports: {
             inbound: options.inboundTransports,
             outbound: options.outboundTransports.length
@@ -104,9 +109,11 @@ export const createMediator = async (options: CloudAgentOptions): Promise<DidCom
           },
           connections: {
             autoAcceptConnections: true,
+            autoCreateConnectionOnFirstMessage: true,
           },
           mediator: {
             autoAcceptMediationRequests: true,
+            mediationProtocolVersions: ['1.0', '2.0'],
             messageForwardingStrategy: DidCommMessageForwardingStrategy.QueueAndLiveModeDelivery,
           },
           credentials: false,
