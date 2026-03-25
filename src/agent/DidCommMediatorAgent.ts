@@ -1,21 +1,22 @@
 import {
+  Agent,
   AgentDependencies,
   convertPublicKeyToX25519,
   CredoError,
-  DidDocument,
-  DidsModule,
-  ParsedDid,
-  parseDid,
-  WebDidResolver,
-} from '@credo-ts/core'
-import {
-  Agent,
   DependencyManager,
   DidCommV1Service,
+  DidDocument,
   DidRepository,
+  DidsModule,
   InitConfig,
+  JsonTransformer,
   Kms,
+  NewDidCommV2Service,
+  NewDidCommV2ServiceEndpoint,
+  ParsedDid,
+  parseDid,
   PeerDidNumAlgo,
+  WebDidResolver,
 } from '@credo-ts/core'
 import { askarNodeJS, KdfMethod } from '@openwallet-foundation/askar-nodejs'
 import { createRequire } from 'module'
@@ -34,6 +35,9 @@ import { DidCommShortenUrlModule, ShortenUrlRole } from '@2060.io/credo-ts-didco
 import { WebVhDidResolver, WebVhDidRegistrar } from '@credo-ts/webvh'
 import { multibaseEncode, MultibaseEncoding } from 'didwebvh-ts'
 import { WebDidRegistrar } from './WebDidRegistrar.js'
+import { AGENT_DIDCOMM_PUBLISHED_SERVICES } from '../config/constants.js'
+
+const MANAGED_DIDCOMM_SERVICE_TYPES = [DidCommV1Service.type, NewDidCommV2Service.type] as const
 
 interface AgentOptions<Modules> {
   config: InitConfig
@@ -135,13 +139,12 @@ export class DidCommMediatorAgent extends Agent {
       const hasLegacyMethods = (didDocument.verificationMethod ?? []).some((vm) =>
         ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(vm.type)
       )
-      const servicesChanged =
-        JSON.stringify(didDocument.didCommServices) !== JSON.stringify(this.getDidCommServices(didDocument.id))
+      const servicesChanged = this.havePublishedDidCommServicesChanged(didDocument)
       if (hasLegacyMethods || servicesChanged) {
         if (servicesChanged) {
           didDocument.service = [
             ...(didDocument.service
-              ? didDocument.service.filter((service) => ![DidCommV1Service.type].includes(service.type))
+              ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
               : []),
             ...this.getDidCommServices(didDocument.id),
           ]
@@ -169,19 +172,48 @@ export class DidCommMediatorAgent extends Agent {
     return await didRepository.findCreatedDid(this.context, parsedDid.did)
   }
 
+  private havePublishedDidCommServicesChanged(didDocument: DidDocument): boolean {
+    const fromDoc = (didDocument.service ?? [])
+      .filter((s) => MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type))
+      .map((s) => JsonTransformer.toJSON(s))
+    const expected = this.getDidCommServices(didDocument.id).map((s) => JsonTransformer.toJSON(s))
+    return JSON.stringify(fromDoc) !== JSON.stringify(expected)
+  }
+
   private getDidCommServices(publicDid: string) {
     const keyAgreementId = `${publicDid}#key-agreement-1`
+    const mode = AGENT_DIDCOMM_PUBLISHED_SERVICES
+    const includeV1 = mode === 'v1' || mode === 'both'
+    const includeV2 = mode === 'v2' || mode === 'both'
+    const services: (DidCommV1Service | NewDidCommV2Service)[] = []
 
-    return this.didcomm.config.endpoints.map((endpoint: any, index: any) => {
-      return new DidCommV1Service({
-        id: `${publicDid}#did-communication`,
-        serviceEndpoint: endpoint,
-        priority: index,
-        routingKeys: [], // TODO: Support mediation
-        recipientKeys: [keyAgreementId],
-        accept: ['didcomm/aip2;env=rfc19'],
-      })
+    this.didcomm.config.endpoints.forEach((endpoint: string, index: number) => {
+      if (includeV1) {
+        services.push(
+          new DidCommV1Service({
+            id: `${publicDid}#did-communication`,
+            serviceEndpoint: endpoint,
+            priority: index,
+            routingKeys: [],
+            recipientKeys: [keyAgreementId],
+            accept: ['didcomm/aip2;env=rfc19'],
+          })
+        )
+      }
+      if (includeV2) {
+        services.push(
+          new NewDidCommV2Service({
+            id: `${publicDid}#didcomm-messaging-${index}`,
+            serviceEndpoint: new NewDidCommV2ServiceEndpoint({
+              uri: endpoint,
+              accept: ['didcomm/v2'],
+            }),
+          })
+        )
+      }
     })
+
+    return services
   }
 
   private async createAndAddDidCommKeysAndServices(didDocument: DidDocument) {
@@ -259,7 +291,7 @@ export class DidCommMediatorAgent extends Agent {
     didDocument.keyAgreement = [...new Set([...(didDocument.keyAgreement ?? []), keyAgreement])]
     didDocument.service = [
       ...(didDocument.service
-        ? didDocument.service.filter((service) => ![DidCommV1Service.type].includes(service.type))
+        ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
         : []),
       ...didcommServices,
     ]

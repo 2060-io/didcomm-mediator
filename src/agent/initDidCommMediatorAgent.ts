@@ -1,12 +1,7 @@
 import type { IncomingMessage } from 'http'
 import type { Express } from 'express'
 
-import {
-  ConsoleLogger,
-  DidRepository,
-  LogLevel,
-  utils,
-} from '@credo-ts/core'
+import { ConsoleLogger, DidRepository, LogLevel, utils } from '@credo-ts/core'
 import {
   DidCommApi,
   DidCommConnectionService,
@@ -54,9 +49,8 @@ async function resolveDidDocumentData(agent: DidCommMediatorAgent) {
 
   const didLog = didRecord.metadata.get('log') as DIDLog[] | null
 
-  return { didDocument, didLog: didLog?.map(entry => JSON.stringify(entry)).join('\n') }
+  return { didDocument, didLog: didLog?.map((entry) => JSON.stringify(entry)).join('\n') }
 }
-
 
 export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
@@ -164,7 +158,7 @@ export const initMediator = async (
   if (publicDid) {
     app.get('/.well-known/did.json', async (_req, res) => {
       logger.info(`Public Did Document requested`)
-     
+
       const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
 
       if (resolvedDidDocument) {
@@ -180,7 +174,7 @@ export const initMediator = async (
       const didRecord = await agent.dependencyManager.resolve(DidRepository).findCreatedDid(agent.context, publicDid)
       const didDocument = didRecord?.didDocument?.toJSON()
 
-    const { didLog } = await resolveDidDocumentData(agent)
+      const { didLog } = await resolveDidDocumentData(agent)
 
       if (didLog) {
         res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
@@ -190,7 +184,6 @@ export const initMediator = async (
         res.status(404).end()
       }
     })
-
 
     agent.events.on<DidCommConnectionStateChangedEvent>(
       DidCommConnectionEventTypes.DidCommConnectionStateChanged,

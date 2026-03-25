@@ -3,6 +3,24 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
+/** Which DIDComm service entries to publish in the public DID document (v1, v2, or both). */
+export type AgentDidCommPublishedServices = 'v1' | 'v2' | 'both'
+
+function parseAgentDidCommPublishedServices(): AgentDidCommPublishedServices {
+  const raw = process.env.AGENT_DIDCOMM_PUBLISHED_SERVICES?.trim().toLowerCase()
+  if (!raw) return 'both'
+  if (raw === 'v1' || raw === '1') return 'v1'
+  if (raw === 'v2' || raw === '2') return 'v2'
+  if (raw === 'both') return 'both'
+  // eslint-disable-next-line no-console
+  console.warn(
+    `AGENT_DIDCOMM_PUBLISHED_SERVICES="${process.env.AGENT_DIDCOMM_PUBLISHED_SERVICES}" is invalid; expected v1, v2, both, 1, or 2. Using default "both".`
+  )
+  return 'both'
+}
+
+export const AGENT_DIDCOMM_PUBLISHED_SERVICES = parseAgentDidCommPublishedServices()
+
 export const AGENT_PORT = Number(process.env.AGENT_PORT || 4000)
 export const AGENT_LOG_LEVEL = process.env.AGENT_LOG_LEVEL ? Number(process.env.AGENT_LOG_LEVEL) : LogLevel.debug
 
