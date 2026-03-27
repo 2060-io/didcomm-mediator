@@ -58,6 +58,7 @@ export interface CloudAgentOptions {
   messagePickupPostgresDatabaseName?: string
   shortenInvitationBaseUrl?: string
   shortenUrlCleanupIntervalSeconds?: number
+  silentFcmNotificationsEnabled?: boolean
 }
 
 export const createMediator = (

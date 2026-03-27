@@ -1,6 +1,6 @@
 import { initializeApp, App as FcmApp } from 'firebase-admin/app'
 import { credential } from 'firebase-admin'
-import { getMessaging } from 'firebase-admin/messaging'
+import { getMessaging, Message } from 'firebase-admin/messaging'
 import path from 'path'
 import { Logger } from '@credo-ts/core'
 import { FcmNotificationSender } from './FcmNotificationSender'
@@ -28,18 +28,23 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
     }
   }
 
-  public async sendMessage(registrationToken: string, messageId: string) {
+  /**
+   * Sends an FCM notification (either visible or silent) to the given device token.
+   *
+   * @param registrationToken - FCM device token
+   * @param messageId - Unique message identifier
+   * @param silent - If true, sends a silent (data-only) notification. Defaults to false (visible).
+   * @returns Promise resolving to true if successful, false otherwise
+   */
+  public async sendMessage(registrationToken: string, messageId: string, silent = false): Promise<boolean> {
     try {
       if (!this.fcmApp) {
         this.logger?.warn('Firebase Admin is not initialized. Skipping notification.')
         return false
       }
-      const response = await getMessaging(this.fcmApp).send({
+
+      const message: Message = {
         token: registrationToken,
-        notification: {
-          title: 'Hologram',
-          body: 'You have new messages',
-        },
         data: {
           '@type': 'https://didcomm.org/push-notifications-fcm',
           message_id: messageId,
@@ -47,16 +52,38 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
         android: {
           collapseKey: 'generic-new-messages',
           priority: 'high',
-          notification: { tag: 'generic-new-messages', icon: 'ic_notification' },
+          notification: silent
+            ? undefined
+            : {
+                tag: 'generic-new-messages',
+                icon: 'ic_notification',
+              },
         },
         apns: {
-          headers: {
-            'apns-priority': '10',
-            'apns-collapse-id': 'generic-new-messages',
+          headers: silent
+            ? {
+                'apns-collapse-id': 'generic-new-messages',
+                'apns-push-type': 'background',
+                'apns-priority': '5',
+              }
+            : {
+                'apns-collapse-id': 'generic-new-messages',
+                'apns-push-type': 'alert',
+                'apns-priority': '10',
+              },
+          payload: {
+            aps: silent ? { contentAvailable: true } : { sound: 'default' },
           },
-          payload: { aps: { contentAvailable: true } },
         },
-      })
+        notification: silent
+          ? undefined
+          : {
+              title: 'Hologram',
+              body: 'You have new messages',
+            },
+      }
+
+      const response = await getMessaging(this.fcmApp).send(message)
       this.logger?.debug(`Message sent successfully: ${response}`)
       return true
     } catch (error) {
@@ -65,6 +92,10 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
     }
   }
 
+  /**
+   * Indicates whether the Firebase Admin SDK has been successfully initialized.
+   * @returns True if initialized, false otherwise
+   */
   public isInitialized(): boolean {
     return this.fcmApp !== null
   }

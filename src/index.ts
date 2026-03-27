@@ -21,6 +21,7 @@ import {
   MPR_POSTGRES_DATABASE_NAME,
   SHORTEN_INVITATION_BASE_URL,
   SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
+  ENABLE_SILENT_FCM_NOTIFICATIONS,
 } from './config/constants'
 import { askarPostgresConfig, keyDerivationMethodMap } from './config/wallet'
 import { deriveShortenBaseFromPublicDid } from './util/invitationBase'
@@ -60,6 +61,7 @@ async function run() {
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
       shortenInvitationBaseUrl: computedShortenBase,
       shortenUrlCleanupIntervalSeconds: SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
+      silentFcmNotificationsEnabled: ENABLE_SILENT_FCM_NOTIFICATIONS,
     })
   } catch (error) {
     logger.error(`${error}`)

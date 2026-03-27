@@ -21,10 +21,12 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
   private messages: InMemoryQueuedMessage[]
   private agent?: DidCommMediatorAgent
   private notificationSender: FcmNotificationSender | undefined
+  private sendSilentNotifications: boolean
 
-  public constructor(notificationSender: FcmNotificationSender, logger?: Logger) {
+  public constructor(notificationSender: FcmNotificationSender, logger?: Logger, sendSilentNotifications = false) {
     this.logger = logger
     this.notificationSender = notificationSender
+    this.sendSilentNotifications = sendSilentNotifications
     this.messages = []
   }
 
@@ -80,7 +82,8 @@ export class InMemoryMessagePickupRepository implements MessagePickupRepository 
 
       if (token) {
         this.logger?.info(`[InMemoryMessagePickupRepository] Send notification for connection ${connectionId}`)
-        if (this.notificationSender) await this.notificationSender.sendMessage(token, 'messageId')
+        if (this.notificationSender)
+          await this.notificationSender.sendMessage(token, 'messageId', this.sendSilentNotifications)
       }
     }
 
