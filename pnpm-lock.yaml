@@ -7,11 +7,11 @@ settings:
 overrides:
   tsyringe: 4.8.0
   typescript: ~5.9.3
-  '@credo-ts/anoncreds': 0.6.4-pr-2704-20260318225938
-  '@credo-ts/askar': 0.6.4-pr-2704-20260318225938
-  '@credo-ts/core': 0.6.4-pr-2704-20260318225938
-  '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938
-  '@credo-ts/node': 0.6.4-pr-2704-20260318225938
+  '@credo-ts/anoncreds': 0.6.4-pr-2704-20260401124413
+  '@credo-ts/askar': 0.6.4-pr-2704-20260401124413
+  '@credo-ts/core': 0.6.4-pr-2704-20260401124413
+  '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413
+  '@credo-ts/node': 0.6.4-pr-2704-20260401124413
   '@openwallet-foundation/askar-nodejs': ^0.4.3
   '@openwallet-foundation/askar-shared': ^0.4.3
   ws: ^8.13.0
@@ -24,28 +24,28 @@ importers:
     dependencies:
       '@2060.io/credo-ts-didcomm-shorten-url':
         specifier: 0.0.12
-        version: 0.0.12(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))
+        version: 0.0.12(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))
       '@credo-ts/askar':
-        specifier: 0.6.4-pr-2704-20260318225938
-        version: 0.6.4-pr-2704-20260318225938(@openwallet-foundation/askar-shared@0.4.3)(typescript@5.9.3)
+        specifier: 0.6.4-pr-2704-20260401124413
+        version: 0.6.4-pr-2704-20260401124413(@openwallet-foundation/askar-shared@0.4.3)(typescript@5.9.3)
       '@credo-ts/core':
-        specifier: 0.6.4-pr-2704-20260318225938
-        version: 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+        specifier: 0.6.4-pr-2704-20260401124413
+        version: 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@credo-ts/didcomm':
-        specifier: 0.6.4-pr-2704-20260318225938
-        version: 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+        specifier: 0.6.4-pr-2704-20260401124413
+        version: 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@credo-ts/didcomm-push-notifications':
         specifier: ^0.0.1
-        version: 0.0.1(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))
+        version: 0.0.1(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
         specifier: ^0.0.1
-        version: 0.0.1(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))
+        version: 0.0.1(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))
       '@credo-ts/node':
-        specifier: 0.6.4-pr-2704-20260318225938
-        version: 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+        specifier: 0.6.4-pr-2704-20260401124413
+        version: 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@credo-ts/webvh':
-        specifier: 0.6.4-pr-2704-20260318225938
-        version: 0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
+        specifier: 0.6.4-pr-2704-20260401124413
+        version: 0.6.4-pr-2704-20260401124413(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
       '@hyperledger/anoncreds-shared':
         specifier: ^0.2.4
         version: 0.2.4
@@ -182,8 +182,8 @@ packages:
   '@2060.io/credo-ts-didcomm-shorten-url@0.0.12':
     resolution: {integrity: sha512-FJxopR3kuHQ8ZCRcAw50vz9wPDjYk0WIiQGEaof8jS/9jybppHYpopnkQxDgMz6u9SI5/w6Vb4P/PFhYVZGtkw==}
     peerDependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413
 
   '@2060.io/ffi-napi@4.0.9':
     resolution: {integrity: sha512-JfVREbtkJhMXSUpya3JCzDumdjeZDCKv4PemiWK+pts5CYgdoMidxeySVlFeF5pHqbBpox4I0Be7sDwAq4N0VQ==}
@@ -368,40 +368,70 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@credo-ts/anoncreds@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-hDrTb9ZB9Om2gd6foMQK5Q6puice63fYB5rNEfZrrr3zePmtzt9/38+SsP2KlOUBopf0aB9IAUABjVmPbj/r6g==}
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
+    resolution: {integrity: sha512-ZKZ/F8US7JR92J4DMct6cLW/Y66o2K576+zjlEN/MevH70bFIsB10wkZEQPLzl2oNh2SMGy55xpJ9JoBRl5DOA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
+    resolution: {integrity: sha512-32b1mgc+P61Js+KW9VZv/c+xRw5EfmOcPx990JbCBSkYJFY0l25VinvyyWfl+3KjibQmAcYwmyzKF9J4DyKP/Q==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
+    resolution: {integrity: sha512-wfqgzqCAy/Vn8i6WVIh7qZd0DdBFaWBjPdB6ma+Wihcjv0gHqD/mw3ouVv7kbbUNrab6dKEx/w3xQZEdeXIlzg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
+    resolution: {integrity: sha512-tNg0za41TpQfkhWjptD+0gSD2fggMiDCSacuIeELyb2xZhr7PrhPe5h66Jc67B/5dmpIhI2QOUtv4SBsricyYQ==}
+    cpu: [arm]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
+    resolution: {integrity: sha512-rpiLnVEsqtPJ+mXTdx1rfz4RtUGYIUg2rUAZgd1KjiC1SehYUSkJN7Yh+aVfSjvCGtVP0/bfkQkXpPXKbmSUaA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
+    resolution: {integrity: sha512-dI+9P7cfWxkTQ+oE+7Aa6onEn92PHgfWXZivjNheCRmTBDBf2fx6RyTi0cmgpYLnD1KLZK9ZYrMxaPZ4oiXhGA==}
+    cpu: [x64]
+    os: [win32]
+
+  '@credo-ts/anoncreds@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-viBwc3jNX5pqKWqnm1kCGIU9WLnvBEacjUJx5GqtSErnjPvrAbUcwYU2v6slFd6ry/AluxFXG9/rCiaOUJqetg==}
     peerDependencies:
       '@hyperledger/anoncreds-shared': ^0.3.4
 
-  '@credo-ts/askar@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-vwlNKxEWe/TMX50X57DFspt9GYVCz9iIScCLZFLLwwyihbAJjfoWUF/zw3eq2213RzAy9qp26VXlkiN+wqUcDg==}
+  '@credo-ts/askar@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-pj5puX05GfI7Dmtin8d7lw8iayhBAbigVNfctYJ/rZXh1m/r+P45ZLZbKKqlldEr1sA0cUN/4twA9+MtdzR7Ug==}
     peerDependencies:
       '@openwallet-foundation/askar-shared': ^0.4.3
 
-  '@credo-ts/core@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-ej4qqa12E7mHNatkWLvYM/7oCFn0xNM7QX8jOJwXqy/TZgULBDTN992ZJ64WlWgzQox3GGjnEDCqXmvRGwr60g==}
+  '@credo-ts/core@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-3n8Ae/Z8ZdtsRIRkMAIDTlUhNPOKc+FxeTIFnVCOL/sQD4WedqL59dLDgGyfiYhuZzQ9Rd9SkzkUm8+6yJzwpA==}
 
   '@credo-ts/didcomm-push-notifications@0.0.1':
     resolution: {integrity: sha512-gWeIsjDMxMrcdJF9ZZ1hhL2IO1gWWJ0iflrg+NzTEn6D1VkgzdQgrJcv5zSXxjQ2Xj+wEp4XrmuQYUVbp8hALA==}
     peerDependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413
 
   '@credo-ts/didcomm-transport-queue-postgres@0.0.1':
     resolution: {integrity: sha512-1J6EXeSM9WWY8S0QJBneLY9exgXka9CDUqpflVrzh+4q56zVgQ+c4/ThqYsbI+zkTKIrW2xELr0wJz4qzCeOJQ==}
     peerDependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413
 
-  '@credo-ts/didcomm@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-a9JHA+xNajJxcvtLwEC00XXVPPYDD6NNK9Lp62v9PWwIfURs93wbnWRo/+hmVf4rHlelqVQamjWhPYyIH8U4Mg==}
+  '@credo-ts/didcomm@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-ChWNmR5HbDnzD11qQyXziArDe4FCItBrg+CUkjXChkCzpFNcmTyEqLKLoA7nu0Xr/KPI39Ra41FeYfBq/hv2PA==}
 
-  '@credo-ts/node@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-O0YNJfxSRxYoOBa14HhAidv6Jpx+aPkz6zSbOAG6XqHkyhhK9fuPwJpIvt3UgTt7qgEMZGcA+wmwCXeFgNtUEA==}
+  '@credo-ts/node@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-uJVrndjXnILy3YGVjkFgj0Nf4/6kHEw6vrfGMqlj4PGV3RYHuAsNi3nptXg8BNwU2qCkToA1jzA2/Wv5/SoYBg==}
     engines: {node: '>=20.19'}
 
-  '@credo-ts/webvh@0.6.4-pr-2704-20260318225938':
-    resolution: {integrity: sha512-UjXXVMlmVOvBEePGorMlGM/SzeypiftLU6uxS/WWDAHIfO3UBMbZB9aB/Y6ww/S4EavfW5hADF6LY9o1JYC7ew==}
+  '@credo-ts/webvh@0.6.4-pr-2704-20260401124413':
+    resolution: {integrity: sha512-9AyNEpePfDJTGF/S4OHqRd6eCfq9S2PWWUqD83MOH7rc/FnfZE6NDvzNWRhjPkj5SjnHWlX3QIuxl7HbKWno6g==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -679,6 +709,9 @@ packages:
   '@openwallet-foundation/askar-shared@0.4.3':
     resolution: {integrity: sha512-Zt9zlvjJxNs8UWlnRydZH594Lak15YPHY72VT1+iDbXh0OjTdyq6Bf0FIsh9sfFnRYIgh2zd8+VoXxZ07GjADA==}
 
+  '@owf/mdoc@0.6.0':
+    resolution: {integrity: sha512-vJL62hzjcSweBjDD9eRUH1RIMSzZUtHKjVFMMo50oHPLO9ZVZbQABFe9IFoa5AgXkwfv27HjnFv/eRbkOrlsUA==}
+
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
 
@@ -820,7 +853,6 @@ packages:
 
   '@sphereon/kmp-mdoc-core@0.2.0-SNAPSHOT.26':
     resolution: {integrity: sha512-QXJ6R8ENiZV2rPMbn06cw5JKwqUYN1kzVRbYfONqE1PEXx1noQ4md7uxr2zSczi0ubKkNcbyYDNtIMTZIhGzmQ==}
-    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution: {integrity: sha512-foFxfLkRwcn/MOp/eht46Q7wsvpQGlO7aowowIIb5Tz9u97kYZ2kz6K2h2ODxWuv5CRA7Q0MY8XUBGE2lfOhOQ==}
@@ -1084,6 +1116,15 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
+  '@verifiables/request-converter@0.2.0':
+    resolution: {integrity: sha512-afhFYBSYf0zqLkHu1xlLJ8DUAV/ved5yD9MKnPPaG9tH68winV10eBBH4/2eoi2qK6hvAtWPjoZ+1pRF6jLUJw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      dcql: '>=2.0.0'
+    peerDependenciesMeta:
+      dcql:
+        optional: true
+
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
 
@@ -1315,6 +1356,13 @@ packages:
     resolution: {integrity: sha512-prMTQVpcns/tzFgFVkVp6ak6RykZyWb3gu8ckUpd6YkTlacOd3DXGJjIpD4Q6zJirizvaiAjSSHlOsA+6sNh2A==}
     engines: {node: '>= 10'}
 
+  cbor-extract@2.2.2:
+    resolution: {integrity: sha512-hlSxxI9XO2yQfe9g6msd3g4xCfDqK5T5P0fRMLuaLHhxn4ViPrm+a+MUfhrvH2W962RGxcBwEGzLQyjbDG1gng==}
+    hasBin: true
+
+  cbor-x@1.6.4:
+    resolution: {integrity: sha512-UGKHjp6RHC6QuZ2yy5LCKm7MojM4716DwoSaqwQpaH4DvZvbBTGcoDNTiG9Y2lByXZYFEs9WRkS5tLl96IrF1Q==}
+
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
@@ -1502,6 +1550,10 @@ packages:
   destroy@1.2.0:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
+
+  detect-libc@2.1.2:
+    resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
+    engines: {node: '>=8'}
 
   detect-newline@3.1.0:
     resolution: {integrity: sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==}
@@ -2637,6 +2689,10 @@ packages:
     resolution: {integrity: sha512-rLvcdSyRCyouf6jcOIPe/BgwG/d7hKjzMKOas33/pHEr6gbq18IK9zV7DiPvzsz0oBJPme6qr6H6kGZuI9/DZg==}
     engines: {node: '>= 6.13.0'}
 
+  node-gyp-build-optional-packages@5.1.1:
+    resolution: {integrity: sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==}
+    hasBin: true
+
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
@@ -3578,15 +3634,21 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod-validation-error@5.0.0:
+    resolution: {integrity: sha512-hmk+pkyKq7Q71PiWVSDUc3VfpzpvcRHZ3QPw9yEMVvmtCekaMeOHnbr3WbxfrgEnQTv6haGP4cmv0Ojmihzsxw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.12(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.12(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.1
       reflect-metadata: 0.1.14
@@ -3826,11 +3888,29 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@credo-ts/anoncreds@0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
+    optional: true
+
+  '@credo-ts/anoncreds@0.6.4-pr-2704-20260401124413(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
     dependencies:
       '@astronautlabs/jsonpath': 1.1.2
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@hyperledger/anoncreds-shared': 0.2.4
       '@sphereon/pex-models': 2.3.2
       class-transformer: 0.5.1
@@ -3841,9 +3921,9 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/askar@0.6.4-pr-2704-20260318225938(@openwallet-foundation/askar-shared@0.4.3)(typescript@5.9.3)':
+  '@credo-ts/askar@0.6.4-pr-2704-20260401124413(@openwallet-foundation/askar-shared@0.4.3)(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@openwallet-foundation/askar-shared': 0.4.3
       class-transformer: 0.5.1
       class-validator: 0.14.3
@@ -3854,9 +3934,8 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3)':
+  '@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3)':
     dependencies:
-      '@animo-id/mdoc': 0.5.2
       '@animo-id/pex': 6.1.1
       '@astronautlabs/jsonpath': 1.1.2
       '@digitalcredentials/jsonld': 9.0.0
@@ -3865,6 +3944,7 @@ snapshots:
       '@multiformats/base-x': 4.0.1
       '@noble/curves': 2.0.1
       '@noble/hashes': 2.0.1
+      '@owf/mdoc': 0.6.0
       '@peculiar/asn1-ecc': 2.6.1
       '@peculiar/asn1-rsa': 2.6.1
       '@peculiar/asn1-schema': 2.6.0
@@ -3881,6 +3961,7 @@ snapshots:
       '@sphereon/ssi-types': 0.33.0
       '@stablelib/ed25519': 2.0.2
       '@types/ws': 8.18.1
+      '@verifiables/request-converter': 0.2.0(dcql@3.0.0(typescript@5.9.3))
       buffer: 6.0.3
       class-transformer: 0.5.1
       class-validator: 0.14.3
@@ -3903,25 +3984,25 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))':
+  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.3
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(@credo-ts/core@0.6.4-pr-2704-20260318225938(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(@credo-ts/core@0.6.4-pr-2704-20260401124413(typescript@5.9.3))(@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       pg: 8.17.1
       pg-pubsub: 0.8.1
     transitivePeerDependencies:
       - pg-native
 
-  '@credo-ts/didcomm@0.6.4-pr-2704-20260318225938(typescript@5.9.3)':
+  '@credo-ts/didcomm@0.6.4-pr-2704-20260401124413(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@stablelib/ed25519': 2.0.2
       class-transformer: 0.5.1
       class-validator: 0.14.3
@@ -3933,10 +4014,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/node@0.6.4-pr-2704-20260318225938(typescript@5.9.3)':
+  '@credo-ts/node@0.6.4-pr-2704-20260401124413(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       '@types/express': 5.0.6
       express: 5.2.1
       rxjs: 7.8.2
@@ -3948,10 +4029,10 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@credo-ts/webvh@0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
+  '@credo-ts/webvh@0.6.4-pr-2704-20260401124413(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/anoncreds': 0.6.4-pr-2704-20260318225938(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
-      '@credo-ts/core': 0.6.4-pr-2704-20260318225938(typescript@5.9.3)
+      '@credo-ts/anoncreds': 0.6.4-pr-2704-20260401124413(@hyperledger/anoncreds-shared@0.2.4)(typescript@5.9.3)
+      '@credo-ts/core': 0.6.4-pr-2704-20260401124413(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.3
       didwebvh-ts: 2.7.2
@@ -4399,6 +4480,12 @@ snapshots:
     dependencies:
       buffer: 6.0.3
       tar: 7.5.4
+
+  '@owf/mdoc@0.6.0':
+    dependencies:
+      cbor-x: 1.6.4
+      zod: 4.3.6
+      zod-validation-error: 5.0.0(zod@4.3.6)
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
@@ -4965,6 +5052,10 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
+  '@verifiables/request-converter@0.2.0(dcql@3.0.0(typescript@5.9.3))':
+    optionalDependencies:
+      dcql: 3.0.0(typescript@5.9.3)
+
   '@yarnpkg/lockfile@1.1.0': {}
 
   abort-controller@3.0.0:
@@ -5252,6 +5343,22 @@ snapshots:
       lodash: 4.17.21
     optional: true
 
+  cbor-extract@2.2.2:
+    dependencies:
+      node-gyp-build-optional-packages: 5.1.1
+    optionalDependencies:
+      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-darwin-x64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-x64': 2.2.2
+      '@cbor-extract/cbor-extract-win32-x64': 2.2.2
+    optional: true
+
+  cbor-x@1.6.4:
+    optionalDependencies:
+      cbor-extract: 2.2.2
+
   chalk@4.1.2:
     dependencies:
       ansi-styles: 4.3.0
@@ -5412,6 +5519,9 @@ snapshots:
   depd@2.0.0: {}
 
   destroy@1.2.0: {}
+
+  detect-libc@2.1.2:
+    optional: true
 
   detect-newline@3.1.0: {}
 
@@ -6877,6 +6987,11 @@ snapshots:
 
   node-forge@1.3.3: {}
 
+  node-gyp-build-optional-packages@5.1.1:
+    dependencies:
+      detect-libc: 2.1.2
+    optional: true
+
   node-gyp-build@4.8.4: {}
 
   node-int64@0.4.0: {}
@@ -7833,5 +7948,9 @@ snapshots:
   yn@3.1.1: {}
 
   yocto-queue@0.1.0: {}
+
+  zod-validation-error@5.0.0(zod@4.3.6):
+    dependencies:
+      zod: 4.3.6
 
   zod@4.3.6: {}
