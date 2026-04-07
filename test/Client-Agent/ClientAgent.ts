@@ -48,7 +48,7 @@ const { registerAskar } = cjsRequire('@openwallet-foundation/askar-shared')
 registerAskar?.({ askar: askarNodeJS })
 const askar = askarNodeJS
 
-const logger = new ConsoleLogger(LogLevel.debug)
+const logger = new ConsoleLogger(LogLevel.Debug)
 const port = Number(CLIENT_AGENT_PORT)
 const wsEndpoint = CLIENT_AGENT_WS_ENDPOINT ?? `ws://${CLIENT_AGENT_HOST ?? 'localhost'}:${port}`
 

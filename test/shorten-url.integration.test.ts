@@ -59,7 +59,7 @@ describe('Shorten URL integration', () => {
     const { initMediator } = await import('../src/agent/initDidCommMediatorAgent.js')
     const result = await initMediator({
       config: {
-        logger: new ConsoleLogger(LogLevel.off),
+        logger: new ConsoleLogger(LogLevel.Off),
       },
       wallet: {
         id: 'mediator-test-wallet',

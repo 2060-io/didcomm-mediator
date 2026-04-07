@@ -22,7 +22,7 @@ function parseAgentDidCommPublishedServices(): AgentDidCommPublishedServices {
 export const AGENT_DIDCOMM_PUBLISHED_SERVICES = parseAgentDidCommPublishedServices()
 
 export const AGENT_PORT = Number(process.env.AGENT_PORT || 4000)
-export const AGENT_LOG_LEVEL = process.env.AGENT_LOG_LEVEL ? Number(process.env.AGENT_LOG_LEVEL) : LogLevel.debug
+export const AGENT_LOG_LEVEL = process.env.AGENT_LOG_LEVEL ? Number(process.env.AGENT_LOG_LEVEL) : LogLevel.Debug
 
 export const AGENT_NAME = process.env.AGENT_NAME || 'Test DIDComm Mediator'
 export const AGENT_ENDPOINTS = process.env.AGENT_ENDPOINTS?.replace(' ', '').split(',') || ['ws://localhost:4000']

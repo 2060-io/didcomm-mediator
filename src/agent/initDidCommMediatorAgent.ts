@@ -64,7 +64,7 @@ export const initMediator = async (
     did?: string
   }
 ): Promise<{ app: Express; agent: DidCommMediatorAgent }> => {
-  const logger = config.config.logger ?? new ConsoleLogger(LogLevel.off)
+  const logger = config.config.logger ?? new ConsoleLogger(LogLevel.Off)
   const publicDid = config.did
   const shortenInvitationBaseUrl =
     config.shortenInvitationBaseUrl ??
