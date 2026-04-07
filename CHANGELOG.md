@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/2060-io/didcomm-mediator/compare/v1.4.0...v1.4.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* **chart:** allow use from secrets ([#50](https://github.com/2060-io/didcomm-mediator/issues/50)) ([64db3f8](https://github.com/2060-io/didcomm-mediator/commit/64db3f8ac5b0ba68c6fd795c3106dd7eab7a5618))
+
 ## [1.4.0](https://github.com/2060-io/didcomm-mediator/compare/v1.3.0...v1.4.0) (2025-12-02)
 
 
