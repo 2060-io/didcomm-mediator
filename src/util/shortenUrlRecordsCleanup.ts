@@ -5,7 +5,7 @@ import {
   ShortenUrlState,
 } from '@2060.io/credo-ts-didcomm-shorten-url'
 
-const defaultLogger = new ConsoleLogger(LogLevel.off)
+const defaultLogger = new ConsoleLogger(LogLevel.Off)
 
 /**
  * Scan shorten-url records and delete those that are:

@@ -1,9 +1,18 @@
-import type { AskarWalletPostgresStorageConfig } from '@credo-ts/askar/build/wallet'
+import { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST } from './constants.js'
 
-import { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST } from './constants'
-import { KeyDerivationMethod } from '@credo-ts/core'
+type AskarPostgresStorageConfig = {
+  type: 'postgres'
+  config: {
+    host: string
+    connectTimeout?: number
+    idleTimeout?: number
+    maxConnections?: number
+    minConnections?: number
+  }
+  credentials: { account: string; password: string; adminAccount?: string; adminPassword?: string }
+}
 
-export const askarPostgresConfig: AskarWalletPostgresStorageConfig = {
+export const askarPostgresConfig: AskarPostgresStorageConfig = {
   type: 'postgres',
   config: {
     host: POSTGRES_HOST as string,
@@ -17,8 +26,8 @@ export const askarPostgresConfig: AskarWalletPostgresStorageConfig = {
   },
 }
 
-export const keyDerivationMethodMap: { [key: string]: KeyDerivationMethod } = {
-  ARGON2I_INT: KeyDerivationMethod.Argon2IInt,
-  ARGON2I_MOD: KeyDerivationMethod.Argon2IMod,
-  RAW: KeyDerivationMethod.Raw,
+export const keyDerivationMethodMap: Record<string, 'kdf:argon2i:int' | 'kdf:argon2i:mod' | 'raw'> = {
+  ARGON2I_INT: 'kdf:argon2i:int',
+  ARGON2I_MOD: 'kdf:argon2i:mod',
+  RAW: 'raw',
 }
