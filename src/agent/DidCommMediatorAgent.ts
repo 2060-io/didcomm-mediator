@@ -362,7 +362,7 @@ export const createMediator = async (options: CloudAgentOptions): Promise<DidCom
           registrars: [new WebDidRegistrar(), new WebVhDidRegistrar()],
         }),
         didcomm: new DidCommModule({
-          didcommVersions: ['v2'],
+          didcommVersions: ['v1', 'v2'],
           didCommMimeType: DidCommMimeType.V1,
           peerDidNumAlgoForV2OOB:
             process.env.PEER_DID_NUM_ALGO === '2'
