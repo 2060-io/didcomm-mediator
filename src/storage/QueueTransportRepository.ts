@@ -55,6 +55,7 @@ const sendPushNotification = async (
 type InMemoryQueuedMessage = QueuedDidCommMessage & {
   connectionId: string
   recipientDids: string[]
+  state: 'pending' | 'sending'
 }
 /**
  * In-memory implementation of the DidCommQueueTransportRepository with push notifications
@@ -68,22 +69,33 @@ export class InMemoryQueueTransportRepository implements DidCommQueueTransportRe
     const { connectionId, recipientDid } = options
     const filtered = this.messages.filter(
       (msg) =>
-        msg.connectionId === connectionId && (recipientDid === undefined || msg.recipientDids.includes(recipientDid))
+        msg.connectionId === connectionId &&
+        msg.state === 'pending' &&
+        (recipientDid === undefined || msg.recipientDids.includes(recipientDid))
     )
     return filtered.length
   }
 
   public takeFromQueue(agentContext: AgentContext, options: TakeFromQueueOptions) {
     const { connectionId, recipientDid, limit, deleteMessages } = options
-    const filtered = this.messages.filter(
+    let filtered = this.messages.filter(
       (msg) =>
-        msg.connectionId === connectionId && (recipientDid === undefined || msg.recipientDids.includes(recipientDid))
+        msg.connectionId === connectionId &&
+        msg.state === 'pending' &&
+        (recipientDid === undefined || msg.recipientDids.includes(recipientDid))
     )
-    const slice = limit ? filtered.slice(0, limit) : filtered
-    if (deleteMessages) {
-      this.removeMessages(agentContext, { connectionId, messageIds: slice.map((m) => m.id) })
+    const messagesToTake = limit ?? filtered.length
+    filtered = filtered.slice(0, messagesToTake)
+
+    for (const msg of filtered) {
+      const index = this.messages.findIndex((item) => item.id === msg.id)
+      if (index !== -1) this.messages[index].state = 'sending'
     }
-    return slice
+
+    if (deleteMessages) {
+      this.removeMessages(agentContext, { connectionId, messageIds: filtered.map((m) => m.id) })
+    }
+    return filtered
   }
 
   public addMessage(agentContext: AgentContext, options: AddMessageOptions) {
@@ -95,6 +107,7 @@ export class InMemoryQueueTransportRepository implements DidCommQueueTransportRe
       recipientDids,
       encryptedMessage: payload,
       receivedAt: options.receivedAt ?? new Date(),
+      state: 'pending',
     })
     void sendPushNotification(
       agentContext,
