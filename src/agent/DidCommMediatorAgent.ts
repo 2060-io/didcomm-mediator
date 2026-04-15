@@ -35,7 +35,7 @@ import { DidCommShortenUrlModule, ShortenUrlRole } from '@2060.io/credo-ts-didco
 import { WebVhDidResolver, WebVhDidRegistrar } from '@credo-ts/webvh'
 import { multibaseEncode, MultibaseEncoding } from 'didwebvh-ts'
 import { WebDidRegistrar } from './WebDidRegistrar.js'
-import { AGENT_DIDCOMM_PUBLISHED_SERVICES } from '../config/constants.js'
+import { DIDCOMM_V1_SUPPORT, DIDCOMM_V2_SUPPORT } from '../config/constants.js'
 
 const MANAGED_DIDCOMM_SERVICE_TYPES = [DidCommV1Service.type, NewDidCommV2Service.type] as const
 
@@ -182,9 +182,8 @@ export class DidCommMediatorAgent extends Agent {
 
   private getDidCommServices(publicDid: string) {
     const keyAgreementId = `${publicDid}#key-agreement-1`
-    const mode = AGENT_DIDCOMM_PUBLISHED_SERVICES
-    const includeV1 = mode === 'v1' || mode === 'both'
-    const includeV2 = mode === 'v2' || mode === 'both'
+    const includeV1 = DIDCOMM_V1_SUPPORT
+    const includeV2 = DIDCOMM_V2_SUPPORT
     const services: (DidCommV1Service | NewDidCommV2Service)[] = []
 
     this.didcomm.config.endpoints.forEach((endpoint: string, index: number) => {
@@ -380,7 +379,7 @@ export const createMediator = async (options: CloudAgentOptions): Promise<DidCom
           },
           mediator: {
             autoAcceptMediationRequests: true,
-            mediationProtocolVersions: ['1.0', '2.0'],
+            mediationProtocolVersions: ['v1', 'v2'],
             messageForwardingStrategy: DidCommMessageForwardingStrategy.QueueAndLiveModeDelivery,
           },
           credentials: false,

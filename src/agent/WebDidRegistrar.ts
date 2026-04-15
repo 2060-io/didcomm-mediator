@@ -28,7 +28,7 @@ interface WebDidUpdateOptions extends DidUpdateOptions {
  * Handles creation, update, and (future) deactivation of DIDs using the webvh method.
  */
 export class WebDidRegistrar implements DidRegistrar {
-  supportedMethods: string[] = ['web']
+  public supportedMethods: string[] = ['web']
 
   /**
    * Creates a new DID document and saves it in the repository.
@@ -117,7 +117,7 @@ export class WebDidRegistrar implements DidRegistrar {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  deactivate(agentContext: AgentContext, options: DidDeactivateOptions): Promise<DidDeactivateResult> {
+  public deactivate(agentContext: AgentContext, options: DidDeactivateOptions): Promise<DidDeactivateResult> {
     throw new Error('Method not implemented.')
   }
 

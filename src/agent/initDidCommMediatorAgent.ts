@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'http'
 import type { Express } from 'express'
 
-import { ConsoleLogger, DidRepository, LogLevel, utils } from '@credo-ts/core'
+import { ConsoleLogger, LogLevel, utils } from '@credo-ts/core'
 import {
   DidCommApi,
   DidCommConnectionService,
@@ -25,17 +25,17 @@ import { Socket } from 'net'
 import { DidCommHttpOutboundTransport, DidCommWsOutboundTransport } from '@credo-ts/didcomm'
 
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender.js'
-import {
-  InMemoryQueueTransportRepository,
-  PostgresQueueTransportRepository,
-} from '../storage/QueueTransportRepository.js'
+import { InMemoryDidCommQueueTransportRepository } from '../storage/InMemoryDidCommQueueTransportRepository.js'
 import { DidCommPushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/didcomm-push-notifications'
 import { createMediator, type CloudAgentOptions, DidCommMediatorAgent } from './DidCommMediatorAgent.js'
 import { deriveShortenBaseFromPublicDid } from '../util/invitationBase.js'
 import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup.js'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
-import { DidCommTransportQueuePostgres } from '@credo-ts/didcomm-transport-queue-postgres'
+import {
+  DidCommTransportQueuePostgres,
+  type PostgresMessageQueuedEvent,
+} from '@credo-ts/didcomm-transport-queue-postgres'
 import { DIDLog } from 'didwebvh-ts'
 
 async function resolveDidDocumentData(agent: DidCommMediatorAgent) {
@@ -74,17 +74,14 @@ export const initMediator = async (
 
   const queueTransportRepository =
     config.postgresHost && config.postgresUser && config.postgresPassword
-      ? new PostgresQueueTransportRepository(
-          {
-            logger,
-            postgresUser: config.postgresUser,
-            postgresPassword: config.postgresPassword,
-            postgresHost: config.postgresHost,
-            postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
-          },
-          localFcmNotificationSender
-        )
-      : new InMemoryQueueTransportRepository(localFcmNotificationSender)
+      ? new DidCommTransportQueuePostgres({
+          logger,
+          postgresUser: config.postgresUser,
+          postgresPassword: config.postgresPassword,
+          postgresHost: config.postgresHost,
+          postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
+        })
+      : new InMemoryDidCommQueueTransportRepository(localFcmNotificationSender)
 
   const app = express()
   app.use(cors())
@@ -117,6 +114,39 @@ export const initMediator = async (
 
   if (queueTransportRepository instanceof DidCommTransportQueuePostgres) {
     await queueTransportRepository.initialize(agent)
+
+    agent.events.on<PostgresMessageQueuedEvent>(
+      'TransportQueuePostgresMessageQueued',
+      async ({ payload: { message } }) => {
+        try {
+          const connectionRecord = await agent.didcomm.connections.findById(message.connectionId)
+          if (!connectionRecord) {
+            logger.warn(
+              `[TransportQueuePostgresMessageQueued] No connection record found for connectionId: ${message.connectionId}`
+            )
+            return
+          }
+
+          const token = connectionRecord.getTag('device_token') as string | null
+          if (!token) {
+            logger.debug(
+              `[TransportQueuePostgresMessageQueued] No device token found for connectionId: ${message.connectionId}`
+            )
+            return
+          }
+
+          logger.debug(
+            `[TransportQueuePostgresMessageQueued] Sending push notification for message ${message.id} to connection ${message.connectionId}`
+          )
+          await localFcmNotificationSender.sendMessage(token, message.id)
+          logger.info(
+            `[TransportQueuePostgresMessageQueued] Push notification for message ${message.id} sent successfully`
+          )
+        } catch (error) {
+          logger.error(`[TransportQueuePostgresMessageQueued] Error processing event: ${error}`)
+        }
+      }
+    )
   }
 
   startShortenUrlRecordsCleanupMonitor(agent.context, config.shortenUrlCleanupIntervalSeconds)
@@ -170,9 +200,6 @@ export const initMediator = async (
 
     app.get('/.well-known/did.jsonl', async (_req, res) => {
       logger.info(`Public DID log requested`)
-
-      const didRecord = await agent.dependencyManager.resolve(DidRepository).findCreatedDid(agent.context, publicDid)
-      const didDocument = didRecord?.didDocument?.toJSON()
 
       const { didLog } = await resolveDidDocumentData(agent)
 
@@ -262,18 +289,6 @@ export const initMediator = async (
       logger.error(`[ShortenUrl] failed to retrieve shortened url for id ${id}: ${error}`)
       res.status(500).send('Internal Server Error')
     }
-  })
-
-  app.get('/invitation', async (req, res) => {
-    logger.info(`Invitation requested`)
-    const outOfBandInvitation = (
-      await didcommApi.oob.createInvitation({
-        imageUrl: process.env.AGENT_INVITATION_IMAGE_URL,
-      })
-    ).outOfBandInvitation
-    res.send({
-      url: outOfBandInvitation.toUrl({ domain: process.env.AGENT_INVITATION_BASE_URL ?? 'https://2060.io/i' }),
-    })
   })
 
   await agent.initialize()

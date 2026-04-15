@@ -8,22 +8,10 @@ import type {
   QueuedDidCommMessage,
   DidCommQueueTransportRepository,
 } from '@credo-ts/didcomm'
-import {
-  DidCommTransportQueuePostgres,
-  type PostgresTransportQueuePostgresConfig,
-} from '@credo-ts/didcomm-transport-queue-postgres'
 import { DidCommPushNotificationsFcmRepository } from '@credo-ts/didcomm-push-notifications'
 
 import type { FcmNotificationSender } from '../notifications/FcmNotificationSender.js'
 
-/**
- * Send a push notification to a device associated with the connectionId
- * @param agentContext
- * @param connectionId
- * @param notificationSender
- * @param logger
- * @returns
- */
 const sendPushNotification = async (
   agentContext: AgentContext,
   connectionId: string,
@@ -49,18 +37,17 @@ const sendPushNotification = async (
   }
 }
 
-/**
- * In-memory implementation of the DidCommQueueTransportRepository
- */
 type InMemoryQueuedMessage = QueuedDidCommMessage & {
   connectionId: string
   recipientDids: string[]
   state: 'pending' | 'sending'
 }
+
 /**
- * In-memory implementation of the DidCommQueueTransportRepository with push notifications
+ * In-memory implementation of the DidCommQueueTransportRepository with push notifications.
+ * Intended for local testing only; production deployments should use the Postgres transport queue.
  */
-export class InMemoryQueueTransportRepository implements DidCommQueueTransportRepository {
+export class InMemoryDidCommQueueTransportRepository implements DidCommQueueTransportRepository {
   private readonly messages: InMemoryQueuedMessage[] = []
 
   public constructor(private readonly notificationSender?: FcmNotificationSender, private readonly logger?: Logger) {}
@@ -124,26 +111,5 @@ export class InMemoryQueueTransportRepository implements DidCommQueueTransportRe
       const index = this.messages.findIndex((item) => item.id === messageId)
       if (index > -1) this.messages.splice(index, 1)
     }
-  }
-}
-
-/**
- * Postgres implementation of the DidCommQueueTransportRepository with push notifications
- */
-export class PostgresQueueTransportRepository extends DidCommTransportQueuePostgres {
-  public constructor(
-    config: PostgresTransportQueuePostgresConfig,
-    private readonly notificationSender?: FcmNotificationSender
-  ) {
-    super(config)
-  }
-
-  public override async addMessage(agentContext: AgentContext, options: AddMessageOptions) {
-    agentContext.config.logger.debug(
-      `[QueueTransport] Adding message to Postgres queue for connection ${options.connectionId}`
-    )
-    const id = await super.addMessage(agentContext, options)
-    void sendPushNotification(agentContext, options.connectionId, this.notificationSender, agentContext.config.logger)
-    return id
   }
 }
