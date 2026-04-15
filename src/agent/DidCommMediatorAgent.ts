@@ -73,13 +73,20 @@ export class DidCommMediatorAgent extends Agent {
       if (!existingRecord) {
         if (parsedDid.method === 'web') {
           const didDocument = new DidDocument({ id: parsedDid.did })
-          await this.createAndAddDidCommKeysAndServices(didDocument)
 
+          // Create the DID record first so it exists when createAndAddDidCommKeysAndServices
+          // attempts to attach KMS keys to it (mirrors the did:webvh ordering below).
           await this.dids.create({
             method: 'web',
             domain,
             didDocument,
           })
+
+          await this.createAndAddDidCommKeysAndServices(didDocument)
+
+          // Persist the didDocument mutations (services, verification methods) applied above.
+          await this.dids.update({ did: parsedDid.did, didDocument })
+
           this.did = parsedDid.did
         } else if (parsedDid.method === 'webvh') {
           // If there is an existing did:web with the same domain, this could be an
