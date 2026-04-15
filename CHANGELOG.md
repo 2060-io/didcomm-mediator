@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/2060-io/didcomm-mediator/compare/v1.4.1...v2.0.0) (2026-04-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* support DIDComm V2, Mediation Coordination V2 and Message Pickup V3 ([#49](https://github.com/2060-io/didcomm-mediator/issues/49))
+
+### Features
+
+* support DIDComm V2, Mediation Coordination V2 and Message Pickup V3 ([#49](https://github.com/2060-io/didcomm-mediator/issues/49)) ([a97041c](https://github.com/2060-io/didcomm-mediator/commit/a97041cc4d6cd8496c4ac9016a721f11246cf9e6))
+
 ## [1.4.1](https://github.com/2060-io/didcomm-mediator/compare/v1.4.0...v1.4.1) (2026-04-07)
 
 
