@@ -159,9 +159,9 @@ export class DidCommMediatorAgent extends Agent {
         if (hasLegacyMethods) await this.createAndAddDidCommKeysAndServices(didDocument)
 
         await this.dids.update({ did: didDocument.id, didDocument })
-        this.logger?.debug('Public did record updated')
+        this.logger?.debug(`Public did record updated. Agent public DID: ${this.did}`)
       } else {
-        this.logger?.debug('Existing DID record found. No updates')
+        this.logger?.debug(`Existing DID record found. No updates. Agent public DID: ${this.did}`)
       }
       this.did = existingRecord.did
     }
