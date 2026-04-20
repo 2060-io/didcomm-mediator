@@ -219,10 +219,10 @@ export const initMediator = async (
         if (connection.outOfBandId && payload.connectionRecord.state === DidCommDidExchangeState.RequestReceived) {
           const oob = await agent.didcomm.oob.findById(connection.outOfBandId)
           const invitationId = oob?.outOfBandInvitation?.id ?? oob?.outOfBandInvitation?.invitationId
-          if (invitationId === publicDid) {
-            logger.debug(`Incoming connection request for ${publicDid}`)
+          if (invitationId === agent.did) {
+            logger.debug(`Incoming connection request for ${agent.did}`)
             await agent.didcomm.connections.acceptRequest(connection.id)
-            logger.debug(`Accepted request for ${publicDid}`)
+            logger.debug(`Accepted request for ${agent.did}`)
           }
         }
       }
