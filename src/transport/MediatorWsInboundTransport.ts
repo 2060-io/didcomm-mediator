@@ -139,8 +139,6 @@ export class WebSocketTransportSession implements DidCommTransportSession {
   }
 
   public async close(): Promise<void> {
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.close()
-    }
+    // Do not actually close socket. Leave heartbeat to do its job
   }
 }
