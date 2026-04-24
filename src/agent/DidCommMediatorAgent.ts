@@ -147,10 +147,18 @@ export class DidCommMediatorAgent extends Agent {
         ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(vm.type)
       )
       const servicesChanged = this.havePublishedDidCommServicesChanged(didDocument)
-      // If the record has no persisted kms key mappings, the DIDComm keys cannot be used for
-      // decryption (see createAndAddDidCommKeysAndServices). Force a rebuild in that case.
-      const missingKmsKeys = !existingRecord.keys || existingRecord.keys.length === 0
-      const needsRebuild = hasLegacyMethods || missingKmsKeys
+      // If the Ed25519 verification method used for DIDComm has no corresponding kms key
+      // mapping in the DidRecord, decryption will fail (see DidCommEnvelopeService
+      // .extractOurRecipientKeyWithKeyId). Force a rebuild in that case. Note that other
+      // entries (e.g. did:webvh update keys) may already be present in `keys`, so we cannot
+      // simply check for an empty array.
+      const didcommRecipientVmId = this.findEd25519VerificationMethodId(didDocument)
+      const missingDidcommKmsMapping =
+        !didcommRecipientVmId ||
+        !(existingRecord.keys ?? []).some(({ didDocumentRelativeKeyId }) =>
+          didcommRecipientVmId.endsWith(didDocumentRelativeKeyId)
+        )
+      const needsRebuild = hasLegacyMethods || missingDidcommKmsMapping
       if (needsRebuild || servicesChanged) {
         // When a rebuild is needed we'll recreate keys and services from scratch below,
         // so skip the service-only patch in that case (the rebuild supersedes it anyway).
