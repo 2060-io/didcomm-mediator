@@ -147,10 +147,14 @@ export class DidCommMediatorAgent extends Agent {
         ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(vm.type)
       )
       const servicesChanged = this.havePublishedDidCommServicesChanged(didDocument)
-      if (hasLegacyMethods || servicesChanged) {
-        // When legacy methods are present we'll rebuild keys and services from scratch below,
+      // If the record has no persisted kms key mappings, the DIDComm keys cannot be used for
+      // decryption (see createAndAddDidCommKeysAndServices). Force a rebuild in that case.
+      const missingKmsKeys = !existingRecord.keys || existingRecord.keys.length === 0
+      const needsRebuild = hasLegacyMethods || missingKmsKeys
+      if (needsRebuild || servicesChanged) {
+        // When a rebuild is needed we'll recreate keys and services from scratch below,
         // so skip the service-only patch in that case (the rebuild supersedes it anyway).
-        if (servicesChanged && !hasLegacyMethods) {
+        if (servicesChanged && !needsRebuild) {
           const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
           if (!recipientKeyId) {
             // No Ed25519 vm available: rebuild keys and services to add one
@@ -164,7 +168,7 @@ export class DidCommMediatorAgent extends Agent {
             ]
           }
         }
-        if (hasLegacyMethods) await this.createAndAddDidCommKeysAndServices(didDocument)
+        if (needsRebuild) await this.createAndAddDidCommKeysAndServices(didDocument)
 
         await this.dids.update({ did: didDocument.id, didDocument })
         this.logger?.debug(`Public did record updated. Agent public DID: ${this.did}`)
@@ -272,10 +276,13 @@ export class DidCommMediatorAgent extends Agent {
       MultibaseEncoding.BASE58_BTC
     )
     const [record] = await didRepository.findByQuery(this.agentContext, { did: publicDid })
-    record.keys?.push({
-      kmsKeyId: key.keyId,
-      didDocumentRelativeKeyId: `#${publicKeyMultibase}`,
-    })
+    record.keys = [
+      ...(record.keys ?? []),
+      {
+        kmsKeyId: key.keyId,
+        didDocumentRelativeKeyId: `#${publicKeyMultibase}`,
+      },
+    ]
     await didRepository.update(this.agentContext, record)
     const verificationMethodId = `${publicDid}#${publicKeyMultibase}`
     const publicKeyX25519 = convertPublicKeyToX25519(publicKeyBytes)
