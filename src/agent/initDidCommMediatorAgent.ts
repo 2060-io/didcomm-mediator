@@ -217,12 +217,17 @@ export const initMediator = async (
       async ({ payload }) => {
         const connection = payload.connectionRecord
         if (connection.outOfBandId && payload.connectionRecord.state === DidCommDidExchangeState.RequestReceived) {
+          // Get the first record matching agent's DID and obtain all alternatives for it
+          const [agentPublicDidRecord] = await agent.dids.getCreatedDids({ did: agent.did })
+          const alternativeDids = agentPublicDidRecord?.getTag('alternativeDids')
+          const agentPublicDids = [agent.did, ...(Array.isArray(alternativeDids) ? alternativeDids : [])]
+
           const oob = await agent.didcomm.oob.findById(connection.outOfBandId)
           const invitationId = oob?.outOfBandInvitation?.id ?? oob?.outOfBandInvitation?.invitationId
-          if (invitationId === agent.did) {
-            logger.debug(`Incoming connection request for ${agent.did}`)
+          if (agentPublicDids.includes(invitationId)) {
+            logger.debug(`Incoming connection request for ${invitationId}`)
             await agent.didcomm.connections.acceptRequest(connection.id)
-            logger.debug(`Accepted request for ${agent.did}`)
+            logger.debug(`Accepted request for ${invitationId}`)
           }
         }
       }

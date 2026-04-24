@@ -148,13 +148,21 @@ export class DidCommMediatorAgent extends Agent {
       )
       const servicesChanged = this.havePublishedDidCommServicesChanged(didDocument)
       if (hasLegacyMethods || servicesChanged) {
-        if (servicesChanged) {
-          didDocument.service = [
-            ...(didDocument.service
-              ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
-              : []),
-            ...this.getDidCommServices(didDocument.id),
-          ]
+        // When legacy methods are present we'll rebuild keys and services from scratch below,
+        // so skip the service-only patch in that case (the rebuild supersedes it anyway).
+        if (servicesChanged && !hasLegacyMethods) {
+          const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
+          if (!recipientKeyId) {
+            // No Ed25519 vm available: rebuild keys and services to add one
+            await this.createAndAddDidCommKeysAndServices(didDocument)
+          } else {
+            didDocument.service = [
+              ...(didDocument.service
+                ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
+                : []),
+              ...this.getDidCommServices(didDocument.id, recipientKeyId),
+            ]
+          }
         }
         if (hasLegacyMethods) await this.createAndAddDidCommKeysAndServices(didDocument)
 
@@ -179,16 +187,38 @@ export class DidCommMediatorAgent extends Agent {
     return await didRepository.findCreatedDid(this.context, parsedDid.did)
   }
 
+  /**
+   * Look up the Ed25519 verification method id from a DID Document. The DIDComm v1
+   * `did-communication` service requires an Ed25519 key as `recipientKeys` (not the X25519
+   * key-agreement key, which is reserved for DIDComm v2 / `keyAgreement`).
+   */
+  private findEd25519VerificationMethodId(didDocument: DidDocument): string | undefined {
+    const vms = didDocument.verificationMethod ?? []
+    const ed25519Vm = vms.find(
+      (vm) =>
+        vm.type === 'Ed25519VerificationKey2020' ||
+        vm.type === 'Ed25519VerificationKey2018' ||
+        (vm.type === 'Multikey' &&
+          typeof vm.publicKeyMultibase === 'string' &&
+          vm.publicKeyMultibase.startsWith('z6Mk'))
+    )
+    return ed25519Vm?.id
+  }
+
   private havePublishedDidCommServicesChanged(didDocument: DidDocument): boolean {
+    const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
+    // If there's no Ed25519 verification method we cannot publish a valid v1 service: force
+    // a rebuild via createAndAddDidCommKeysAndServices (triggered by hasLegacyMethods or by
+    // returning `true` here so the caller updates the record).
+    if (!recipientKeyId) return true
     const fromDoc = (didDocument.service ?? [])
       .filter((s) => MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type))
       .map((s) => JsonTransformer.toJSON(s))
-    const expected = this.getDidCommServices(didDocument.id).map((s) => JsonTransformer.toJSON(s))
+    const expected = this.getDidCommServices(didDocument.id, recipientKeyId).map((s) => JsonTransformer.toJSON(s))
     return JSON.stringify(fromDoc) !== JSON.stringify(expected)
   }
 
-  private getDidCommServices(publicDid: string) {
-    const keyAgreementId = `${publicDid}#key-agreement-1`
+  private getDidCommServices(publicDid: string, recipientKeyId: string) {
     const includeV1 = DIDCOMM_V1_SUPPORT
     const includeV2 = DIDCOMM_V2_SUPPORT
     const services: (DidCommV1Service | NewDidCommV2Service)[] = []
@@ -201,7 +231,7 @@ export class DidCommMediatorAgent extends Agent {
             serviceEndpoint: endpoint,
             priority: index,
             routingKeys: [],
-            recipientKeys: [keyAgreementId],
+            recipientKeys: [recipientKeyId],
             accept: ['didcomm/aip2;env=rfc19'],
           })
         )
@@ -283,7 +313,7 @@ export class DidCommMediatorAgent extends Agent {
     const assertionMethod = verificationMethodId
     const keyAgreement = keyAgreementId
 
-    const didcommServices = this.getDidCommServices(publicDid)
+    const didcommServices = this.getDidCommServices(publicDid, verificationMethodId)
 
     const currentContexts = Array.isArray(didDocument.context)
       ? didDocument.context
