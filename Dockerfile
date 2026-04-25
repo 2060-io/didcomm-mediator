@@ -11,6 +11,8 @@ RUN corepack enable
 # Copy dependency manifest files
 COPY package.json package.json
 COPY pnpm-lock.yaml pnpm-lock.yaml
+# Patches referenced via pnpm.patchedDependencies must be present during install
+COPY patches patches
 
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
