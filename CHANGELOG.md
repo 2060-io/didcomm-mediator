@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0](https://github.com/2060-io/didcomm-mediator/compare/v1.4.1...v2.0.0) (2026-04-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump to 2.0.0 to align unstable and stable release channels
+* support DIDComm V2, Mediation Coordination V2 and Message Pickup V3 ([#49](https://github.com/2060-io/didcomm-mediator/issues/49))
+
+### Features
+
+* support DIDComm V2, Mediation Coordination V2 and Message Pickup V3 ([#49](https://github.com/2060-io/didcomm-mediator/issues/49)) ([a97041c](https://github.com/2060-io/didcomm-mediator/commit/a97041cc4d6cd8496c4ac9016a721f11246cf9e6))
+
+
+### Bug Fixes
+
+* detect stale keys on DID Document and rebuild if needed ([8d48bb3](https://github.com/2060-io/didcomm-mediator/commit/8d48bb331a988ed65acdcca1ce845ffcf1c8e0ba))
+* don't close WebSockets immediately ([15a4d4e](https://github.com/2060-io/didcomm-mediator/commit/15a4d4e9ae4aaaae6525124768018d125ce59e51))
+* force keys to load ([72b1670](https://github.com/2060-io/didcomm-mediator/commit/72b16709cd88a6ed0c6b30eb36d4e9d851f9bb19))
+* multi-instance live session cleanup ([04cdf55](https://github.com/2060-io/didcomm-mediator/commit/04cdf550ce24ce1b3e253b54ec63a44c4e7cca1d))
+* patches in dockerfile ([e97666d](https://github.com/2060-io/didcomm-mediator/commit/e97666dddb8ac514c55b0e8f4913d306513387b8))
+* public DID checking on connection requests ([#53](https://github.com/2060-io/didcomm-mediator/issues/53)) ([b5c8b0f](https://github.com/2060-io/didcomm-mediator/commit/b5c8b0ff8656b29409a033592a685a4f03d39f1b))
+* publish Ed25519 keys for DIDComm V1 and accept alternative DIDs ([0c68460](https://github.com/2060-io/didcomm-mediator/commit/0c68460c2900a414ab8a93aeb761568efee59589))
+* revert ci prefix to angular ([7c9402f](https://github.com/2060-io/didcomm-mediator/commit/7c9402fb779266ef6f8479ddd7ebcc5de1e8b83d))
+* store DIDComm keys in created DID document ([3a35312](https://github.com/2060-io/didcomm-mediator/commit/3a35312b140824dbf493e41c893b9ac9cdd99171))
+
+
+### Miscellaneous Chores
+
+* trigger major bump ([05126fc](https://github.com/2060-io/didcomm-mediator/commit/05126fc6dd25ccc05900021ba2cba892eebd2670))
+
 ## [1.4.1](https://github.com/2060-io/didcomm-mediator/compare/v1.4.0...v1.4.1) (2026-04-07)
 
 
