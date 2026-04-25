@@ -158,7 +158,35 @@ export class DidCommMediatorAgent extends Agent {
         !(existingRecord.keys ?? []).some(({ didDocumentRelativeKeyId }) =>
           didcommRecipientVmId.endsWith(didDocumentRelativeKeyId)
         )
-      const needsRebuild = hasLegacyMethods || missingDidcommKmsMapping
+      // The published DID document's verification relations must reference exactly our
+      // managed DIDComm keys — extra entries (e.g. a did:webvh update key) would be picked
+      // up by peers as additional invitation keys and break DID Exchange v1.x signature
+      // verification on the receiver side (see createAndAddDidCommKeysAndServices).
+      const hasExtraVerificationRelations =
+        (didDocument.authentication ?? []).length > 1 ||
+        (didDocument.assertionMethod ?? []).length > 1 ||
+        (didDocument.keyAgreement ?? []).length > 1
+      // Detect stale DIDComm verification methods left over from previous wallet states.
+      // Multiple Ed25519VerificationKey2020 entries, multiple X25519 `Multikey` entries
+      // (`z6LS…`), or duplicate VM ids all cause peers to dereference the wrong key when
+      // resolving the V2 keyAgreement and produce extra signer keys on the DID Exchange
+      // response — leading to `response_not_accepted` on the receiver side.
+      const verificationMethods = didDocument.verificationMethod ?? []
+      const ed25519VmCount = verificationMethods.filter((vm) => vm.type === 'Ed25519VerificationKey2020').length
+      const x25519MultikeyCount = verificationMethods.filter(
+        (vm) =>
+          vm.type === 'Multikey' &&
+          typeof vm.publicKeyMultibase === 'string' &&
+          vm.publicKeyMultibase.startsWith('z6LS')
+      ).length
+      const vmIds = verificationMethods.map((vm) => vm.id)
+      const hasDuplicateVmIds = new Set(vmIds).size !== vmIds.length
+      const hasStaleDidcommVerificationMethods = ed25519VmCount > 1 || x25519MultikeyCount > 1 || hasDuplicateVmIds
+      const needsRebuild =
+        hasLegacyMethods ||
+        missingDidcommKmsMapping ||
+        hasExtraVerificationRelations ||
+        hasStaleDidcommVerificationMethods
       if (needsRebuild || servicesChanged) {
         // When a rebuild is needed we'll recreate keys and services from scratch below,
         // so skip the service-only patch in that case (the rebuild supersedes it anyway).
@@ -305,9 +333,35 @@ export class DidCommMediatorAgent extends Agent {
       didDocument.authentication = (didDocument.authentication ?? []).filter((id) => id !== legacyAuthId)
       didDocument.assertionMethod = (didDocument.assertionMethod ?? []).filter((id) => id !== legacyAuthId)
     }
-    const filteredMethods = (didDocument.verificationMethod ?? []).filter(
-      (vm) => !['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(vm.type)
-    )
+    // Strip every verification method that previously belonged to our DIDComm setup.
+    // We must not just merge new VMs alongside old ones, because:
+    //   - Old `Ed25519VerificationKey2020` entries are always our previous DIDComm
+    //     authentication keys (DID method registrars like did:webvh use `Multikey` for
+    //     their own update keys, never `Ed25519VerificationKey2020`), so they're stale.
+    //   - Old X25519 `Multikey` entries (multibase `z6LS…`) are our previous DIDComm
+    //     keyAgreement keys; leaving them in place produces duplicate `#key-agreement-1`
+    //     ids and causes peers' `getRecipientKeysWithVerificationMethod` to dereference
+    //     the wrong (stale) key, ultimately signing DID Exchange responses with extra
+    //     signer keys not present in the receiver's invitation key set.
+    //   - Anything we are about to add by id (e.g. `#key-agreement-1`) must be cleared so
+    //     we don't end up with duplicates.
+    // The webvh update key (a `Multikey` with `z6Mk…` multibase that we don't manage)
+    // is intentionally preserved.
+    const newVmIds = new Set([verificationMethodId, keyAgreementId])
+    const filteredMethods = (didDocument.verificationMethod ?? []).filter((vm) => {
+      if (['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019', 'Ed25519VerificationKey2020'].includes(vm.type)) {
+        return false
+      }
+      if (newVmIds.has(vm.id)) return false
+      if (
+        vm.type === 'Multikey' &&
+        typeof vm.publicKeyMultibase === 'string' &&
+        vm.publicKeyMultibase.startsWith('z6LS')
+      ) {
+        return false
+      }
+      return true
+    })
 
     const verificationMethods = [
       {
@@ -337,9 +391,16 @@ export class DidCommMediatorAgent extends Agent {
       : []
     didDocument.context = [...new Set([...currentContexts.filter((ctx) => !legacyContexts.includes(ctx)), ...context])]
     didDocument.verificationMethod = [...filteredMethods, ...verificationMethods]
-    didDocument.authentication = [...new Set([...(didDocument.authentication ?? []), authentication])]
-    didDocument.assertionMethod = [...new Set([...(didDocument.assertionMethod ?? []), assertionMethod])]
-    didDocument.keyAgreement = [...new Set([...(didDocument.keyAgreement ?? []), keyAgreement])]
+    // Replace (rather than merge with) the verification relations so that ONLY our managed
+    // DIDComm keys are reachable as invitation keys. Some DID method registrars (e.g.
+    // did:webvh) add their own update/signing key to `authentication` / `keyAgreement`;
+    // peers running `getRecipientKeysWithVerificationMethod` over the resolved doc would
+    // otherwise pick those up and treat them as invitation keys, breaking DID Exchange v1.x
+    // signature verification on the receiver side. Update keys remain available in
+    // `verificationMethod` for the DID method's own log-signing logic.
+    didDocument.authentication = [authentication]
+    didDocument.assertionMethod = [assertionMethod]
+    didDocument.keyAgreement = [keyAgreement]
     didDocument.service = [
       ...(didDocument.service
         ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
