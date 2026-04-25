@@ -94,5 +94,10 @@
     "ws": "^8.13.0",
     "@types/ws": "^8.5.13",
     "@types/node": "^20.14.9"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@credo-ts/didcomm-transport-queue-postgres@0.0.1": "patches/@credo-ts__didcomm-transport-queue-postgres@0.0.1.patch"
+    }
   }
 }

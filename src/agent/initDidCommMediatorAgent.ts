@@ -117,8 +117,26 @@ export const initMediator = async (
 
     agent.events.on<PostgresMessageQueuedEvent>(
       'TransportQueuePostgresMessageQueued',
-      async ({ payload: { message } }) => {
+      async ({ payload: { message, session } }) => {
         try {
+          // A live message pickup session exists for this connection — either locally on this
+          // instance, or on another mediator instance (looked up from the shared `live_session`
+          // table). In both cases the message will be delivered over the live WebSocket
+          // (locally via deliverMessages, or via the `newMessage` pg-pubsub channel that the
+          // other instance subscribes to). Sending a push notification here would be a
+          // duplicate signal to the device and, in multi-instance deployments, has been
+          // observed to leave the client out of sync until it is restarted.
+          if (session) {
+            logger.debug(
+              `[TransportQueuePostgresMessageQueued] Live session present for connectionId: ${
+                message.connectionId
+              } (local=${
+                (session as { isLocalSession?: boolean }).isLocalSession ?? false
+              }); skipping push notification for message ${message.id}`
+            )
+            return
+          }
+
           const connectionRecord = await agent.didcomm.connections.findById(message.connectionId)
           if (!connectionRecord) {
             logger.warn(
