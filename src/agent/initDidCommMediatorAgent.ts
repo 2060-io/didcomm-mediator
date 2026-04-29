@@ -63,7 +63,11 @@ export const initMediator = async (
     messagePickupPostgresDatabaseName?: string
     did?: string
   }
-): Promise<{ app: Express; agent: DidCommMediatorAgent }> => {
+): Promise<{
+  app: Express
+  agent: DidCommMediatorAgent
+  queueTransportRepository: DidCommTransportQueuePostgres | InMemoryDidCommQueueTransportRepository
+}> => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.Off)
   const publicDid = config.did
   const shortenInvitationBaseUrl =
@@ -333,5 +337,5 @@ export const initMediator = async (
     })
   }
 
-  return { app, agent }
+  return { app, agent, queueTransportRepository }
 }
