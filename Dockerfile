@@ -1,6 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
-
 FROM node:24-slim AS base
 ENV COREPACK_INTEGRITY_KEYS=0
 RUN corepack enable && corepack prepare pnpm@9.15.3 --activate
