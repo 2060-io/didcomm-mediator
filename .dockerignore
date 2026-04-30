@@ -1,0 +1,31 @@
+# VCS / metadata
+.git
+.gitignore
+.github
+
+# Local node and build output
+node_modules
+build
+logs.txt
+.afj
+
+# Local secrets / runtime config
+.env
+.env.*
+firebase-cfg.json
+ngrok.yml
+
+# Tests and dev-only material (image is for production runtime only)
+test
+jest.config.cjs
+charts
+nginx
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Editor / OS noise
+.DS_Store
+.vscode
+.idea
+*.log

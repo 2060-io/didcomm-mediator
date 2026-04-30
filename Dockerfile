@@ -1,29 +1,37 @@
-FROM node:22-bullseye AS base
+# syntax=docker/dockerfile:1.7
 
-# Set working directory
+
+FROM node:24-slim AS base
+ENV COREPACK_INTEGRITY_KEYS=0
+RUN corepack enable && corepack prepare pnpm@9.15.3 --activate
+
+# ---- Builder ----
+FROM base AS builder
 WORKDIR /www
 ENV RUN_MODE="docker"
 
-# Update and enable Corepack (npm rotated registry keys, bundled corepack may have stale keys)
-RUN npm install -g corepack@latest
-RUN corepack enable
-
-# Copy dependency manifest files
-COPY package.json package.json
-COPY pnpm-lock.yaml pnpm-lock.yaml
-# Patches referenced via pnpm.patchedDependencies must be present during install
-COPY patches patches
-
-# Install dependencies using pnpm
+# Patches dir is read by pnpm at install time (pnpm.patchedDependencies).
+COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
-# Copy application source and configuration files
-COPY ./src ./src
-COPY tsconfig.json tsconfig.json
-COPY jest.config.cjs jest.config.cjs
-
-# Build the application
+COPY tsconfig.json ./
+COPY src ./src
 RUN pnpm build
 
-# Start the application
-CMD ["pnpm", "start"]
+# --ignore-scripts skips the project's postinstall (patch-package), which is
+# a devDep and no longer present after prune.
+RUN pnpm prune --prod --ignore-scripts
+
+# ---- Runtime ----
+FROM node:24-slim AS runtime
+WORKDIR /www
+ENV RUN_MODE="docker"
+ENV NODE_ENV=production
+
+COPY --from=builder /www/node_modules ./node_modules
+COPY --from=builder /www/build ./build
+COPY --from=builder /www/package.json ./package.json
+
+EXPOSE 4000
+CMD ["node", "./build/index.js"]
