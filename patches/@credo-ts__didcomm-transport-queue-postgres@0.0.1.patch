@@ -1,20 +1,139 @@
+diff --git a/build/TransportQueuePostgres.d.ts b/build/TransportQueuePostgres.d.ts
+index 51354c2e3a70e33f956b1f5791144557873809ff..432b257364897381be9582b4ed5f8dc3bce83144 100644
+--- a/build/TransportQueuePostgres.d.ts
++++ b/build/TransportQueuePostgres.d.ts
+@@ -10,6 +10,11 @@ export declare class DidCommTransportQueuePostgres implements DidCommQueueTransp
+     private postgresPassword;
+     private postgresHost;
+     private postgresDatabaseName;
++    private heartbeatIntervalMs;
++    private instanceTimeoutMs;
++    private reaperIntervalMs;
++    private heartbeatTimer?;
++    private reaperTimer?;
+     constructor(options: PostgresTransportQueuePostgresConfig);
+     /**
+      * Initializes the service by setting up the database, message listeners, and the agent.
+@@ -67,9 +72,40 @@ export declare class DidCommTransportQueuePostgres implements DidCommQueueTransp
+      */
+     private initializeMessageListener;
+     /**
+-     * This function checks that messages from the connectionId, which were left in the 'sending'
+-     * state after a liveSessionRemove event, are updated to the 'pending' state for subsequent sending
+-     * @param connectionID
++     * Upserts the heartbeat row for this instance. Called once at startup and then on
++     * a timer every `heartbeatIntervalMs`. The reaper on any instance considers us
++     * alive as long as `instance.last_seen` is newer than `now() - instanceTimeoutMs`.
++     */
++    private heartbeat;
++    /**
++     * Deletes `live_session` rows owned by instances that are either absent from the
++     * `instance` table entirely (e.g. pre-heartbeat legacy rows, or rows orphaned by
++     * an instance that was deleted but whose live_session rows were missed) or whose
++     * last heartbeat is older than `instanceTimeoutMs`.
++     *
++     * For every connection whose live session was reaped, we revive any queued
++     * messages stuck in `sending` back to `pending` and publish to the `newMessage`
++     * pub/sub channel so that an instance currently owning a (possibly new) live
++     * session for the same connection drains them immediately. If no such owner
++     * exists, the next forward addressed to that connection will correctly observe
++     * no live session, triggering a push notification via the downstream consumer.
++     *
++     * Runs under a Postgres session-level advisory lock so only one instance does
++     * the reap per tick across the cluster. Other instances simply skip this tick.
++     */
++    private reapStaleInstances;
++    /**
++     * Reverts any messages left in the 'sending' state for the given connectionId back to
++     * 'pending' (typically after a LiveSessionRemoved event on the instance that owned the
++     * session). If any rows were reverted and another instance currently owns a live session
++     * for that connection, we publish to the 'newMessage' pub/sub channel so the owner wakes
++     * up and drains the queue immediately.
++     *
++     * Without this notification, reverted messages would remain stuck as 'pending' on the DB
++     * until an unrelated event (a new forward arriving at the owning instance, or via pubsub
++     * from a third instance) caused `deliverMessagesFromQueue` to run. In a two-pod migration
++     * scenario where a forward landed on the old pod just before its WebSocket close fired,
++     * that message could otherwise be delivered with arbitrary delay.
+      */
+     private checkQueueMessages;
+     /**
+@@ -91,8 +127,17 @@ export declare class DidCommTransportQueuePostgres implements DidCommQueueTransp
+      */
+     private addLiveSessionOnDb;
+     /**
+-     *This method remove connectionId record to DB upon LiveSessionRemove event
+-     * @param connectionId
++     * Removes the live_session row corresponding to the given pickup session id, scoped
++     * to this instance so we never delete rows owned by another mediator pod.
++     *
++     * Multiple live_session rows can legitimately coexist for the same connection_id
++     * during a session migration between pods (the new owner inserts its row before the
++     * old owner's WebSocket close fires LiveSessionRemoved). Deleting by connection_id
++     * would wipe out the still-active row on the new owner, leaving forwarded messages
++     * with `session = undefined` in addMessage — no pubsub publish, no live delivery,
++     * and (downstream) a spurious push notification.
++     *
++     * @returns true if a row was deleted (i.e. we did own a live session for this id)
+      */
+     private removeLiveSessionOnDb;
+     /**
 diff --git a/build/TransportQueuePostgres.js b/build/TransportQueuePostgres.js
-index 43a11c687b25dab28965d9364b65f6928016c862..9c5601e44ddf52eaeb19696b5236c6069177d831 100644
+index 43a11c687b25dab28965d9364b65f6928016c862..2da24367080c92738f6da983fc4c37d4e7a353e5 100644
 --- a/build/TransportQueuePostgres.js
 +++ b/build/TransportQueuePostgres.js
-@@ -47,14 +47,31 @@ export class DidCommTransportQueuePostgres {
+@@ -6,14 +6,23 @@ import { Pool } from 'pg';
+ import PGPubsub from 'pg-pubsub';
+ import { PostgresMessageQueuedEventType, } from './interfaces.js';
+ import { buildPgDatabaseWithMigrations } from './utils/buildPgDatabaseWithMigrations.js';
++// Arbitrary but stable key used for the reaper's advisory lock. Chosen so it
++// is unlikely to collide with advisory locks used elsewhere in the same DB.
++const REAPER_ADVISORY_LOCK_KEY = 814200381;
+ export class DidCommTransportQueuePostgres {
+     constructor(options) {
+-        const { logger, postgresUser, postgresPassword, postgresHost, postgresDatabaseName } = options;
++        const { logger, postgresUser, postgresPassword, postgresHost, postgresDatabaseName, heartbeatIntervalMs, instanceTimeoutMs, reaperIntervalMs, } = options;
+         this.logger = logger;
+         this.postgresUser = postgresUser;
+         this.postgresPassword = postgresPassword;
+         this.postgresHost = postgresHost;
+         this.postgresDatabaseName = postgresDatabaseName || 'messagepickuprepository';
++        this.heartbeatIntervalMs = heartbeatIntervalMs ?? 10000;
++        this.instanceTimeoutMs = instanceTimeoutMs ?? 60000;
++        this.reaperIntervalMs = reaperIntervalMs ?? 30000;
++        if (this.instanceTimeoutMs <= this.heartbeatIntervalMs) {
++            this.logger?.warn(`[initialize] instanceTimeoutMs (${this.instanceTimeoutMs}) should be significantly larger than heartbeatIntervalMs (${this.heartbeatIntervalMs}); otherwise transient latency may cause live instances to be considered dead.`);
++        }
+         // Initialize instanceName
+         this.instanceName = `${os.hostname()}-${process.pid}-${randomUUID()}`;
+         this.logger?.info(`[initialize] Instance identifier set to: ${this.instanceName}`);
+@@ -47,14 +56,45 @@ export class DidCommTransportQueuePostgres {
              });
              // Initialize Listener PUB/SUB
              await this.initializeMessageListener(agent.context, 'newMessage');
-+            // Defensive cleanup: remove any stale live_session rows that belong to this
-+            // instance identifier from previous runs. The instance name embeds a randomUUID()
-+            // so this should normally be a no-op.
++            // Register this instance in the heartbeat table BEFORE running the reaper,
++            // so a concurrent reaper on another pod cannot misclassify us as dead.
++            await this.heartbeat(agent.context);
++            // Proactively reap any live_session rows belonging to dead instances (including
++            // our own previous incarnations: our randomUUID-scoped instanceName is fresh,
++            // so any rows carrying a previous pod's identity are by definition stale).
++            // This also recovers rows left behind by crashes that never ran `shutdown`.
 +            try {
-+                await this.messagesCollection.query('DELETE FROM live_session WHERE instance = $1', [this.instanceName]);
++                await this.reapStaleInstances(agent.context);
 +            }
-+            catch (cleanupError) {
-+                agent.context.config.logger.warn(`[initialize] Failed startup live_session cleanup: ${cleanupError}`);
++            catch (reapError) {
++                agent.context.config.logger.warn(`[initialize] Startup reaper pass failed: ${reapError}`);
 +            }
++            // Start periodic heartbeat + reaper timers. The reaper uses a Postgres advisory
++            // lock so only one surviving instance actually executes the reap per tick.
++            this.heartbeatTimer = setInterval(() => {
++                this.heartbeat(agent.context).catch((err) => agent.context.config.logger.warn(`[heartbeat] Failed: ${err}`));
++            }, this.heartbeatIntervalMs);
++            this.heartbeatTimer.unref?.();
++            this.reaperTimer = setInterval(() => {
++                this.reapStaleInstances(agent.context).catch((err) => agent.context.config.logger.warn(`[reaper] Failed: ${err}`));
++            }, this.reaperIntervalMs);
++            this.reaperTimer.unref?.();
              // Register event handlers
              agent.events.on(DidCommMessagePickupEventTypes.LiveSessionRemoved, async (data) => {
 -                const connectionId = data.payload.session.connectionId;
@@ -25,10 +144,10 @@ index 43a11c687b25dab28965d9364b65f6928016c862..9c5601e44ddf52eaeb19696b5236c606
 -                    // Verify message sending method and delete session record from DB
 -                    await this.checkQueueMessages(agent.context, connectionId);
 -                    await this.removeLiveSessionOnDb(agent.context, connectionId);
-+                    // Only revive 'sending' messages back to 'pending' if WE actually owned
-+                    // the live_session row that is being removed. Otherwise we would race
-+                    // against another instance that legitimately took ownership of this
-+                    // connection's pickup session and is currently delivering.
++                    // Only revive 'sending' messages back to 'pending' if WE actually owned the
++                    // live_session row that is being removed. Otherwise we would race against
++                    // another instance that legitimately took ownership of this connection's
++                    // pickup session and is currently delivering, causing duplicate delivery.
 +                    const removed = await this.removeLiveSessionOnDb(agent.context, sessionId);
 +                    if (removed) {
 +                        await this.checkQueueMessages(agent.context, connectionId);
@@ -39,9 +158,187 @@ index 43a11c687b25dab28965d9364b65f6928016c862..9c5601e44ddf52eaeb19696b5236c606
                  }
                  catch (handlerError) {
                      agent.context.config.logger.error(`Error handling LiveSessionRemoved: ${handlerError}`);
-@@ -407,20 +424,19 @@ export class DidCommTransportQueuePostgres {
-      *This method remove connectionId record to DB upon LiveSessionRemove event
-      * @param connectionId
+@@ -282,6 +322,35 @@ export class DidCommTransportQueuePostgres {
+         }
+     }
+     async shutdown(agentContext) {
++        agentContext.config.logger.info('[shutdown] Stopping heartbeat/reaper timers and releasing this instance');
++        if (this.heartbeatTimer) {
++            clearInterval(this.heartbeatTimer);
++            this.heartbeatTimer = undefined;
++        }
++        if (this.reaperTimer) {
++            clearInterval(this.reaperTimer);
++            this.reaperTimer = undefined;
++        }
++        // Best-effort graceful handoff: release any live_session rows we still own and
++        // wake up whichever instance may hold (or later reconnect on) each connection.
++        // We don't rely on this — the reaper will catch anything we miss — but it
++        // keeps the DB clean on controlled shutdowns and avoids waiting instanceTimeoutMs.
++        try {
++            const ownRows = await this.messagesCollection?.query('DELETE FROM live_session WHERE instance = $1 RETURNING connection_id', [this.instanceName]);
++            const connectionIds = ownRows?.rows.map((r) => r.connection_id) ?? [];
++            for (const connectionId of connectionIds) {
++                await this.checkQueueMessages(agentContext, connectionId);
++            }
++        }
++        catch (cleanupError) {
++            agentContext.config.logger.warn(`[shutdown] Failed releasing own live_session rows: ${cleanupError}`);
++        }
++        try {
++            await this.messagesCollection?.query('DELETE FROM instance WHERE name = $1', [this.instanceName]);
++        }
++        catch (cleanupError) {
++            agentContext.config.logger.warn(`[shutdown] Failed removing own instance row: ${cleanupError}`);
++        }
+         agentContext.config.logger.info('[shutdown] Close connection to postgres');
+         await this.messagesCollection?.end();
+     }
+@@ -319,23 +388,115 @@ export class DidCommTransportQueuePostgres {
+         }
+     }
+     /**
+-     * This function checks that messages from the connectionId, which were left in the 'sending'
+-     * state after a liveSessionRemove event, are updated to the 'pending' state for subsequent sending
+-     * @param connectionID
++     * Upserts the heartbeat row for this instance. Called once at startup and then on
++     * a timer every `heartbeatIntervalMs`. The reaper on any instance considers us
++     * alive as long as `instance.last_seen` is newer than `now() - instanceTimeoutMs`.
++     */
++    async heartbeat(agentContext) {
++        try {
++            await this.messagesCollection?.query(`INSERT INTO instance (name, last_seen) VALUES ($1, now())
++         ON CONFLICT (name) DO UPDATE SET last_seen = now()`, [this.instanceName]);
++        }
++        catch (error) {
++            agentContext.config.logger.warn(`[heartbeat] Failed to upsert instance row: ${error}`);
++        }
++    }
++    /**
++     * Deletes `live_session` rows owned by instances that are either absent from the
++     * `instance` table entirely (e.g. pre-heartbeat legacy rows, or rows orphaned by
++     * an instance that was deleted but whose live_session rows were missed) or whose
++     * last heartbeat is older than `instanceTimeoutMs`.
++     *
++     * For every connection whose live session was reaped, we revive any queued
++     * messages stuck in `sending` back to `pending` and publish to the `newMessage`
++     * pub/sub channel so that an instance currently owning a (possibly new) live
++     * session for the same connection drains them immediately. If no such owner
++     * exists, the next forward addressed to that connection will correctly observe
++     * no live session, triggering a push notification via the downstream consumer.
++     *
++     * Runs under a Postgres session-level advisory lock so only one instance does
++     * the reap per tick across the cluster. Other instances simply skip this tick.
++     */
++    async reapStaleInstances(agentContext) {
++        if (!this.messagesCollection)
++            return;
++        const client = await this.messagesCollection.connect();
++        try {
++            const lockResult = await client.query('SELECT pg_try_advisory_lock($1) AS pg_try_advisory_lock', [REAPER_ADVISORY_LOCK_KEY]);
++            const acquired = lockResult.rows[0]?.pg_try_advisory_lock === true;
++            if (!acquired) {
++                agentContext.config.logger.trace?.('[reaper] Another instance holds the reaper lock; skipping tick.');
++                return;
++            }
++            try {
++                // Delete live_session rows whose instance is either unknown or stale.
++                // Exclude our own instance as a belt-and-suspenders guard: we're alive by
++                // definition, even if our heartbeat row were somehow missing transiently.
++                const reaped = await client.query(`DELETE FROM live_session ls
++             WHERE ls.instance <> $1
++               AND NOT EXISTS (
++                 SELECT 1 FROM instance i
++                  WHERE i.name = ls.instance
++                    AND i.last_seen >= now() - ($2::bigint * interval '1 millisecond')
++               )
++           RETURNING ls.connection_id, ls.session_id, ls.instance`, [this.instanceName, this.instanceTimeoutMs]);
++                // Drop the heartbeat rows of the now-dead instances (again excluding ourselves).
++                await client.query(`DELETE FROM instance
++             WHERE name <> $1
++               AND last_seen < now() - ($2::bigint * interval '1 millisecond')`, [this.instanceName, this.instanceTimeoutMs]);
++                if (reaped.rowCount && reaped.rowCount > 0) {
++                    const staleInstances = new Set(reaped.rows.map((r) => r.instance));
++                    agentContext.config.logger.info(`[reaper] Reaped ${reaped.rowCount} live_session row(s) from ${staleInstances.size} dead instance(s): ${[...staleInstances].join(', ')}`);
++                    // Wake up current owners (if any) and revive any stuck 'sending' messages.
++                    // Dedupe by connection_id in case an instance had multiple rows for one connection.
++                    const connectionIds = Array.from(new Set(reaped.rows.map((r) => r.connection_id)));
++                    for (const connectionId of connectionIds) {
++                        await this.checkQueueMessages(agentContext, connectionId);
++                    }
++                }
++                else {
++                    agentContext.config.logger.debug('[reaper] No stale live_session rows to reap.');
++                }
++            }
++            finally {
++                await client.query('SELECT pg_advisory_unlock($1)', [REAPER_ADVISORY_LOCK_KEY]);
++            }
++        }
++        catch (error) {
++            agentContext.config.logger.error(`[reaper] Error during reap: ${error}`);
++        }
++        finally {
++            client.release();
++        }
++    }
++    /**
++     * Reverts any messages left in the 'sending' state for the given connectionId back to
++     * 'pending' (typically after a LiveSessionRemoved event on the instance that owned the
++     * session). If any rows were reverted and another instance currently owns a live session
++     * for that connection, we publish to the 'newMessage' pub/sub channel so the owner wakes
++     * up and drains the queue immediately.
++     *
++     * Without this notification, reverted messages would remain stuck as 'pending' on the DB
++     * until an unrelated event (a new forward arriving at the owning instance, or via pubsub
++     * from a third instance) caused `deliverMessagesFromQueue` to run. In a two-pod migration
++     * scenario where a forward landed on the old pod just before its WebSocket close fired,
++     * that message could otherwise be delivered with arbitrary delay.
+      */
+     async checkQueueMessages(agentContext, connectionId) {
+         try {
+             agentContext.config.logger.debug(`[checkQueueMessages] Init verify messages state 'sending'`);
+-            const messagesToSend = await this.messagesCollection?.query('SELECT * FROM queued_message WHERE state = $1 and connection_id = $2', ['sending', connectionId]);
+-            if (messagesToSend && messagesToSend.rows.length > 0) {
+-                for (const message of messagesToSend.rows) {
+-                    // Update the message state to 'pending'
+-                    await this.messagesCollection?.query('UPDATE queued_message SET state = $1 WHERE id = $2', [
+-                        'pending',
+-                        message.id,
+-                    ]);
++            const result = await this.messagesCollection?.query(`UPDATE queued_message SET state = 'pending' WHERE state = 'sending' AND connection_id = $1 RETURNING id`, [connectionId]);
++            const revertedCount = result?.rowCount ?? 0;
++            if (revertedCount > 0) {
++                agentContext.config.logger.debug(`[checkQueueMessages] ${revertedCount} messages reverted to 'pending' for connectionId ${connectionId}.`);
++                // Notify any other instance currently owning a live session for this connection so
++                // it can pick up the reverted messages without waiting for a new forward.
++                try {
++                    await this.pubSubInstance.publish('newMessage', connectionId);
++                }
++                catch (publishError) {
++                    agentContext.config.logger.warn(`[checkQueueMessages] Failed to publish 'newMessage' for connectionId ${connectionId}: ${publishError}`);
+                 }
+-                agentContext.config.logger.debug(`[checkQueueMessages] ${messagesToSend.rows.length} messages updated to 'pending'.`);
+             }
+             else {
+                 agentContext.config.logger.debug('[checkQueueMessages] No messages in "sending" state.');
+@@ -404,23 +565,31 @@ export class DidCommTransportQueuePostgres {
+         }
+     }
+     /**
+-     *This method remove connectionId record to DB upon LiveSessionRemove event
+-     * @param connectionId
++     * Removes the live_session row corresponding to the given pickup session id, scoped
++     * to this instance so we never delete rows owned by another mediator pod.
++     *
++     * Multiple live_session rows can legitimately coexist for the same connection_id
++     * during a session migration between pods (the new owner inserts its row before the
++     * old owner's WebSocket close fires LiveSessionRemoved). Deleting by connection_id
++     * would wipe out the still-active row on the new owner, leaving forwarded messages
++     * with `session = undefined` in addMessage — no pubsub publish, no live delivery,
++     * and (downstream) a spurious push notification.
++     *
++     * @returns true if a row was deleted (i.e. we did own a live session for this id)
       */
 -    async removeLiveSessionOnDb(agentContext, connectionId) {
 -        agentContext.config.logger.debug(`[removeLiveSessionOnDb] initializing remove LiveSession to connectionId ${connectionId}`);
@@ -69,3 +366,68 @@ index 43a11c687b25dab28965d9364b65f6928016c862..9c5601e44ddf52eaeb19696b5236c606
          }
      }
      /**
+diff --git a/build/TransportQueuePostgres.js.map b/build/TransportQueuePostgres.js.map
+index 9355efd5c30ae57b16a471ba035a9f0d542c42d7..9b894ebc3e8787e479329d0b9ecd567be0033fba 100644
+--- a/build/TransportQueuePostgres.js.map
++++ b/build/TransportQueuePostgres.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"TransportQueuePostgres.js","sourceRoot":"","sources":["../src/TransportQueuePostgres.ts"],"names":[],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"TransportQueuePostgres.js","sourceRoot":"","sources":["../src/TransportQueuePostgres.ts"],"names":[],"mappings":"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"}
+\ No newline at end of file
+diff --git a/build/interfaces.d.ts b/build/interfaces.d.ts
+index 79506adc1f84806ea286e2c8f4504d5f6af5a64e..88f2d6e908b0e82ef429f7baa02d803cd7b8075b 100644
+--- a/build/interfaces.d.ts
++++ b/build/interfaces.d.ts
+@@ -6,6 +6,23 @@ export interface PostgresTransportQueuePostgresConfig {
+     postgresPassword: string;
+     postgresHost: string;
+     postgresDatabaseName?: string;
++    /**
++     * How often this instance refreshes its presence in the `instance` table.
++     * Defaults to 10_000ms.
++     */
++    heartbeatIntervalMs?: number;
++    /**
++     * After how long without a heartbeat an instance is considered dead and
++     * its `live_session` rows become eligible for reaping. Defaults to 60_000ms.
++     * Should be comfortably larger than `heartbeatIntervalMs` (typically 5-10x)
++     * to tolerate transient DB or scheduling latency.
++     */
++    instanceTimeoutMs?: number;
++    /**
++     * How often to run the stale-instance reaper. Only one instance runs the
++     * reaper per tick (protected by a Postgres advisory lock). Defaults to 30_000ms.
++     */
++    reaperIntervalMs?: number;
+ }
+ export declare const PostgresMessageQueuedEventType: "TransportQueuePostgresMessageQueued";
+ export interface PostgresMessageQueuedEvent extends BaseEvent {
+diff --git a/build/interfaces.js.map b/build/interfaces.js.map
+index 05fec82c1c7ae46c75a79cf6f96de6cce5ed7349..6c3b4649e8e4bfb2757f2820b641c0deedb190de 100644
+--- a/build/interfaces.js.map
++++ b/build/interfaces.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"interfaces.js","sourceRoot":"","sources":["../src/interfaces.ts"],"names":[],"mappings":"AAWA,MAAM,CAAC,MAAM,8BAA8B,GAAG,qCAA8C,CAAA"}
+\ No newline at end of file
++{"version":3,"file":"interfaces.js","sourceRoot":"","sources":["../src/interfaces.ts"],"names":[],"mappings":"AA+BA,MAAM,CAAC,MAAM,8BAA8B,GAAG,qCAA8C,CAAA"}
+\ No newline at end of file
+diff --git a/migrations/002-instance-heartbeat.sql b/migrations/002-instance-heartbeat.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..f1ab4482239fa13a85f8e805962733c5a3d1a154
+--- /dev/null
++++ b/migrations/002-instance-heartbeat.sql
+@@ -0,0 +1,13 @@
++-- Track live mediator instances via periodic heartbeats so that `live_session`
++-- rows left behind by crashed, OOM-killed or scaled-down instances can be
++-- reaped proactively by the surviving instances. Without this table,
++-- `live_session` rows owned by a dead instance would remain indefinitely and
++-- cause forwarded messages to be emitted with a stale `session` (suppressing
++-- push notifications) while no instance is able to actually deliver them.
++
++CREATE TABLE IF NOT EXISTS instance (
++  name VARCHAR(200) PRIMARY KEY,
++  last_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
++);
++
++CREATE INDEX IF NOT EXISTS instance_last_seen_idx ON instance (last_seen);
