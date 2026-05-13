@@ -61,157 +61,181 @@ export class DidCommMediatorAgent extends Agent {
     await super.initialize()
 
     const parsedDid = this.did ? parseDid(this.did) : null
-    if (parsedDid) {
-      // If a public did is specified, check if it's already stored in the wallet. If it's not the case,
-      // create a new one and generate keys for DIDComm (if there are endpoints configured)
-      // TODO: Make DIDComm version, keys, etc. configurable. Keys can also be imported
-      const domain = parsedDid.id.includes(':') ? parsedDid.id.split(':')[1] : parsedDid.id
+    if (!parsedDid) return
 
-      const existingRecord = await this.findCreatedDid(parsedDid)
-
-      // DID has not been created yet. Let's do it
-      if (!existingRecord) {
-        if (parsedDid.method === 'web') {
-          const didDocument = new DidDocument({ id: parsedDid.did })
-
-          // Create the DID record first so it exists when createAndAddDidCommKeysAndServices
-          // attempts to attach KMS keys to it (mirrors the did:webvh ordering below).
-          await this.dids.create({
-            method: 'web',
-            domain,
-            didDocument,
-          })
-
-          await this.createAndAddDidCommKeysAndServices(didDocument)
-
-          // Persist the didDocument mutations (services, verification methods) applied above.
-          await this.dids.update({ did: parsedDid.did, didDocument })
-
-          this.did = parsedDid.did
-        } else if (parsedDid.method === 'webvh') {
-          // If there is an existing did:web with the same domain, this could be an
-          // upgrade. There should be no problem on removing did:web record since we
-          // can use newer keys for DIDComm bootstrapping, but we should at least warn
-          // about that
-          const didRepository = this.dependencyManager.resolve(DidRepository)
-          const existingDidWebRecord = await didRepository.findCreatedDid(this.context, `did:web:${domain}`)
-          if (existingDidWebRecord) {
-            this.logger.warn('Existing record for legacy did:web found. Removing it')
-            await didRepository.delete(this.context, existingDidWebRecord)
-          }
-
-          this.logger.debug(`Creating did:webvh for domain: ${domain}`)
-          const {
-            didState: { did: publicDid, didDocument },
-          } = await this.dids.create({ method: 'webvh', domain })
-          if (!publicDid || !didDocument) {
-            this.logger.error('Failed to create did:webvh record')
-            process.exit(1)
-          }
-
-          // Add DIDComm services and keys
-          await this.createAndAddDidCommKeysAndServices(didDocument)
-
-          didDocument.alsoKnownAs = [`did:web:${domain}`]
-
-          const result = await this.dids.update({ did: publicDid, didDocument })
-          if (result.didState.state !== 'finished') {
-            this.logger.error(`Cannot update DID ${publicDid}`)
-            process.exit(1)
-          }
-          this.logger?.debug('Public did:webvh record created')
-          this.did = publicDid
-        } else {
-          throw new CredoError(`Agent DID method not supported: ${parsedDid.method}`)
-        }
-
-        return
-      }
-
-      // Make sure did:webvh record has the did:web form as an alternative, in order to support
-      // implicit invitations
-      if (
-        parsedDid.method === 'webvh' &&
-        !(existingRecord?.getTag('alternativeDids') as string[])?.includes(`did:web:${domain}`)
-      ) {
-        this.logger?.debug('Adding did:web form as an alternative DID')
-
-        existingRecord.setTag('alternativeDids', [`did:web:${domain}`])
-        const didRepository = this.dependencyManager.resolve(DidRepository)
-        await didRepository.update(this.agentContext, existingRecord)
-      }
-      // DID Already exists: update it in case that agent parameters have been changed. At the moment, we can only update
-      //  DIDComm endpoints, so we'll only replace the service (if different from previous)
-      const didDocument = existingRecord.didDocument!
-      const hasLegacyMethods = (didDocument.verificationMethod ?? []).some((vm) =>
-        ['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019'].includes(vm.type)
+    // Add a lock to make a single instance update the DID record if needed
+    const lockId = `did-bootstrap:${parsedDid.did}`
+    const acquired = await this.acquireBootstrapLock(lockId, {
+      ttlMs: 5 * 60 * 1000,
+      maxWaitMs: 2 * 60 * 1000,
+      pollMs: 1000,
+    })
+    if (!acquired) {
+      this.logger?.warn(
+        `Could not acquire DID bootstrap lock for ${parsedDid.did} within the wait window; proceeding with best-effort read-only initialization`
       )
-      const servicesChanged = this.havePublishedDidCommServicesChanged(didDocument)
-      // If the Ed25519 verification method used for DIDComm has no corresponding kms key
-      // mapping in the DidRecord, decryption will fail (see DidCommEnvelopeService
-      // .extractOurRecipientKeyWithKeyId). Force a rebuild in that case. Note that other
-      // entries (e.g. did:webvh update keys) may already be present in `keys`, so we cannot
-      // simply check for an empty array.
-      const didcommRecipientVmId = this.findEd25519VerificationMethodId(didDocument)
-      const missingDidcommKmsMapping =
-        !didcommRecipientVmId ||
-        !(existingRecord.keys ?? []).some(({ didDocumentRelativeKeyId }) =>
-          didcommRecipientVmId.endsWith(didDocumentRelativeKeyId)
-        )
-      // The published DID document's verification relations must reference exactly our
-      // managed DIDComm keys — extra entries (e.g. a did:webvh update key) would be picked
-      // up by peers as additional invitation keys and break DID Exchange v1.x signature
-      // verification on the receiver side (see createAndAddDidCommKeysAndServices).
-      const hasExtraVerificationRelations =
-        (didDocument.authentication ?? []).length > 1 ||
-        (didDocument.assertionMethod ?? []).length > 1 ||
-        (didDocument.keyAgreement ?? []).length > 1
-      // Detect stale DIDComm verification methods left over from previous wallet states.
-      // Multiple Ed25519VerificationKey2020 entries, multiple X25519 `Multikey` entries
-      // (`z6LS…`), or duplicate VM ids all cause peers to dereference the wrong key when
-      // resolving the V2 keyAgreement and produce extra signer keys on the DID Exchange
-      // response — leading to `response_not_accepted` on the receiver side.
-      const verificationMethods = didDocument.verificationMethod ?? []
-      const ed25519VmCount = verificationMethods.filter((vm) => vm.type === 'Ed25519VerificationKey2020').length
-      const x25519MultikeyCount = verificationMethods.filter(
-        (vm) =>
-          vm.type === 'Multikey' &&
-          typeof vm.publicKeyMultibase === 'string' &&
-          vm.publicKeyMultibase.startsWith('z6LS')
-      ).length
-      const vmIds = verificationMethods.map((vm) => vm.id)
-      const hasDuplicateVmIds = new Set(vmIds).size !== vmIds.length
-      const hasStaleDidcommVerificationMethods = ed25519VmCount > 1 || x25519MultikeyCount > 1 || hasDuplicateVmIds
-      const needsRebuild =
-        hasLegacyMethods ||
-        missingDidcommKmsMapping ||
-        hasExtraVerificationRelations ||
-        hasStaleDidcommVerificationMethods
-      if (needsRebuild || servicesChanged) {
-        // When a rebuild is needed we'll recreate keys and services from scratch below,
-        // so skip the service-only patch in that case (the rebuild supersedes it anyway).
-        if (servicesChanged && !needsRebuild) {
-          const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
-          if (!recipientKeyId) {
-            // No Ed25519 vm available: rebuild keys and services to add one
-            await this.createAndAddDidCommKeysAndServices(didDocument)
-          } else {
-            didDocument.service = [
-              ...(didDocument.service
-                ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
-                : []),
-              ...this.getDidCommServices(didDocument.id, recipientKeyId),
-            ]
-          }
-        }
-        if (needsRebuild) await this.createAndAddDidCommKeysAndServices(didDocument)
+    }
+    try {
+      await this.bootstrapPublicDid(parsedDid)
+    } finally {
+      if (acquired) await this.releaseBootstrapLock(lockId)
+    }
+  }
 
-        await this.dids.update({ did: didDocument.id, didDocument })
-        this.logger?.debug(`Public did record updated. Agent public DID: ${this.did}`)
+  private async bootstrapPublicDid(parsedDid: ParsedDid) {
+    // If a public did is specified, check if it's already stored in the wallet. If it's not the case,
+    // create a new one and generate keys for DIDComm (if there are endpoints configured)
+    // TODO: Make DIDComm version, keys, etc. configurable. Keys can also be imported
+    const domain = parsedDid.id.includes(':') ? parsedDid.id.split(':')[1] : parsedDid.id
+
+    const existingRecord = await this.findCreatedDid(parsedDid)
+
+    // DID has not been created yet. Let's do it
+    if (!existingRecord) {
+      if (parsedDid.method === 'web') {
+        const didDocument = new DidDocument({ id: parsedDid.did })
+
+        // Create the DID record first so it exists when createAndAddDidCommKeysAndServices
+        // attempts to attach KMS keys to it (mirrors the did:webvh ordering below).
+        await this.dids.create({
+          method: 'web',
+          domain,
+          didDocument,
+        })
+
+        await this.createAndAddDidCommKeysAndServices(didDocument)
+
+        // Persist the didDocument mutations (services, verification methods) applied above.
+        await this.dids.update({ did: parsedDid.did, didDocument })
+
+        this.did = parsedDid.did
+      } else if (parsedDid.method === 'webvh') {
+        // If there is an existing did:web with the same domain, this could be an
+        // upgrade. There should be no problem on removing did:web record since we
+        // can use newer keys for DIDComm bootstrapping, but we should at least warn
+        // about that
+        const didRepository = this.dependencyManager.resolve(DidRepository)
+        const existingDidWebRecord = await didRepository.findCreatedDid(this.context, `did:web:${domain}`)
+        if (existingDidWebRecord) {
+          this.logger.warn('Existing record for legacy did:web found. Removing it')
+          await didRepository.delete(this.context, existingDidWebRecord)
+        }
+
+        this.logger.debug(`Creating did:webvh for domain: ${domain}`)
+        const {
+          didState: { did: publicDid, didDocument },
+        } = await this.dids.create({ method: 'webvh', domain })
+        if (!publicDid || !didDocument) {
+          this.logger.error('Failed to create did:webvh record')
+          process.exit(1)
+        }
+
+        // Add DIDComm services and keys
+        await this.createAndAddDidCommKeysAndServices(didDocument)
+
+        didDocument.alsoKnownAs = [`did:web:${domain}`]
+
+        const result = await this.dids.update({ did: publicDid, didDocument })
+        if (result.didState.state !== 'finished') {
+          this.logger.error(`Cannot update DID ${publicDid}`)
+          process.exit(1)
+        }
+        this.logger?.debug('Public did:webvh record created')
+        this.did = publicDid
       } else {
-        this.logger?.debug(`Existing DID record found. No updates. Agent public DID: ${this.did}`)
+        throw new CredoError(`Agent DID method not supported: ${parsedDid.method}`)
       }
-      this.did = existingRecord.did
+
+      return
+    }
+
+    // Make sure did:webvh record has the did:web form as an alternative, in order to support
+    // implicit invitations
+    if (
+      parsedDid.method === 'webvh' &&
+      !(existingRecord?.getTag('alternativeDids') as string[])?.includes(`did:web:${domain}`)
+    ) {
+      this.logger?.debug('Adding did:web form as an alternative DID')
+
+      existingRecord.setTag('alternativeDids', [`did:web:${domain}`])
+      const didRepository = this.dependencyManager.resolve(DidRepository)
+      await didRepository.update(this.agentContext, existingRecord)
+    }
+    // DID already exists: the only mutation we can apply at startup is updating the
+    // DIDComm service entries (e.g. endpoint config has changed). Keys are never
+    // rebuilt — they're managed at DID creation time only.
+    const didDocument = existingRecord.didDocument!
+    if (this.havePublishedDidCommServicesChanged(didDocument)) {
+      // `havePublishedDidCommServicesChanged` only returns true when our managed
+      // Ed25519VerificationKey2020 is present, so the lookup below cannot be undefined.
+      const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)!
+      didDocument.service = [
+        ...(didDocument.service?.filter((s) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type)) ?? []),
+        ...this.getDidCommServices(didDocument.id, recipientKeyId),
+      ]
+      await this.dids.update({ did: didDocument.id, didDocument })
+      this.logger?.debug(`Public did record updated. Agent public DID: ${this.did}`)
+    } else {
+      this.logger?.debug(`Existing DID record found. No updates. Agent public DID: ${this.did}`)
+    }
+    this.did = existingRecord.did
+  }
+
+  private async acquireBootstrapLock(
+    lockId: string,
+    opts: { ttlMs: number; maxWaitMs: number; pollMs: number }
+  ): Promise<boolean> {
+    const key = `mediator-bootstrap-lock:${lockId}`
+    const instanceTag = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    const deadline = Date.now() + opts.maxWaitMs
+
+    const tryOnce = async (): Promise<boolean> => {
+      try {
+        await this.genericRecords.save({
+          id: key,
+          content: { acquiredAt: Date.now(), instanceTag, ttlMs: opts.ttlMs },
+        })
+        return true
+      } catch {
+        // Either duplicate id (lock held) or transient error: inspect existing record
+        const existing = await this.genericRecords.findById(key).catch(() => null)
+        if (!existing) return false
+        const acquiredAt = (existing.content?.acquiredAt as number | undefined) ?? 0
+        const ttlMs = (existing.content?.ttlMs as number | undefined) ?? opts.ttlMs
+        if (Date.now() - acquiredAt < ttlMs) return false
+        // Stale: try to forcibly take over
+        this.logger?.warn(`Bootstrap lock ${key} is stale (held by ${existing.content?.instanceTag}); taking over`)
+        try {
+          await this.genericRecords.delete(existing)
+        } catch {
+          return false
+        }
+        try {
+          await this.genericRecords.save({
+            id: key,
+            content: { acquiredAt: Date.now(), instanceTag, ttlMs: opts.ttlMs },
+          })
+          return true
+        } catch {
+          return false
+        }
+      }
+    }
+
+    while (true) {
+      if (await tryOnce()) return true
+      if (Date.now() >= deadline) return false
+      this.logger?.debug(`Bootstrap lock ${key} held by another instance; waiting`)
+      await new Promise((r) => setTimeout(r, opts.pollMs))
+    }
+  }
+
+  private async releaseBootstrapLock(lockId: string) {
+    const key = `mediator-bootstrap-lock:${lockId}`
+    try {
+      await this.genericRecords.deleteById(key)
+    } catch (error) {
+      this.logger?.debug(`Failed to release bootstrap lock ${key}: ${error}`)
     }
   }
 
@@ -228,29 +252,20 @@ export class DidCommMediatorAgent extends Agent {
   }
 
   /**
-   * Look up the Ed25519 verification method id from a DID Document. The DIDComm v1
-   * `did-communication` service requires an Ed25519 key as `recipientKeys` (not the X25519
-   * key-agreement key, which is reserved for DIDComm v2 / `keyAgreement`).
+   * Look up our managed DIDComm Ed25519 verification method id from a DID Document. The
+   * DIDComm v1 `did-communication` service requires an Ed25519 key as `recipientKeys`
+   * (not the X25519 key-agreement key, which is reserved for DIDComm v2 / `keyAgreement`).
+   * We publish ours as `Ed25519VerificationKey2020`; other Ed25519 keys that may appear
+   * in the document (notably the `did:webvh` update key, published as a `Multikey` with
+   * `z6Mk…` multibase) are intentionally ignored here.
    */
   private findEd25519VerificationMethodId(didDocument: DidDocument): string | undefined {
-    const vms = didDocument.verificationMethod ?? []
-    const ed25519Vm = vms.find(
-      (vm) =>
-        vm.type === 'Ed25519VerificationKey2020' ||
-        vm.type === 'Ed25519VerificationKey2018' ||
-        (vm.type === 'Multikey' &&
-          typeof vm.publicKeyMultibase === 'string' &&
-          vm.publicKeyMultibase.startsWith('z6Mk'))
-    )
-    return ed25519Vm?.id
+    return (didDocument.verificationMethod ?? []).find((vm) => vm.type === 'Ed25519VerificationKey2020')?.id
   }
 
   private havePublishedDidCommServicesChanged(didDocument: DidDocument): boolean {
     const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
-    // If there's no Ed25519 verification method we cannot publish a valid v1 service: force
-    // a rebuild via createAndAddDidCommKeysAndServices (triggered by hasLegacyMethods or by
-    // returning `true` here so the caller updates the record).
-    if (!recipientKeyId) return true
+    if (!recipientKeyId) return false
     const fromDoc = (didDocument.service ?? [])
       .filter((s) => MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type))
       .map((s) => JsonTransformer.toJSON(s))
@@ -292,10 +307,16 @@ export class DidCommMediatorAgent extends Agent {
     return services
   }
 
+  /**
+   * Generate the DIDComm Ed25519 + derived X25519 keys, register the Ed25519 key with the
+   * DID record's KMS mapping, and append the corresponding verification methods, verification
+   * relations, contexts, and managed services to the passed DID document. Intended to be
+   * invoked exactly once per public DID, at creation time.
+   */
   private async createAndAddDidCommKeysAndServices(didDocument: DidDocument) {
     const publicDid = didDocument.id
 
-    const context = [
+    const didCommContexts = [
       'https://w3id.org/security/multikey/v1',
       'https://w3id.org/security/suites/ed25519-2020/v1',
       'https://w3id.org/security/suites/x25519-2019/v1',
@@ -304,7 +325,6 @@ export class DidCommMediatorAgent extends Agent {
     const kms = this.agentContext.resolve(Kms.KeyManagementApi)
     const didRepository = this.agentContext.resolve(DidRepository)
 
-    // Create didcomm keys
     const key = await kms.createKey({ type: { kty: 'OKP', crv: 'Ed25519' } })
     const publicKeyBytes = Kms.PublicJwk.fromPublicJwk(key.publicJwk).publicKey.publicKey
     const publicKeyMultibase = multibaseEncode(
@@ -312,85 +332,25 @@ export class DidCommMediatorAgent extends Agent {
       MultibaseEncoding.BASE58_BTC
     )
     const [record] = await didRepository.findByQuery(this.agentContext, { did: publicDid })
-    record.keys = [
-      ...(record.keys ?? []),
-      {
-        kmsKeyId: key.keyId,
-        didDocumentRelativeKeyId: `#${publicKeyMultibase}`,
-      },
-    ]
+    record.keys = [...(record.keys ?? []), { kmsKeyId: key.keyId, didDocumentRelativeKeyId: `#${publicKeyMultibase}` }]
     await didRepository.update(this.agentContext, record)
+
     const verificationMethodId = `${publicDid}#${publicKeyMultibase}`
     const publicKeyX25519 = convertPublicKeyToX25519(publicKeyBytes)
     const x25519Key = Kms.PublicJwk.fromPublicKey({ kty: 'OKP', crv: 'X25519', publicKey: publicKeyX25519 })
 
-    // Remove legacy if exist
-    const legacyContexts = ['https://w3id.org/security/suites/ed25519-2018/v1']
-    const legacyAuthId = (didDocument.verificationMethod ?? []).find((vm) =>
-      ['Ed25519VerificationKey2018'].includes(vm.type)
-    )?.id
-    if (legacyAuthId) {
-      didDocument.authentication = (didDocument.authentication ?? []).filter((id) => id !== legacyAuthId)
-      didDocument.assertionMethod = (didDocument.assertionMethod ?? []).filter((id) => id !== legacyAuthId)
-    }
-    // Strip every verification method that previously belonged to our DIDComm setup.
-    // We must not just merge new VMs alongside old ones, because:
-    //   - Old `Ed25519VerificationKey2020` entries are always our previous DIDComm
-    //     authentication keys (DID method registrars like did:webvh use `Multikey` for
-    //     their own update keys, never `Ed25519VerificationKey2020`), so they're stale.
-    //   - Old X25519 `Multikey` entries (multibase `z6LS…`) are our previous DIDComm
-    //     keyAgreement keys; leaving them in place produces duplicate `#key-agreement-1`
-    //     ids and causes peers' `getRecipientKeysWithVerificationMethod` to dereference
-    //     the wrong (stale) key, ultimately signing DID Exchange responses with extra
-    //     signer keys not present in the receiver's invitation key set.
-    //   - Anything we are about to add by id (e.g. `#key-agreement-1`) must be cleared so
-    //     we don't end up with duplicates.
-    // The webvh update key (a `Multikey` with `z6Mk…` multibase that we don't manage)
-    // is intentionally preserved.
-    const newVmIds = new Set([verificationMethodId, keyAgreementId])
-    const filteredMethods = (didDocument.verificationMethod ?? []).filter((vm) => {
-      if (['Ed25519VerificationKey2018', 'X25519KeyAgreementKey2019', 'Ed25519VerificationKey2020'].includes(vm.type)) {
-        return false
-      }
-      if (newVmIds.has(vm.id)) return false
-      if (
-        vm.type === 'Multikey' &&
-        typeof vm.publicKeyMultibase === 'string' &&
-        vm.publicKeyMultibase.startsWith('z6LS')
-      ) {
-        return false
-      }
-      return true
-    })
-
     const verificationMethods = [
-      {
-        controller: publicDid,
-        id: verificationMethodId,
-        publicKeyMultibase,
-        type: 'Ed25519VerificationKey2020',
-      },
-      {
-        controller: publicDid,
-        id: keyAgreementId,
-        publicKeyMultibase: x25519Key.fingerprint,
-        type: 'Multikey',
-      },
+      { controller: publicDid, id: verificationMethodId, publicKeyMultibase, type: 'Ed25519VerificationKey2020' },
+      { controller: publicDid, id: keyAgreementId, publicKeyMultibase: x25519Key.fingerprint, type: 'Multikey' },
     ]
-
-    const authentication = verificationMethodId
-    const assertionMethod = verificationMethodId
-    const keyAgreement = keyAgreementId
-
-    const didcommServices = this.getDidCommServices(publicDid, verificationMethodId)
 
     const currentContexts = Array.isArray(didDocument.context)
       ? didDocument.context
       : didDocument.context
       ? [didDocument.context]
       : []
-    didDocument.context = [...new Set([...currentContexts.filter((ctx) => !legacyContexts.includes(ctx)), ...context])]
-    didDocument.verificationMethod = [...filteredMethods, ...verificationMethods]
+    didDocument.context = [...new Set([...currentContexts, ...didCommContexts])]
+    didDocument.verificationMethod = [...(didDocument.verificationMethod ?? []), ...verificationMethods]
     // Replace (rather than merge with) the verification relations so that ONLY our managed
     // DIDComm keys are reachable as invitation keys. Some DID method registrars (e.g.
     // did:webvh) add their own update/signing key to `authentication` / `keyAgreement`;
@@ -398,14 +358,12 @@ export class DidCommMediatorAgent extends Agent {
     // otherwise pick those up and treat them as invitation keys, breaking DID Exchange v1.x
     // signature verification on the receiver side. Update keys remain available in
     // `verificationMethod` for the DID method's own log-signing logic.
-    didDocument.authentication = [authentication]
-    didDocument.assertionMethod = [assertionMethod]
-    didDocument.keyAgreement = [keyAgreement]
+    didDocument.authentication = [verificationMethodId]
+    didDocument.assertionMethod = [verificationMethodId]
+    didDocument.keyAgreement = [keyAgreementId]
     didDocument.service = [
-      ...(didDocument.service
-        ? didDocument.service.filter((service) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(service.type))
-        : []),
-      ...didcommServices,
+      ...(didDocument.service?.filter((s) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type)) ?? []),
+      ...this.getDidCommServices(publicDid, verificationMethodId),
     ]
   }
 }
