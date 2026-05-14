@@ -164,11 +164,12 @@ export class DidCommMediatorAgent extends Agent {
     // DID already exists: the only mutation we can apply at startup is updating the
     // DIDComm service entries (e.g. endpoint config has changed). Keys are never
     // rebuilt — they're managed at DID creation time only.
-    const didDocument = existingRecord.didDocument!
-    if (this.havePublishedDidCommServicesChanged(didDocument)) {
-      // `havePublishedDidCommServicesChanged` only returns true when our managed
-      // Ed25519VerificationKey2020 is present, so the lookup below cannot be undefined.
-      const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)!
+    const didDocument = existingRecord.didDocument
+    if (!didDocument) {
+      throw new CredoError(`Existing DID record ${existingRecord.did} has no DID document attached`)
+    }
+    const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
+    if (recipientKeyId && this.havePublishedDidCommServicesChanged(didDocument, recipientKeyId)) {
       didDocument.service = [
         ...(didDocument.service?.filter((s) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type)) ?? []),
         ...this.getDidCommServices(didDocument.id, recipientKeyId),
@@ -222,12 +223,12 @@ export class DidCommMediatorAgent extends Agent {
       }
     }
 
-    while (true) {
+    while (Date.now() < deadline) {
       if (await tryOnce()) return true
-      if (Date.now() >= deadline) return false
       this.logger?.debug(`Bootstrap lock ${key} held by another instance; waiting`)
       await new Promise((r) => setTimeout(r, opts.pollMs))
     }
+    return false
   }
 
   private async releaseBootstrapLock(lockId: string) {
@@ -263,9 +264,7 @@ export class DidCommMediatorAgent extends Agent {
     return (didDocument.verificationMethod ?? []).find((vm) => vm.type === 'Ed25519VerificationKey2020')?.id
   }
 
-  private havePublishedDidCommServicesChanged(didDocument: DidDocument): boolean {
-    const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
-    if (!recipientKeyId) return false
+  private havePublishedDidCommServicesChanged(didDocument: DidDocument, recipientKeyId: string): boolean {
     const fromDoc = (didDocument.service ?? [])
       .filter((s) => MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type))
       .map((s) => JsonTransformer.toJSON(s))
