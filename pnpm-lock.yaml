@@ -20,7 +20,7 @@ overrides:
 
 patchedDependencies:
   '@credo-ts/didcomm-transport-queue-postgres@0.0.1':
-    hash: 6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541
+    hash: i7nz7h4rgcdpge6ks4oihmndgq
     path: patches/@credo-ts__didcomm-transport-queue-postgres@0.0.1.patch
 
 importers:
@@ -44,7 +44,7 @@ importers:
         version: 0.0.1(@credo-ts/core@0.7.1-pr-2704-20260610194233(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260610194233(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
         specifier: ^0.0.1
-        version: 0.0.1(patch_hash=6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541)(@credo-ts/core@0.7.1-pr-2704-20260610194233(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260610194233(typescript@5.9.3))
+        version: 0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.7.1-pr-2704-20260610194233(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260610194233(typescript@5.9.3))
       '@credo-ts/node':
         specifier: 0.7.1-pr-2704-20260610194233
         version: 0.7.1-pr-2704-20260610194233(typescript@5.9.3)
@@ -1113,6 +1113,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@verifiables/request-converter@0.2.0':
     resolution: {integrity: sha512-afhFYBSYf0zqLkHu1xlLJ8DUAV/ved5yD9MKnPPaG9tH68winV10eBBH4/2eoi2qK6hvAtWPjoZ+1pRF6jLUJw==}
@@ -3360,10 +3361,12 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -3829,7 +3832,7 @@ snapshots:
       class-transformer: 0.5.1
       class-validator: 0.14.4
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(patch_hash=6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541)(@credo-ts/core@0.7.1-pr-2704-20260610194233(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260610194233(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.7.1-pr-2704-20260610194233(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260610194233(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.7.1-pr-2704-20260610194233(typescript@5.9.3)
       '@credo-ts/didcomm': 0.7.1-pr-2704-20260610194233(typescript@5.9.3)
