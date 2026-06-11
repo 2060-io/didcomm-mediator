@@ -28,7 +28,7 @@ const sendPushNotification = async (
       logger?.debug(
         `[QueueTransport] Found FCM token for connection ${connectionId}, with ${token} sending notification`
       )
-      await notificationSender.sendMessage(token, connectionId)
+      await notificationSender.sendMessage(token, connectionId, record?.devicePlatform)
       return
     }
     logger?.debug(`[QueueTransport] no FCM token found for connection ${connectionId}, skipping notification`)

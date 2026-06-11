@@ -1,4 +1,5 @@
 import type { App as FcmApp } from 'firebase-admin/app'
+import type { AndroidConfig, ApnsConfig, Message } from 'firebase-admin/messaging'
 import firebaseAdmin from 'firebase-admin'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -31,35 +32,48 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
     }
   }
 
-  public async sendMessage(registrationToken: string, messageId: string) {
+  public async sendMessage(registrationToken: string, messageId: string, devicePlatform?: string | null) {
     try {
       if (!this.fcmApp) {
         this.logger?.warn('Firebase Admin is not initialized. Skipping notification.')
         return false
       }
-      const response = await firebaseAdmin.messaging(this.fcmApp).send({
-        token: registrationToken,
-        notification: {
-          title: 'Hologram',
-          body: 'You have new messages',
+      const data = {
+        '@type': 'https://didcomm.org/push-notifications-fcm',
+        message_id: messageId,
+      }
+      const android: AndroidConfig = {
+        collapseKey: 'generic-new-messages',
+        priority: 'high',
+      }
+      const notification = {
+        title: 'Hologram',
+        body: 'Checking for new messages',
+      }
+      // No aps sound key: silent delivery (no tone or vibration) on iOS
+      const apns: ApnsConfig = {
+        headers: {
+          'apns-push-type': 'alert',
+          'apns-priority': '10',
+          'apns-collapse-id': 'generic-new-messages',
         },
-        data: {
-          '@type': 'https://didcomm.org/push-notifications-fcm',
-          message_id: messageId,
-        },
-        android: {
-          collapseKey: 'generic-new-messages',
-          priority: 'high',
-          notification: { tag: 'generic-new-messages', icon: 'ic_notification' },
-        },
-        apns: {
-          headers: {
-            'apns-priority': '10',
-            'apns-collapse-id': 'generic-new-messages',
-          },
-          payload: { aps: { contentAvailable: true } },
-        },
-      })
+        payload: { aps: { contentAvailable: true, threadId: 'generic-new-messages' } },
+      }
+      let message: Message
+      if (devicePlatform === 'android') {
+        message = { token: registrationToken, data, android }
+      } else if (devicePlatform === 'ios') {
+        message = { token: registrationToken, notification, data, apns }
+      } else {
+        message = {
+          token: registrationToken,
+          notification,
+          data,
+          android: { ...android, notification: { tag: 'generic-new-messages', icon: 'ic_notification' } },
+          apns,
+        }
+      }
+      const response = await firebaseAdmin.messaging(this.fcmApp).send(message)
       this.logger?.debug(`Message sent successfully: ${response}`)
       return true
     } catch (error) {

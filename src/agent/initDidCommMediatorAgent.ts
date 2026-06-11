@@ -26,7 +26,10 @@ import { DidCommHttpOutboundTransport, DidCommWsOutboundTransport } from '@credo
 
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender.js'
 import { InMemoryDidCommQueueTransportRepository } from '../storage/InMemoryDidCommQueueTransportRepository.js'
-import { DidCommPushNotificationsFcmSetDeviceInfoMessage } from '@credo-ts/didcomm-push-notifications'
+import {
+  DidCommPushNotificationsFcmRepository,
+  DidCommPushNotificationsFcmSetDeviceInfoMessage,
+} from '@credo-ts/didcomm-push-notifications'
 import { createMediator, type CloudAgentOptions, DidCommMediatorAgent } from './DidCommMediatorAgent.js'
 import { deriveShortenBaseFromPublicDid } from '../util/invitationBase.js'
 import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup.js'
@@ -160,7 +163,16 @@ export const initMediator = async (
           logger.debug(
             `[TransportQueuePostgresMessageQueued] Sending push notification for message ${message.id} to connection ${message.connectionId}`
           )
-          await localFcmNotificationSender.sendMessage(token, message.id)
+          let devicePlatform = connectionRecord.getTag('device_platform') as string | null | undefined
+          if (!devicePlatform) {
+            // Registrations older than the device_platform tag carry the platform in the credo FCM record
+            const fcmRepository = agent.dependencyManager.resolve(DidCommPushNotificationsFcmRepository)
+            const fcmRecord = await fcmRepository.findSingleByQuery(agent.context, {
+              connectionId: message.connectionId,
+            })
+            devicePlatform = fcmRecord?.devicePlatform
+          }
+          await localFcmNotificationSender.sendMessage(token, message.id, devicePlatform)
           logger.info(
             `[TransportQueuePostgresMessageQueued] Push notification for message ${message.id} sent successfully`
           )
@@ -264,7 +276,9 @@ export const initMediator = async (
       if (!connection) return
 
       if (message.type === DidCommPushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
-        connection.setTag('device_token', (message as DidCommPushNotificationsFcmSetDeviceInfoMessage).deviceToken)
+        const deviceInfo = message as DidCommPushNotificationsFcmSetDeviceInfoMessage
+        connection.setTag('device_token', deviceInfo.deviceToken)
+        connection.setTag('device_platform', deviceInfo.devicePlatform)
         await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connection)
       }
 
