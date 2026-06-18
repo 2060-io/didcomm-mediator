@@ -92,9 +92,7 @@ export class WebDidRegistrar implements DidRegistrar {
       }
 
       const didRepository = agentContext.dependencyManager.resolve(DidRepository)
-      const didRecord = await didRepository.findSingleByQuery(agentContext, {
-        $or: [{ did }, { domain, method: 'web' }],
-      })
+      const didRecord = await didRepository.findSingleByQuery(agentContext, { did })
 
       if (!didRecord) return this.handleError('Did not found')
 
