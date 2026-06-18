@@ -92,12 +92,7 @@ export class WebDidRegistrar implements DidRegistrar {
       }
 
       const didRepository = agentContext.dependencyManager.resolve(DidRepository)
-      // Without a domain the $or branch would collapse to { method: 'web' } and match
-      // every created did:web record in the wallet
-      const didRecord = await didRepository.findSingleByQuery(
-        agentContext,
-        domain ? { $or: [{ did }, { domain, method: 'web' }] } : { did }
-      )
+      const didRecord = await didRepository.findSingleByQuery(agentContext, { did })
 
       if (!didRecord) return this.handleError('Did not found')
 

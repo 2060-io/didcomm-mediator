@@ -165,12 +165,15 @@ export const initMediator = async (
           )
           let devicePlatform = connectionRecord.getTag('device_platform') as string | null | undefined
           if (!devicePlatform) {
-            // Registrations older than the device_platform tag carry the platform in the credo FCM record
             const fcmRepository = agent.dependencyManager.resolve(DidCommPushNotificationsFcmRepository)
             const fcmRecord = await fcmRepository.findSingleByQuery(agent.context, {
               connectionId: message.connectionId,
             })
-            devicePlatform = fcmRecord?.devicePlatform
+            if (fcmRecord?.devicePlatform) {
+              devicePlatform = fcmRecord.devicePlatform
+              connectionRecord.setTag('device_platform', devicePlatform)
+              await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connectionRecord)
+            }
           }
           await localFcmNotificationSender.sendMessage(token, message.id, devicePlatform)
           logger.info(
