@@ -20,7 +20,7 @@ overrides:
 
 patchedDependencies:
   '@credo-ts/didcomm-transport-queue-postgres@0.0.1':
-    hash: 6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541
+    hash: i7nz7h4rgcdpge6ks4oihmndgq
     path: patches/@credo-ts__didcomm-transport-queue-postgres@0.0.1.patch
 
 importers:
@@ -44,7 +44,7 @@ importers:
         version: 0.0.1(@credo-ts/core@0.7.1-pr-2704-20260618182855(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260618182855(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
         specifier: ^0.0.1
-        version: 0.0.1(patch_hash=6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541)(@credo-ts/core@0.7.1-pr-2704-20260618182855(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260618182855(typescript@5.9.3))
+        version: 0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.7.1-pr-2704-20260618182855(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260618182855(typescript@5.9.3))
       '@credo-ts/node':
         specifier: 0.7.1-pr-2704-20260618182855
         version: 0.7.1-pr-2704-20260618182855(typescript@5.9.3)
@@ -851,6 +851,7 @@ packages:
 
   '@sphereon/kmp-mdoc-core@0.2.0-SNAPSHOT.26':
     resolution: {integrity: sha512-QXJ6R8ENiZV2rPMbn06cw5JKwqUYN1kzVRbYfONqE1PEXx1noQ4md7uxr2zSczi0ubKkNcbyYDNtIMTZIhGzmQ==}
+    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution: {integrity: sha512-foFxfLkRwcn/MOp/eht46Q7wsvpQGlO7aowowIIb5Tz9u97kYZ2kz6K2h2ODxWuv5CRA7Q0MY8XUBGE2lfOhOQ==}
@@ -3832,7 +3833,7 @@ snapshots:
       class-transformer: 0.5.1
       class-validator: 0.14.4
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(patch_hash=6ed288ae506a32f5a67518dccc21bf9ec05a88b58ef97fa4c681b860d3a2c541)(@credo-ts/core@0.7.1-pr-2704-20260618182855(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260618182855(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.7.1-pr-2704-20260618182855(typescript@5.9.3))(@credo-ts/didcomm@0.7.1-pr-2704-20260618182855(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.7.1-pr-2704-20260618182855(typescript@5.9.3)
       '@credo-ts/didcomm': 0.7.1-pr-2704-20260618182855(typescript@5.9.3)
