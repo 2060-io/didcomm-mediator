@@ -5,3 +5,7 @@ logs.txt
 .afj
 .env
 firebase-cfg.json
+
+# Editor and agent config (not shared)
+.claude/
+.vscode/
