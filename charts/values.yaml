@@ -52,3 +52,34 @@ statefulset:
   #     secretName: my-existing-secret
   #     key: password
   envFromSecrets: []
+
+# Admin API configuration. The admin HTTP server runs on a separate
+# container port so it can be exposed (or not) through its own Service /
+# Ingress, independently of the public DIDComm endpoint.
+admin:
+  # Set to false to disable the admin port entirely. When true, ADMIN_API_KEY
+  # must resolve to a non-empty value — the mediator refuses to start otherwise.
+  enabled: true
+  port: 4001
+  # Either provide the key inline (apiKey) or reference an existing Secret that
+  # holds it under the given `secretKey`. `existingSecret` wins if both are set.
+  apiKey: ""
+  existingSecret: ""
+  secretKey: ADMIN_API_KEY
+  # If set, enables CORS on the admin app with this origin.
+  corsOrigin: ""
+  # Internal Service for the admin port. By default it is ClusterIP with no
+  # Ingress — operators should expose it only via a dedicated internal ingress
+  # or via kubectl port-forward. To publish it externally, add annotations /
+  # change the Service type here.
+  service:
+    enabled: true
+    type: ClusterIP
+    annotations: {}
+  cleanup:
+    # When true, a cron job inside the admin app deletes connections whose
+    # updatedAt is older than `inactiveDays`, along with their queued messages.
+    enabled: false
+    inactiveDays: 365
+    # Node-cron expression (not Kubernetes CronJob syntax).
+    cron: "0 3 * * *"

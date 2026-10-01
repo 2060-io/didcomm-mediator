@@ -45,3 +45,15 @@ export const MPR_MAX_RECEIVE_BYTES = Number(process.env.MPR_MAX_RECEIVE_BYTES)
 export const SHORTEN_INVITATION_BASE_URL = process.env.SHORTEN_INVITATION_BASE_URL
 
 export const SHORTEN_URL_CLEANUP_INTERVAL_SECONDS = Number(process.env.SHORTEN_URL_CLEANUP_INTERVAL_SECONDS) || 86400
+
+// Admin API (runs on a separate HTTP port)
+export const ADMIN_PORT = Number(process.env.ADMIN_PORT || 4001)
+export const ADMIN_HOST = process.env.ADMIN_HOST || '0.0.0.0'
+export const ADMIN_API_KEY = process.env.ADMIN_API_KEY
+export const ADMIN_CORS_ORIGIN = process.env.ADMIN_CORS_ORIGIN
+
+// Scheduled cleanup of inactive connections (and their queued messages).
+// Disabled by default; enable by setting ADMIN_CLEANUP_ENABLED=true.
+export const ADMIN_CLEANUP_ENABLED = parseBoolEnv(process.env.ADMIN_CLEANUP_ENABLED, false)
+export const ADMIN_CLEANUP_INACTIVE_DAYS = Number(process.env.ADMIN_CLEANUP_INACTIVE_DAYS || 365)
+export const ADMIN_CLEANUP_CRON = process.env.ADMIN_CLEANUP_CRON || '0 3 * * *'

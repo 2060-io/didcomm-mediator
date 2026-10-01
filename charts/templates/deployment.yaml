@@ -68,11 +68,37 @@ spec:
           image: io2060/didcomm-mediator:{{ .Chart.Version }}
           imagePullPolicy: {{ .Values.statefulset.image.pullPolicy }}
           ports:
-            - containerPort: 4000
+            - name: didcomm
+              containerPort: 4000
+            {{- if .Values.admin.enabled }}
+            - name: admin
+              containerPort: {{ .Values.admin.port }}
+            {{- end }}
           env:
             {{- range $key, $val := .Values.statefulset.env }}
             - name: {{ $key }}
               value: {{ tpl (printf "%q" $val) $ }}
+            {{- end }}
+            {{- if .Values.admin.enabled }}
+            - name: ADMIN_PORT
+              value: {{ .Values.admin.port | quote }}
+            - name: ADMIN_HOST
+              value: "0.0.0.0"
+            {{- if .Values.admin.corsOrigin }}
+            - name: ADMIN_CORS_ORIGIN
+              value: {{ .Values.admin.corsOrigin | quote }}
+            {{- end }}
+            - name: ADMIN_CLEANUP_ENABLED
+              value: {{ .Values.admin.cleanup.enabled | quote }}
+            - name: ADMIN_CLEANUP_INACTIVE_DAYS
+              value: {{ .Values.admin.cleanup.inactiveDays | quote }}
+            - name: ADMIN_CLEANUP_CRON
+              value: {{ .Values.admin.cleanup.cron | quote }}
+            - name: ADMIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.admin.existingSecret }}{{ .Values.admin.existingSecret }}{{ else }}{{ include "didcomm-mediator.fullname" . }}-admin{{ end }}
+                  key: {{ .Values.admin.secretKey }}
             {{- end }}
             {{- range .Values.statefulset.envFromSecrets }}
             - name: {{ .name }}

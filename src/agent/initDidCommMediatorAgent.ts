@@ -52,6 +52,23 @@ async function resolveDidDocumentData(agent: DidCommMediatorAgent) {
   return { didDocument, didLog: didLog?.map((entry) => JSON.stringify(entry)).join('\n') }
 }
 
+export interface InitMediatorResult {
+  app: Express
+  agent: DidCommMediatorAgent
+  queueTransportRepository: DidCommTransportQueuePostgres | InMemoryDidCommQueueTransportRepository
+  shortenUrlRepository: DidCommShortenUrlRepository
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  didcommApi: DidCommApi<any>
+  shortenInvitationBaseUrl: string
+  /**
+   * Finishes the startup sequence: calls `agent.initialize()` and wires the
+   * WebSocket upgrade on the HTTP server created by `HttpInboundTransport`.
+   * When `autoInitialize` is `true` (the default) this is invoked internally
+   * and the returned function is a no-op.
+   */
+  finalize: () => Promise<void>
+}
+
 export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
     shortenInvitationBaseUrl?: string
@@ -62,12 +79,21 @@ export const initMediator = async (
     postgresHost?: string
     messagePickupPostgresDatabaseName?: string
     did?: string
+    /**
+     * When true (default), the agent is initialized (and the WS upgrade handler
+     * registered) before returning. Set to false when an external bootstrapper
+     * needs to mount additional routes on the shared Express app between agent
+     * creation and agent initialization (e.g. the Nest bootstrap in `index.ts`).
+     */
+    autoInitialize?: boolean
+    /**
+     * When true (default), the public HTTP routes (`/.well-known/did.json`,
+     * `/.well-known/did.jsonl`, `/s`) are registered directly on the shared
+     * Express app. Set to false when a Nest `PublicModule` owns those routes.
+     */
+    registerPublicHttpRoutes?: boolean
   }
-): Promise<{
-  app: Express
-  agent: DidCommMediatorAgent
-  queueTransportRepository: DidCommTransportQueuePostgres | InMemoryDidCommQueueTransportRepository
-}> => {
+): Promise<InitMediatorResult> => {
   const logger = config.config.logger ?? new ConsoleLogger(LogLevel.Off)
   const publicDid = config.did
   const shortenInvitationBaseUrl =
@@ -207,32 +233,36 @@ export const initMediator = async (
     }
   )
 
+  const registerPublicHttpRoutes = config.registerPublicHttpRoutes ?? true
+
   if (publicDid) {
-    app.get('/.well-known/did.json', async (_req, res) => {
-      logger.info(`Public Did Document requested`)
+    if (registerPublicHttpRoutes) {
+      app.get('/.well-known/did.json', async (_req, res) => {
+        logger.info(`Public Did Document requested`)
 
-      const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
+        const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
 
-      if (resolvedDidDocument) {
-        res.send(resolvedDidDocument)
-      } else {
-        res.status(404).end()
-      }
-    })
+        if (resolvedDidDocument) {
+          res.send(resolvedDidDocument)
+        } else {
+          res.status(404).end()
+        }
+      })
 
-    app.get('/.well-known/did.jsonl', async (_req, res) => {
-      logger.info(`Public DID log requested`)
+      app.get('/.well-known/did.jsonl', async (_req, res) => {
+        logger.info(`Public DID log requested`)
 
-      const { didLog } = await resolveDidDocumentData(agent)
+        const { didLog } = await resolveDidDocumentData(agent)
 
-      if (didLog) {
-        res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
-        res.setHeader('Cache-Control', 'no-cache')
-        res.send(didLog)
-      } else {
-        res.status(404).end()
-      }
-    })
+        if (didLog) {
+          res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
+          res.setHeader('Cache-Control', 'no-cache')
+          res.send(didLog)
+        } else {
+          res.status(404).end()
+        }
+      })
+    }
 
     agent.events.on<DidCommConnectionStateChangedEvent>(
       DidCommConnectionEventTypes.DidCommConnectionStateChanged,
@@ -276,66 +306,89 @@ export const initMediator = async (
     })
   }
 
-  app.get('/s', async (req, res) => {
-    const id = req.query.id
-    try {
-      if (typeof id !== 'string') {
-        logger.warn('[ShortenUrl] /s endpoint called without id query parameter')
-        return res.status(400).json({ error: 'Query parameter "id" is required' })
+  if (registerPublicHttpRoutes) {
+    app.get('/s', async (req, res) => {
+      const id = req.query.id
+      try {
+        if (typeof id !== 'string') {
+          logger.warn('[ShortenUrl] /s endpoint called without id query parameter')
+          return res.status(400).json({ error: 'Query parameter "id" is required' })
+        }
+        logger.debug(`[ShortenUrl] /s endpoint called with id ${id}`)
+
+        const shortUrlRecord = await shortenUrlRepository.findById(agent.context, id)
+        logger.debug(`[ShortenUrl] /s endpoint found record: ${JSON.stringify(shortUrlRecord, null, 2)}`)
+
+        if (!shortUrlRecord) {
+          logger.warn('[ShortenUrl] /s endpoint received unknown id', { id })
+          return res.status(404).json({ error: 'Shortened URL not found' })
+        }
+        const longUrl = shortUrlRecord.url
+
+        logger.debug(`[ShortenUrl] /s endpoint retrieved longUrl: ${longUrl}`)
+
+        if (!longUrl) {
+          logger.warn('[ShortenUrl] /s endpoint received unknown UUID', { id })
+          return res.status(404).json({ error: 'Shortened URL not found' })
+        }
+        if (await isShortenUrlRecordExpired(shortUrlRecord)) {
+          shortenUrlRepository.deleteById(agent.context, id)
+          logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
+          return res.status(410).json({ error: 'Shortened URL has expired' })
+        }
+
+        if (req.accepts('json')) {
+          const invitationUrl = await didcommApi.oob.parseInvitation(longUrl)
+          res.send(invitationUrl.toJSON()).end()
+        } else {
+          res.status(302).location(longUrl).end()
+        }
+      } catch (error) {
+        logger.error(`[ShortenUrl] failed to retrieve shortened url for id ${id}: ${error}`)
+        res.status(500).send('Internal Server Error')
       }
-      logger.debug(`[ShortenUrl] /s endpoint called with id ${id}`)
-
-      const shortUrlRecord = await shortenUrlRepository.findById(agent.context, id)
-      logger.debug(`[ShortenUrl] /s endpoint found record: ${JSON.stringify(shortUrlRecord, null, 2)}`)
-
-      if (!shortUrlRecord) {
-        logger.warn('[ShortenUrl] /s endpoint received unknown id', { id })
-        return res.status(404).json({ error: 'Shortened URL not found' })
-      }
-      const longUrl = shortUrlRecord.url
-
-      logger.debug(`[ShortenUrl] /s endpoint retrieved longUrl: ${longUrl}`)
-
-      if (!longUrl) {
-        logger.warn('[ShortenUrl] /s endpoint received unknown UUID', { id })
-        return res.status(404).json({ error: 'Shortened URL not found' })
-      }
-      if (await isShortenUrlRecordExpired(shortUrlRecord)) {
-        shortenUrlRepository.deleteById(agent.context, id)
-        logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
-        return res.status(410).json({ error: 'Shortened URL has expired' })
-      }
-
-      if (req.accepts('json')) {
-        const invitationUrl = await didcommApi.oob.parseInvitation(longUrl)
-        res.send(invitationUrl.toJSON()).end()
-      } else {
-        res.status(302).location(longUrl).end()
-      }
-    } catch (error) {
-      logger.error(`[ShortenUrl] failed to retrieve shortened url for id ${id}: ${error}`)
-      res.status(500).send('Internal Server Error')
-    }
-  })
-
-  await agent.initialize()
-  logger.info('agent initialized')
-
-  const server =
-    (
-      agent.modules.didcomm.inboundTransports.find(
-        (transport: unknown) => transport instanceof HttpInboundTransport
-      ) as HttpInboundTransport | undefined
-    )?.server ?? app.listen(config.port)
-
-  if (config.enableWs && webSocketServer) {
-    server?.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
-      webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
-        const socketId = utils.uuid()
-        webSocketServer.emit('connection', socketParam, request, socketId)
-      })
     })
   }
 
-  return { app, agent, queueTransportRepository }
+  const finalize = async () => {
+    await agent.initialize()
+    logger.info('agent initialized')
+
+    const server =
+      (
+        agent.modules.didcomm.inboundTransports.find(
+          (transport: unknown) => transport instanceof HttpInboundTransport
+        ) as HttpInboundTransport | undefined
+      )?.server ?? app.listen(config.port)
+
+    if (config.enableWs && webSocketServer) {
+      server?.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
+        webSocketServer.handleUpgrade(request, socket as Socket, head, (socketParam) => {
+          const socketId = utils.uuid()
+          webSocketServer.emit('connection', socketParam, request, socketId)
+        })
+      })
+    }
+  }
+
+  const autoInitialize = config.autoInitialize ?? true
+  let finalized = false
+  const guardedFinalize = async () => {
+    if (finalized) return
+    finalized = true
+    await finalize()
+  }
+  if (autoInitialize) {
+    await guardedFinalize()
+  }
+
+  return {
+    app,
+    agent,
+    queueTransportRepository,
+    shortenUrlRepository,
+    didcommApi,
+    shortenInvitationBaseUrl,
+    finalize: guardedFinalize,
+  }
 }

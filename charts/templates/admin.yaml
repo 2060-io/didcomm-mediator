@@ -1,0 +1,46 @@
+{{- if and .Values.admin.enabled .Values.admin.service.enabled }}
+{{/*
+  Separate Service exposing only the admin port. Default type is ClusterIP and
+  there is no Ingress for it — operators must opt-in explicitly if they want
+  the admin API reachable outside the cluster.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "didcomm-mediator.fullname" . }}-admin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "didcomm-mediator.labels" . | nindent 4 }}
+  {{- with .Values.admin.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.admin.service.type }}
+  selector:
+    {{ include "didcomm-mediator.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: admin
+      port: {{ .Values.admin.port }}
+      targetPort: admin
+      protocol: TCP
+---
+{{- end }}
+{{- if and .Values.admin.enabled (not .Values.admin.existingSecret) }}
+{{/*
+  Opaque Secret holding the admin API key. Created only when the user did not
+  point us at an existing Secret via `.Values.admin.existingSecret`. An empty
+  `admin.apiKey` will render an empty string here; the mediator refuses to
+  start in that case (fail-closed), surfacing the misconfiguration early.
+*/}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "didcomm-mediator.fullname" . }}-admin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "didcomm-mediator.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  {{ .Values.admin.secretKey }}: {{ .Values.admin.apiKey | quote }}
+{{- end }}
