@@ -5,6 +5,7 @@ import type { AgentContext } from '@credo-ts/core'
 import { CredoError, EventEmitter, utils } from '@credo-ts/core'
 import {
   DidCommEventTypes,
+  type DidCommMessageProcessedEvent,
   DidCommMimeType,
   DidCommModuleConfig,
   DidCommTransportService,
@@ -74,6 +75,14 @@ export class HttpInboundTransport implements DidCommInboundTransport {
         const encryptedMessage = JSON.parse(message)
 
         const eventEmitter = agentContext.dependencyManager.resolve(EventEmitter)
+
+        // Wait until the agent has processed the message before the response ends and the
+        // session is removed. The message receiver stores the session for a message with
+        // return routing. If the session is removed first, the receiver puts the closed
+        // session back into the session table, and the sender then picks that closed session
+        // for every later message to the connection, also for live delivery.
+        const processed = this.waitForProcessedMessage(agentContext, eventEmitter, encryptedMessage)
+
         eventEmitter.emit(agentContext, {
           type: DidCommEventTypes.DidCommMessageReceived,
           payload: {
@@ -81,6 +90,8 @@ export class HttpInboundTransport implements DidCommInboundTransport {
             session,
           },
         })
+
+        await processed
 
         if (!res.headersSent) {
           res.status(200).end()
@@ -104,6 +115,28 @@ export class HttpInboundTransport implements DidCommInboundTransport {
 
   public async stop(): Promise<void> {
     return new Promise((resolve, reject) => this._server?.close((err) => (err ? reject(err) : resolve())))
+  }
+
+  private waitForProcessedMessage(
+    agentContext: AgentContext,
+    eventEmitter: EventEmitter,
+    encryptedMessage: unknown
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const pending: { timer?: ReturnType<typeof setTimeout> } = {}
+      const listener = (event: DidCommMessageProcessedEvent) => {
+        if (event.payload.encryptedMessage !== encryptedMessage) return
+        clearTimeout(pending.timer)
+        eventEmitter.off(DidCommEventTypes.DidCommMessageProcessed, listener)
+        resolve()
+      }
+      pending.timer = setTimeout(() => {
+        eventEmitter.off(DidCommEventTypes.DidCommMessageProcessed, listener)
+        reject(new CredoError(`Inbound message was not processed in ${this.processedMessageListenerTimeoutMs} ms`))
+      }, this.processedMessageListenerTimeoutMs)
+      agentContext.config.logger.trace('Waiting for the inbound message to be processed')
+      eventEmitter.on(DidCommEventTypes.DidCommMessageProcessed, listener)
+    })
   }
 }
 
