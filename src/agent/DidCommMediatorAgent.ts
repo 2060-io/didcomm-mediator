@@ -142,6 +142,15 @@ export class DidCommMediatorAgent extends Agent {
         }
         this.logger?.debug('Public did:webvh record created')
         this.did = publicDid
+
+        // Tag the did:web form now. Otherwise, until the next restart, a first message
+        // addressed to did:web:<domain> does not match our created DID and gets no connection
+        const newRecord = await didRepository.findCreatedDid(this.context, publicDid)
+        if (newRecord) {
+          newRecord.setTag('alternativeDids', [`did:web:${domain}`])
+          await didRepository.update(this.context, newRecord)
+          this.logger?.debug('Added did:web form as an alternative DID')
+        }
       } else {
         throw new CredoError(`Agent DID method not supported: ${parsedDid.method}`)
       }
