@@ -4,6 +4,8 @@ import type { AgentContext } from '@credo-ts/core'
 
 import { CredoError, EventEmitter, utils } from '@credo-ts/core'
 import {
+  DIDCOMM_V2_ENCRYPTED_MIME_TYPE,
+  DIDCOMM_V2_SIGNED_MIME_TYPE,
   DidCommEventTypes,
   type DidCommMessageProcessedEvent,
   DidCommMimeType,
@@ -11,10 +13,21 @@ import {
   DidCommTransportService,
   type DidCommInboundTransport,
   type DidCommTransportSession,
+  isDidCommV2EncryptedMessage,
+  normalizeDidCommMediaType,
 } from '@credo-ts/didcomm'
 import express, { text, type Express } from 'express'
 
-const supportedContentTypes: string[] = [DidCommMimeType.V0, DidCommMimeType.V1]
+const v1ContentTypes: string[] = [DidCommMimeType.V0, DidCommMimeType.V1]
+const supportedContentTypes: string[] = [...v1ContentTypes, DIDCOMM_V2_ENCRYPTED_MIME_TYPE, DIDCOMM_V2_SIGNED_MIME_TYPE]
+
+const normalizeContentType = (contentType: string | undefined): string | undefined =>
+  contentType ? normalizeDidCommMediaType(contentType) : undefined
+
+const isSupportedContentType = (contentType: string | undefined): boolean => {
+  const normalized = normalizeContentType(contentType)
+  return normalized !== undefined && supportedContentTypes.includes(normalized)
+}
 
 export class HttpInboundTransport implements DidCommInboundTransport {
   public readonly app: Express
@@ -46,7 +59,7 @@ export class HttpInboundTransport implements DidCommInboundTransport {
 
     this.app.use(
       text({
-        type: supportedContentTypes,
+        type: (req) => isSupportedContentType(req.headers['content-type']),
         limit: '5mb',
       })
     )
@@ -60,9 +73,7 @@ export class HttpInboundTransport implements DidCommInboundTransport {
     })
 
     this.app.post(this.path, async (req, res) => {
-      const contentType = req.headers['content-type']
-
-      if (!contentType || !supportedContentTypes.includes(contentType)) {
+      if (!isSupportedContentType(req.headers['content-type'])) {
         return res
           .status(415)
           .send(`Unsupported content-type. Supported content-types are: ${supportedContentTypes.join(', ')}`)
@@ -166,8 +177,10 @@ export class HttpTransportSession implements DidCommTransportSession {
     const didCommConfig = agentContext.dependencyManager.resolve(DidCommModuleConfig)
     let responseMimeType = didCommConfig.didCommMimeType
 
-    const requestMimeType = this.req.headers['content-type']
-    if (requestMimeType && supportedContentTypes.includes(requestMimeType)) {
+    const requestMimeType = normalizeContentType(this.req.headers['content-type'])
+    if (isDidCommV2EncryptedMessage(encryptedMessage)) {
+      responseMimeType = DIDCOMM_V2_ENCRYPTED_MIME_TYPE
+    } else if (requestMimeType && v1ContentTypes.includes(requestMimeType)) {
       responseMimeType = requestMimeType
     }
 
