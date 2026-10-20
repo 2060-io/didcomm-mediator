@@ -18,11 +18,6 @@ overrides:
   '@types/ws': ^8.5.13
   '@types/node': ^20.14.9
 
-patchedDependencies:
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1':
-    hash: i7nz7h4rgcdpge6ks4oihmndgq
-    path: patches/@credo-ts__didcomm-transport-queue-postgres@0.0.1.patch
-
 importers:
 
   .:
@@ -43,8 +38,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1(@credo-ts/core@0.8.0-pr-2704-20261016160242(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261016160242(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
-        specifier: ^0.0.1
-        version: 0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.8.0-pr-2704-20261016160242(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261016160242(typescript@5.9.3))
+        specifier: 0.0.2
+        version: 0.0.2(@credo-ts/core@0.8.0-pr-2704-20261016160242(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261016160242(typescript@5.9.3))
       '@credo-ts/node':
         specifier: 0.8.0-pr-2704-20261016160242
         version: 0.8.0-pr-2704-20261016160242(typescript@5.9.3)
@@ -406,8 +401,8 @@ packages:
       '@credo-ts/core': 0.8.0-pr-2704-20261016160242
       '@credo-ts/didcomm': 0.8.0-pr-2704-20261016160242
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1':
-    resolution: {integrity: sha512-1J6EXeSM9WWY8S0QJBneLY9exgXka9CDUqpflVrzh+4q56zVgQ+c4/ThqYsbI+zkTKIrW2xELr0wJz4qzCeOJQ==}
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.2':
+    resolution: {integrity: sha512-P98mB3Pb6HMk0ZVmKzfvnq2UVwPoEMdUwkBu2c8r3pt+Ju+1Q1fPpnso2KdwByxR+/ArAdEPBLkYQ+cTWo347A==}
     peerDependencies:
       '@credo-ts/core': 0.8.0-pr-2704-20261016160242
       '@credo-ts/didcomm': 0.8.0-pr-2704-20261016160242
@@ -3865,7 +3860,7 @@ snapshots:
       class-transformer: 0.5.1
       class-validator: 0.14.4
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.1(patch_hash=i7nz7h4rgcdpge6ks4oihmndgq)(@credo-ts/core@0.8.0-pr-2704-20261016160242(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261016160242(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.2(@credo-ts/core@0.8.0-pr-2704-20261016160242(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261016160242(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.8.0-pr-2704-20261016160242(typescript@5.9.3)
       '@credo-ts/didcomm': 0.8.0-pr-2704-20261016160242(typescript@5.9.3)

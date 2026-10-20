@@ -7,9 +7,7 @@ FROM base AS builder
 WORKDIR /www
 ENV RUN_MODE="docker"
 
-# Patches dir is read by pnpm at install time (pnpm.patchedDependencies).
 COPY package.json pnpm-lock.yaml ./
-COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
 COPY tsconfig.json ./
