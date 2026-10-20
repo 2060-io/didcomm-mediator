@@ -60,6 +60,9 @@ export class MediatorWsInboundTransport implements DidCommInboundTransport {
   public async stop() {
     this.logger.debug('Closing WebSocket Server')
 
+    // With noServer, close() only calls back once every client is gone
+    for (const client of this.socketServer.clients) client.terminate()
+
     return new Promise<void>((resolve, reject) => {
       this.socketServer.close((error) => {
         if (error) {
