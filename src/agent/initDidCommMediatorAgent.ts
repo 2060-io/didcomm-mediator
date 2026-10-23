@@ -33,6 +33,8 @@ import {
 import { createMediator, type CloudAgentOptions, DidCommMediatorAgent } from './DidCommMediatorAgent.js'
 import { deriveShortenBaseFromPublicDid } from '../util/invitationBase.js'
 import { isShortenUrlRecordExpired, startShortenUrlRecordsCleanupMonitor } from '../util/shortenUrlRecordsCleanup.js'
+import { startPendingMessagesPush } from '../util/pendingMessagesPush.js'
+import { PENDING_MESSAGES_PUSH_DELAY_MS } from '../config/constants.js'
 import { HttpInboundTransport } from '../transport/HttpInboundTransport.js'
 import { MediatorWsInboundTransport } from '../transport/MediatorWsInboundTransport.js'
 import {
@@ -64,6 +66,7 @@ export const initMediator = async (
     postgresPassword?: string
     postgresHost?: string
     messagePickupPostgresDatabaseName?: string
+    pendingMessagesPushDelayMs?: number
     did?: string
   }
 ): Promise<{
@@ -122,6 +125,32 @@ export const initMediator = async (
   if (queueTransportRepository instanceof DidCommTransportQueuePostgres) {
     await queueTransportRepository.initialize(agent)
 
+    const sendPushNotification = async (connectionId: string, messageId: string): Promise<boolean> => {
+      const connectionRecord = await agent.didcomm.connections.findById(connectionId)
+      if (!connectionRecord) {
+        logger.warn(`[PushNotification] No connection record found for connectionId: ${connectionId}`)
+        return false
+      }
+
+      const token = connectionRecord.getTag('device_token') as string | null
+      if (!token) {
+        logger.debug(`[PushNotification] No device token found for connectionId: ${connectionId}`)
+        return false
+      }
+
+      let devicePlatform = connectionRecord.getTag('device_platform') as string | null | undefined
+      if (!devicePlatform) {
+        const fcmRepository = agent.dependencyManager.resolve(DidCommPushNotificationsFcmRepository)
+        const fcmRecord = await fcmRepository.findSingleByQuery(agent.context, { connectionId })
+        if (fcmRecord?.devicePlatform) {
+          devicePlatform = fcmRecord.devicePlatform
+          connectionRecord.setTag('device_platform', devicePlatform)
+          await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connectionRecord)
+        }
+      }
+      return localFcmNotificationSender.sendMessage(token, messageId, devicePlatform)
+    }
+
     agent.events.on<PostgresMessageQueuedEvent>(
       'TransportQueuePostgresMessageQueued',
       async ({ payload: { message, session } }) => {
@@ -144,45 +173,26 @@ export const initMediator = async (
             return
           }
 
-          const connectionRecord = await agent.didcomm.connections.findById(message.connectionId)
-          if (!connectionRecord) {
-            logger.warn(
-              `[TransportQueuePostgresMessageQueued] No connection record found for connectionId: ${message.connectionId}`
-            )
-            return
-          }
-
-          const token = connectionRecord.getTag('device_token') as string | null
-          if (!token) {
-            logger.debug(
-              `[TransportQueuePostgresMessageQueued] No device token found for connectionId: ${message.connectionId}`
-            )
-            return
-          }
-
           logger.debug(
             `[TransportQueuePostgresMessageQueued] Sending push notification for message ${message.id} to connection ${message.connectionId}`
           )
-          let devicePlatform = connectionRecord.getTag('device_platform') as string | null | undefined
-          if (!devicePlatform) {
-            const fcmRepository = agent.dependencyManager.resolve(DidCommPushNotificationsFcmRepository)
-            const fcmRecord = await fcmRepository.findSingleByQuery(agent.context, {
-              connectionId: message.connectionId,
-            })
-            if (fcmRecord?.devicePlatform) {
-              devicePlatform = fcmRecord.devicePlatform
-              connectionRecord.setTag('device_platform', devicePlatform)
-              await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connectionRecord)
-            }
+          if (await sendPushNotification(message.connectionId, message.id)) {
+            logger.info(
+              `[TransportQueuePostgresMessageQueued] Push notification for message ${message.id} sent successfully`
+            )
           }
-          await localFcmNotificationSender.sendMessage(token, message.id, devicePlatform)
-          logger.info(
-            `[TransportQueuePostgresMessageQueued] Push notification for message ${message.id} sent successfully`
-          )
         } catch (error) {
           logger.error(`[TransportQueuePostgresMessageQueued] Error processing event: ${error}`)
         }
       }
+    )
+
+    startPendingMessagesPush(
+      agent,
+      queueTransportRepository,
+      config.pendingMessagesPushDelayMs ?? PENDING_MESSAGES_PUSH_DELAY_MS,
+      sendPushNotification,
+      logger
     )
   }
 

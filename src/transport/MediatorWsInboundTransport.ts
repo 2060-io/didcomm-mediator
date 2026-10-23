@@ -8,6 +8,7 @@ import {
   type DidCommTransportSession,
 } from '@credo-ts/didcomm'
 import WebSocket, { WebSocketServer } from 'ws'
+import { WS_SEND_TIMEOUT_MS } from '../config/constants.js'
 
 interface ExtWebSocket extends WebSocket {
   isAlive: boolean
@@ -132,12 +133,23 @@ export class WebSocketTransportSession implements DidCommTransportSession {
       throw new CredoError(`${this.type} transport session has been closed.`)
     }
 
-    this.socket.send(JSON.stringify(encryptedMessage), (error) => {
-      if (error != void 0) {
-        this.logger.debug(`Error sending message: ${error}`)
-        throw new CredoError(`${this.type} send message failed.`, { cause: error })
-      }
-      this.logger.debug(`${this.type} sent message successfully.`)
+    await new Promise<void>((resolve, reject) => {
+      // Credo processes inbound messages one at a time, so a write stuck on a stalled socket holds up every connection
+      const timeout = setTimeout(() => {
+        this.logger.debug(`${this.type} send not written after ${WS_SEND_TIMEOUT_MS}ms, terminating the socket`)
+        this.socket.terminate()
+        reject(new CredoError(`${this.type} send message timed out.`))
+      }, WS_SEND_TIMEOUT_MS)
+      this.socket.send(JSON.stringify(encryptedMessage), (error) => {
+        clearTimeout(timeout)
+        if (error != void 0) {
+          this.logger.debug(`Error sending message: ${error}`)
+          reject(new CredoError(`${this.type} send message failed.`, { cause: error }))
+          return
+        }
+        this.logger.debug(`${this.type} sent message successfully.`)
+        resolve()
+      })
     })
   }
 
