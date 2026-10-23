@@ -17,6 +17,7 @@ import {
   POSTGRES_PASSWORD,
   POSTGRES_USER,
   MPR_POSTGRES_DATABASE_NAME,
+  PENDING_MESSAGES_PUSH_DELAY_MS,
   SHORTEN_INVITATION_BASE_URL,
   SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
 } from './config/constants.js'
@@ -56,6 +57,7 @@ async function run() {
       postgresPassword: POSTGRES_PASSWORD,
       postgresHost: POSTGRES_HOST,
       messagePickupPostgresDatabaseName: MPR_POSTGRES_DATABASE_NAME,
+      pendingMessagesPushDelayMs: PENDING_MESSAGES_PUSH_DELAY_MS,
       shortenInvitationBaseUrl: computedShortenBase,
       shortenUrlCleanupIntervalSeconds: SHORTEN_URL_CLEANUP_INTERVAL_SECONDS,
       endpoints: AGENT_ENDPOINTS,

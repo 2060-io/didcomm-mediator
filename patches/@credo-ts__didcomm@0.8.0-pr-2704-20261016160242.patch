@@ -1,0 +1,111 @@
+diff --git a/build/modules/message-pickup/DidCommMessagePickupApi.mjs b/build/modules/message-pickup/DidCommMessagePickupApi.mjs
+index 824344da9e01a31bd94236cc71210de2fcbd7b73..d0c0cae2ec2acd871159456ae91d326904b5efcb 100644
+--- a/build/modules/message-pickup/DidCommMessagePickupApi.mjs
++++ b/build/modules/message-pickup/DidCommMessagePickupApi.mjs
+@@ -96,6 +96,7 @@ let DidCommMessagePickupApi = class DidCommMessagePickupApi {
+ 		const session = this.messagePickupSessionService.getLiveSession(this.agentContext, pickupSessionId);
+ 		if (!session) throw new CredoError(`No active live mode session found with id ${pickupSessionId}`);
+ 		const connectionRecord = await this.connectionService.getById(this.agentContext, session.connectionId);
++		if (!this.messagePickupSessionService.getLiveSession(this.agentContext, pickupSessionId)) throw new CredoError(`Live mode session ${pickupSessionId} ended while loading its connection`);
+ 		if (session.protocolVersion === "v4") assertDidCommV2Connection(connectionRecord, "Message Pickup 4.0");
+ 		else assertDidCommV1Connection(connectionRecord, "Message Pickup");
+ 		const deliverMessagesReturn = await this.getProtocol(session.protocolVersion).createDeliveryMessage(this.agentContext, {
+diff --git a/build/modules/message-pickup/protocol/v2/DidCommMessagePickupV2Protocol.mjs b/build/modules/message-pickup/protocol/v2/DidCommMessagePickupV2Protocol.mjs
+index 7f936cb07543281087706af1df807ed0c356a414..abc842b47396451563c656c65c0716eec9f2e2a9 100644
+--- a/build/modules/message-pickup/protocol/v2/DidCommMessagePickupV2Protocol.mjs
++++ b/build/modules/message-pickup/protocol/v2/DidCommMessagePickupV2Protocol.mjs
+@@ -83,13 +83,18 @@ let DidCommMessagePickupV2Protocol = class DidCommMessagePickupV2Protocol extend
+ 		const recipientKey = messageContext.message.recipientKey;
+ 		const agentContext = messageContext.agentContext;
+ 		const queueTransportRepository = agentContext.dependencyManager.resolve(DidCommModuleConfig).queueTransportRepository;
++		const liveSession = agentContext.dependencyManager.resolve(DidCommMessagePickupSessionService).getLiveSessionByConnectionId(agentContext, {
++			connectionId: connection.id,
++			role: "MessageHolder"
++		});
+ 		const statusMessage = new DidCommStatusV2Message({
+ 			threadId: messageContext.message.threadId,
+ 			recipientKey,
+ 			messageCount: await queueTransportRepository.getAvailableMessageCount(agentContext, {
+ 				connectionId: connection.id,
+ 				recipientDid: recipientKey ? verkeyToDidKey(recipientKey) : void 0
+-			})
++			}),
++			liveDelivery: liveSession !== void 0 && liveSession.transportSessionId === messageContext.sessionId
+ 		});
+ 		return new DidCommOutboundMessageContext(statusMessage, {
+ 			agentContext: messageContext.agentContext,
+@@ -177,7 +182,7 @@ let DidCommMessagePickupV2Protocol = class DidCommMessagePickupV2Protocol extend
+ 		else sessionService.removeLiveSession(agentContext, { connectionId: connection.id });
+ 		const statusMessage = new DidCommStatusV2Message({
+ 			threadId: message.threadId,
+-			liveDelivery: message.liveDelivery,
++			liveDelivery: message.liveDelivery && sessionId !== void 0,
+ 			messageCount: await queueTransportRepository.getAvailableMessageCount(agentContext, { connectionId: connection.id })
+ 		});
+ 		return new DidCommOutboundMessageContext(statusMessage, {
+diff --git a/build/modules/message-pickup/protocol/v4/DidCommMessagePickupV4Protocol.mjs b/build/modules/message-pickup/protocol/v4/DidCommMessagePickupV4Protocol.mjs
+index 66ecd63d1c5f569cf17c693a28d35ef2d27a9136..5fab1651e750360a27a098278e185bf68f5ba841 100644
+--- a/build/modules/message-pickup/protocol/v4/DidCommMessagePickupV4Protocol.mjs
++++ b/build/modules/message-pickup/protocol/v4/DidCommMessagePickupV4Protocol.mjs
+@@ -91,13 +91,18 @@ let DidCommMessagePickupV4Protocol = class DidCommMessagePickupV4Protocol extend
+ 		const recipientDid = messageContext.message.recipientDid;
+ 		const agentContext = messageContext.agentContext;
+ 		const queueTransportRepository = agentContext.dependencyManager.resolve(DidCommModuleConfig).queueTransportRepository;
++		const liveSession = agentContext.dependencyManager.resolve(DidCommMessagePickupSessionService).getLiveSessionByConnectionId(agentContext, {
++			connectionId: connection.id,
++			role: "MessageHolder"
++		});
+ 		const statusMessage = new DidCommStatusV4Message({
+ 			threadId: messageContext.message.threadId,
+ 			recipientDid,
+ 			messageCount: await queueTransportRepository.getAvailableMessageCount(agentContext, {
+ 				connectionId: connection.id,
+ 				recipientDid
+-			})
++			}),
++			liveDelivery: liveSession !== void 0 && liveSession.transportSessionId === messageContext.sessionId
+ 		});
+ 		return new DidCommOutboundMessageContext(statusMessage, {
+ 			agentContext: messageContext.agentContext,
+diff --git a/build/modules/routing/services/DidCommMediatorService.mjs b/build/modules/routing/services/DidCommMediatorService.mjs
+index d3eca7a9db1418497f84ac8f986caf66c41ce286..7f63b84aabd2685a934f4ada06205fd3a49eec8f 100644
+--- a/build/modules/routing/services/DidCommMediatorService.mjs
++++ b/build/modules/routing/services/DidCommMediatorService.mjs
+@@ -15,6 +15,7 @@ import { DidCommMediationRecord } from "../repository/DidCommMediationRecord.mjs
+ import { DidCommMediationRepository } from "../repository/DidCommMediationRepository.mjs";
+ import "../repository/index.mjs";
+ import { DidCommMessageSender } from "../../../DidCommMessageSender.mjs";
++import { MessageSendingError } from "../../../errors/MessageSendingError.mjs";
+ import { DidCommConnectionService } from "../../connections/services/DidCommConnectionService.mjs";
+ import "../DidCommRoutingEvents.mjs";
+ import "../models/DidCommMediationRole.mjs";
+@@ -24,6 +25,7 @@ import { DidCommMediationGrantMessage } from "../protocol/v1/messages/DidCommMed
+ import "../protocol/v1/messages/index.mjs";
+ import "../../connections/services/index.mjs";
+ import { DidCommMessagePickupApi } from "../../message-pickup/DidCommMessagePickupApi.mjs";
++import { DidCommMessagePickupSessionService } from "../../message-pickup/services/DidCommMessagePickupSessionService.mjs";
+ import "../../message-pickup/DidCommMessagePickupSession.mjs";
+ import "../../message-pickup/index.mjs";
+ import "../DidCommMessageForwardingStrategy.mjs";
+@@ -133,10 +135,17 @@ let DidCommMediatorService = class DidCommMediatorService {
+ 					connectionId: mediationRecord.connectionId,
+ 					role: "MessageHolder"
+ 				});
+-				if (session) await messagePickupApi.deliverMessagesFromQueue({
+-					pickupSessionId: session.id,
+-					recipientDid
+-				});
++				if (session) try {
++					await messagePickupApi.deliverMessagesFromQueue({
++						pickupSessionId: session.id,
++						recipientDid
++					});
++				} catch (error) {
++					const sessionService = agentContext.dependencyManager.resolve(DidCommMessagePickupSessionService);
++					const endSession = error instanceof MessageSendingError && sessionService.getLiveSession(agentContext, session.id) !== void 0;
++					this.logger.warn(`Live mode delivery failed for connection '${mediationRecord.connectionId}'${endSession ? ", ending its live mode session" : ""}`, { error: error.message });
++					if (endSession) sessionService.removeLiveSession(agentContext, { connectionId: mediationRecord.connectionId });
++				}
+ 				break;
+ 			}
+ 			case "DirectDelivery": await agentContext.dependencyManager.resolve(DidCommMessageSender).sendPackage(agentContext, {
