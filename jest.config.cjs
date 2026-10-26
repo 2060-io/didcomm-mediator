@@ -17,6 +17,8 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // webcrypto-core's ESM build is a .js file without "type": "module", which Jest can only load as CommonJS
+    '^webcrypto-core$': require.resolve('webcrypto-core', { paths: [require.resolve('@credo-ts/core/package.json')] }),
   },
   transformIgnorePatterns: ['/node_modules/(?!@credo-ts|@2060.io|@openwallet-foundation)/'],
   collectCoverageFrom: ['src/**/*.{js,jsx,tsx,ts}'],
