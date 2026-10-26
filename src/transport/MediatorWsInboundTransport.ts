@@ -134,7 +134,7 @@ export class WebSocketTransportSession implements DidCommTransportSession {
     }
 
     await new Promise<void>((resolve, reject) => {
-      // Credo processes inbound messages one at a time, so a write stuck on a stalled socket holds up every connection
+      // Without a timeout a stalled write holds this connection's forward and its sending rows until the heartbeat ends the socket
       const timeout = setTimeout(() => {
         this.logger.debug(`${this.type} send not written after ${WS_SEND_TIMEOUT_MS}ms, terminating the socket`)
         this.socket.terminate()

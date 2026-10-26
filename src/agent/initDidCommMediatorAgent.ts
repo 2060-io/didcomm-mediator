@@ -26,6 +26,7 @@ import { DidCommHttpOutboundTransport, DidCommWsOutboundTransport } from '@credo
 
 import { LocalFcmNotificationSender } from '../notifications/LocalFcmNotificationSender.js'
 import { InMemoryDidCommQueueTransportRepository } from '../storage/InMemoryDidCommQueueTransportRepository.js'
+import { assertQueueSchema } from '../storage/assertQueueSchema.js'
 import {
   DidCommPushNotificationsFcmRepository,
   DidCommPushNotificationsFcmSetDeviceInfoMessage,
@@ -82,16 +83,19 @@ export const initMediator = async (
     'http://localhost:4000'
   const localFcmNotificationSender = new LocalFcmNotificationSender(logger)
 
-  const queueTransportRepository =
+  const postgresQueueConfig =
     config.postgresHost && config.postgresUser && config.postgresPassword
-      ? new DidCommTransportQueuePostgres({
+      ? {
           logger,
           postgresUser: config.postgresUser,
           postgresPassword: config.postgresPassword,
           postgresHost: config.postgresHost,
-          postgresDatabaseName: config.messagePickupPostgresDatabaseName ?? 'messagepickuprepository',
-        })
-      : new InMemoryDidCommQueueTransportRepository(localFcmNotificationSender)
+          postgresDatabaseName: config.messagePickupPostgresDatabaseName || 'messagepickuprepository',
+        }
+      : undefined
+  const queueTransportRepository = postgresQueueConfig
+    ? new DidCommTransportQueuePostgres(postgresQueueConfig)
+    : new InMemoryDidCommQueueTransportRepository(localFcmNotificationSender)
 
   const app = express()
   app.use(cors())
@@ -122,8 +126,9 @@ export const initMediator = async (
   const didcommApi = agent.dependencyManager.resolve(DidCommApi)
   const shortenUrlRepository = agent.dependencyManager.resolve(DidCommShortenUrlRepository)
 
-  if (queueTransportRepository instanceof DidCommTransportQueuePostgres) {
+  if (postgresQueueConfig && queueTransportRepository instanceof DidCommTransportQueuePostgres) {
     await queueTransportRepository.initialize(agent)
+    await assertQueueSchema(postgresQueueConfig)
 
     const sendPushNotification = async (connectionId: string, messageId: string): Promise<boolean> => {
       const connectionRecord = await agent.didcomm.connections.findById(connectionId)

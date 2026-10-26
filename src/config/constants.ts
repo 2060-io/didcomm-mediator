@@ -24,7 +24,7 @@ export const AGENT_ENDPOINTS = process.env.AGENT_ENDPOINTS?.replace(' ', '').spl
 export const AGENT_PUBLIC_DID = process.env.AGENT_PUBLIC_DID
 export const HTTP_SUPPORT = Boolean(process.env.HTTP_SUPPORT ?? true)
 export const WS_SUPPORT = Boolean(process.env.WS_SUPPORT ?? true)
-export const WS_SEND_TIMEOUT_MS = Number(process.env.WS_SEND_TIMEOUT_MS) || 1000
+export const WS_SEND_TIMEOUT_MS = Number(process.env.WS_SEND_TIMEOUT_MS) || 10000
 export const DIDCOMM_V1_SUPPORT = parseBoolEnv(process.env.DIDCOMM_V1_SUPPORT, true)
 export const DIDCOMM_V2_SUPPORT = parseBoolEnv(process.env.DIDCOMM_V2_SUPPORT, true)
 

@@ -45,7 +45,7 @@ index cabe9b6be1157834d83891e9cf0eb228bf5116c5..89690bc4515868848491e1dd3695d2d0
       * Emits a MessageQueuedEvent using the agent's EventEmitter.
       *
 diff --git a/build/TransportQueuePostgres.js b/build/TransportQueuePostgres.js
-index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0e187641b 100644
+index ef59a989cbdd9bb6f565499dc46a07697f27bacf..a0e6fe2bb87272da9f3daffa7919d8d4a8646da5 100644
 --- a/build/TransportQueuePostgres.js
 +++ b/build/TransportQueuePostgres.js
 @@ -4,16 +4,18 @@ import { EventEmitter } from '@credo-ts/core';
@@ -141,7 +141,7 @@ index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0
 +                }
 +                catch (deliveryError) {
 +                    agentContext.config.logger.warn(`[addMessage] Live delivery failed for connectionId: ${connectionId}, moving message ${messageRecord.id} back to 'pending': ${deliveryError}`);
-+                    await this.messagesCollection.query(`UPDATE queued_message SET state = 'pending', instance = NULL, sending_since = NULL WHERE id = $1 AND state = 'sending'`, [messageRecord.id]);
++                    await this.messagesCollection.query(`UPDATE queued_message SET state = 'pending', instance = NULL, sending_since = NULL WHERE id = $1 AND state = 'sending' AND instance = $2`, [messageRecord.id, this.instanceName]);
 +                    try {
 +                        await this.pubSubInstance.publish('newMessage', connectionId);
 +                    }
@@ -187,15 +187,13 @@ index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0
              }
              finally {
                  await client.query('SELECT pg_advisory_unlock($1)', [REAPER_ADVISORY_LOCK_KEY]);
-@@ -478,6 +509,58 @@ export class DidCommTransportQueuePostgres {
+@@ -478,6 +509,56 @@ export class DidCommTransportQueuePostgres {
              client.release();
          }
      }
 +    async revertUnackedMessages(agentContext, client) {
 +        // Instances older than migration 004 do not set sending_since, so their rows get a full ack timeout from now.
-+        // Rows stuck for over a day are left alone so they are not all delivered again at once.
-+        await client.query(`UPDATE queued_message SET sending_since = now()
-+         WHERE state = 'sending' AND sending_since IS NULL AND created_at > now() - interval '24 hours'`);
++        await client.query(`UPDATE queued_message SET sending_since = now() WHERE state = 'sending' AND sending_since IS NULL`);
 +        const reverted = await client.query(`UPDATE queued_message SET state = 'pending', instance = NULL, sending_since = NULL
 +         WHERE state = 'sending' AND sending_since < now() - ($1::bigint * interval '1 millisecond')
 +       RETURNING id, connection_id, attempts`, [this.ackTimeoutMs]);
@@ -246,7 +244,7 @@ index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0
      /**
       * Reverts 'sending' messages for the given connectionId back to 'pending' (typically after a
       * LiveSessionRemoved event on the instance that owned the session). Messages that another
-@@ -495,7 +578,7 @@ export class DidCommTransportQueuePostgres {
+@@ -495,7 +576,7 @@ export class DidCommTransportQueuePostgres {
      async checkQueueMessages(agentContext, connectionId, instance) {
          try {
              agentContext.config.logger.debug(`[checkQueueMessages] Init verify messages state 'sending'`);
@@ -255,7 +253,7 @@ index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0
           WHERE qm.state = 'sending' AND qm.connection_id = $1
             AND (qm.instance = $2 OR qm.instance IS NULL OR NOT EXISTS (
               SELECT 1 FROM live_session ls WHERE ls.connection_id = qm.connection_id::text AND ls.instance = qm.instance
-@@ -516,9 +599,11 @@ export class DidCommTransportQueuePostgres {
+@@ -516,9 +597,11 @@ export class DidCommTransportQueuePostgres {
              else {
                  agentContext.config.logger.debug('[checkQueueMessages] No messages in "sending" state.');
              }
@@ -267,7 +265,7 @@ index ef59a989cbdd9bb6f565499dc46a07697f27bacf..f42e74b58e695dd6ab2c18b3fd082ba0
          }
      }
      /**
-@@ -607,6 +692,12 @@ export class DidCommTransportQueuePostgres {
+@@ -607,6 +690,12 @@ export class DidCommTransportQueuePostgres {
              return false;
          }
      }
@@ -342,12 +340,15 @@ index 2ff7fdfc194f9bd97a4ab54622b576c2626e8dc8..cfe55d339f0fd6fd156993c48702e7bb
 \ No newline at end of file
 diff --git a/migrations/004-queued-message-ack-timeout.sql b/migrations/004-queued-message-ack-timeout.sql
 new file mode 100644
-index 0000000000000000000000000000000000000000..8a0a8920dbfb267149e3a5285d09f02d3dd64a20
+index 0000000000000000000000000000000000000000..6db8d5fc05ff48288dd83f6f51056c9d769f7912
 --- /dev/null
 +++ b/migrations/004-queued-message-ack-timeout.sql
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,8 @@
 +-- When a message last moved to `sending` and how many times it did, so the reaper
 +-- can move messages that were never acknowledged back to `pending`.
 +
 +ALTER TABLE queued_message ADD COLUMN IF NOT EXISTS sending_since TIMESTAMPTZ;
 +ALTER TABLE queued_message ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;
++
++-- Messages already stuck in `sending` get a full ack timeout from now and are then delivered again.
++UPDATE queued_message SET sending_since = now() WHERE state = 'sending' AND sending_since IS NULL;
