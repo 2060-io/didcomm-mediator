@@ -1,11 +1,12 @@
 import {
   Agent,
   AgentDependencies,
-  convertPublicKeyToX25519,
   CredoError,
   DependencyManager,
   DidCommV1Service,
   DidDocument,
+  type DidDocumentKey,
+  type DidRecord,
   DidRepository,
   DidsModule,
   InitConfig,
@@ -38,6 +39,7 @@ import { WebDidRegistrar } from './WebDidRegistrar.js'
 import { DIDCOMM_V1_SUPPORT, DIDCOMM_V2_SUPPORT } from '../config/constants.js'
 
 const MANAGED_DIDCOMM_SERVICE_TYPES = [DidCommV1Service.type, NewDidCommV2Service.type] as const
+const KEY_AGREEMENT_FRAGMENT = 'key-agreement-1'
 
 interface AgentOptions<Modules> {
   config: InitConfig
@@ -170,20 +172,31 @@ export class DidCommMediatorAgent extends Agent {
       const didRepository = this.dependencyManager.resolve(DidRepository)
       await didRepository.update(this.agentContext, existingRecord)
     }
-    // DID already exists: the only mutation we can apply at startup is updating the
-    // DIDComm service entries (e.g. endpoint config has changed). Keys are never
-    // rebuilt — they're managed at DID creation time only.
+    // DID already exists: at startup we can update the DIDComm service entries (e.g. endpoint
+    // config has changed) and replace a key agreement key that has no KMS key of its own.
+    // The DIDComm Ed25519 key is never rebuilt — it's managed at DID creation time only.
     const didDocument = existingRecord.didDocument
     if (!didDocument) {
       throw new CredoError(`Existing DID record ${existingRecord.did} has no DID document attached`)
     }
     const recipientKeyId = this.findEd25519VerificationMethodId(didDocument)
-    if (recipientKeyId && this.havePublishedDidCommServicesChanged(didDocument, recipientKeyId)) {
-      didDocument.service = [
-        ...(didDocument.service?.filter((s) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type)) ?? []),
-        ...this.getDidCommServices(didDocument.id, recipientKeyId),
-      ]
-      await this.dids.update({ did: didDocument.id, didDocument })
+    const keyAgreementKey = await this.replaceDerivedKeyAgreementKey(existingRecord, didDocument)
+    const servicesChanged = recipientKeyId && this.havePublishedDidCommServicesChanged(didDocument, recipientKeyId)
+    if (keyAgreementKey || servicesChanged) {
+      if (servicesChanged) {
+        didDocument.service = [
+          ...(didDocument.service?.filter((s) => !MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type)) ?? []),
+          ...this.getDidCommServices(didDocument.id, recipientKeyId),
+        ]
+      }
+      const result = await this.dids.update({ did: didDocument.id, didDocument })
+      if (result.didState.state !== 'finished') {
+        const reason = result.didState.state === 'failed' ? `: ${result.didState.reason}` : ''
+        throw new CredoError(`Cannot update DID ${didDocument.id}${reason}`)
+      }
+      // Map the new key only after the DID document publishes it, so that an interrupted
+      // update makes the next startup replace the key again
+      if (keyAgreementKey) await this.addDidKey(didDocument.id, keyAgreementKey)
       this.logger?.debug(`Public did record updated. Agent public DID: ${this.did}`)
     } else {
       this.logger?.debug(`Existing DID record found. No updates. Agent public DID: ${this.did}`)
@@ -273,6 +286,50 @@ export class DidCommMediatorAgent extends Agent {
     return (didDocument.verificationMethod ?? []).find((vm) => vm.type === 'Ed25519VerificationKey2020')?.id
   }
 
+  /**
+   * DIDComm v2 decrypts with the KMS key of the keyAgreement verification method, and the KMS
+   * does not derive an X25519 key from an Ed25519 key. DIDs created by older versions publish
+   * an X25519 key derived from the DIDComm Ed25519 key, with no KMS key of its own. Put a new
+   * X25519 key in the passed DID document and return its key mapping to store after the update.
+   */
+  private async replaceDerivedKeyAgreementKey(
+    didRecord: DidRecord,
+    didDocument: DidDocument
+  ): Promise<DidDocumentKey | undefined> {
+    const keyAgreementId = `${didDocument.id}#${KEY_AGREEMENT_FRAGMENT}`
+    const verificationMethod = didDocument.verificationMethod?.find((vm) => vm.id === keyAgreementId)
+    if (!verificationMethod) return
+    if (didRecord.keys?.some(({ didDocumentRelativeKeyId }) => keyAgreementId.endsWith(didDocumentRelativeKeyId))) {
+      return
+    }
+
+    this.logger?.info(`Key agreement key of ${didDocument.id} has no KMS key. Replacing it with a new X25519 key`)
+    const { key, publicKeyMultibase } = await this.createKeyAgreementKey()
+    verificationMethod.publicKeyMultibase = publicKeyMultibase
+    return key
+  }
+
+  private async createKeyAgreementKey(): Promise<{ key: DidDocumentKey; publicKeyMultibase: string }> {
+    const kms = this.agentContext.resolve(Kms.KeyManagementApi)
+    const { keyId, publicJwk } = await kms.createKey({ type: { kty: 'OKP', crv: 'X25519' } })
+    return {
+      key: { kmsKeyId: keyId, didDocumentRelativeKeyId: `#${KEY_AGREEMENT_FRAGMENT}` },
+      publicKeyMultibase: Kms.PublicJwk.fromPublicJwk(publicJwk).fingerprint,
+    }
+  }
+
+  private async addDidKey(did: string, key: DidDocumentKey) {
+    const didRepository = this.agentContext.resolve(DidRepository)
+    const [record] = await didRepository.findByQuery(this.agentContext, { did })
+    record.keys = [
+      ...(record.keys ?? []).filter(
+        ({ didDocumentRelativeKeyId }) => didDocumentRelativeKeyId !== key.didDocumentRelativeKeyId
+      ),
+      key,
+    ]
+    await didRepository.update(this.agentContext, record)
+  }
+
   private havePublishedDidCommServicesChanged(didDocument: DidDocument, recipientKeyId: string): boolean {
     const fromDoc = (didDocument.service ?? [])
       .filter((s) => MANAGED_DIDCOMM_SERVICE_TYPES.includes(s.type))
@@ -316,10 +373,10 @@ export class DidCommMediatorAgent extends Agent {
   }
 
   /**
-   * Generate the DIDComm Ed25519 + derived X25519 keys, register the Ed25519 key with the
-   * DID record's KMS mapping, and append the corresponding verification methods, verification
-   * relations, contexts, and managed services to the passed DID document. Intended to be
-   * invoked exactly once per public DID, at creation time.
+   * Generate the DIDComm Ed25519 key and an independent X25519 key agreement key, register both
+   * with the DID record's KMS mapping, and append the corresponding verification methods,
+   * verification relations, contexts, and managed services to the passed DID document. Intended
+   * to be invoked exactly once per public DID, at creation time.
    */
   private async createAndAddDidCommKeysAndServices(didDocument: DidDocument) {
     const publicDid = didDocument.id
@@ -329,7 +386,7 @@ export class DidCommMediatorAgent extends Agent {
       'https://w3id.org/security/suites/ed25519-2020/v1',
       'https://w3id.org/security/suites/x25519-2019/v1',
     ]
-    const keyAgreementId = `${publicDid}#key-agreement-1`
+    const keyAgreementId = `${publicDid}#${KEY_AGREEMENT_FRAGMENT}`
     const kms = this.agentContext.resolve(Kms.KeyManagementApi)
     const didRepository = this.agentContext.resolve(DidRepository)
 
@@ -339,17 +396,25 @@ export class DidCommMediatorAgent extends Agent {
       new Uint8Array([0xed, 0x01, ...publicKeyBytes]),
       MultibaseEncoding.BASE58_BTC
     )
+    const keyAgreementKey = await this.createKeyAgreementKey()
     const [record] = await didRepository.findByQuery(this.agentContext, { did: publicDid })
-    record.keys = [...(record.keys ?? []), { kmsKeyId: key.keyId, didDocumentRelativeKeyId: `#${publicKeyMultibase}` }]
+    record.keys = [
+      ...(record.keys ?? []),
+      { kmsKeyId: key.keyId, didDocumentRelativeKeyId: `#${publicKeyMultibase}` },
+      keyAgreementKey.key,
+    ]
     await didRepository.update(this.agentContext, record)
 
     const verificationMethodId = `${publicDid}#${publicKeyMultibase}`
-    const publicKeyX25519 = convertPublicKeyToX25519(publicKeyBytes)
-    const x25519Key = Kms.PublicJwk.fromPublicKey({ kty: 'OKP', crv: 'X25519', publicKey: publicKeyX25519 })
 
     const verificationMethods = [
       { controller: publicDid, id: verificationMethodId, publicKeyMultibase, type: 'Ed25519VerificationKey2020' },
-      { controller: publicDid, id: keyAgreementId, publicKeyMultibase: x25519Key.fingerprint, type: 'Multikey' },
+      {
+        controller: publicDid,
+        id: keyAgreementId,
+        publicKeyMultibase: keyAgreementKey.publicKeyMultibase,
+        type: 'Multikey',
+      },
     ]
 
     const currentContexts = Array.isArray(didDocument.context)
