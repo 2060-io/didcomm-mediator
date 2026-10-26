@@ -7,21 +7,16 @@ settings:
 overrides:
   tsyringe: 4.8.0
   typescript: ~5.9.3
-  '@credo-ts/anoncreds': 0.8.0-pr-2704-20261026120726
-  '@credo-ts/askar': 0.8.0-pr-2704-20261026120726
-  '@credo-ts/core': 0.8.0-pr-2704-20261026120726
-  '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726
-  '@credo-ts/node': 0.8.0-pr-2704-20261026120726
+  '@credo-ts/anoncreds': 0.8.0-pr-2704-20261026191309
+  '@credo-ts/askar': 0.8.0-pr-2704-20261026191309
+  '@credo-ts/core': 0.8.0-pr-2704-20261026191309
+  '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309
+  '@credo-ts/node': 0.8.0-pr-2704-20261026191309
   '@openwallet-foundation/askar-nodejs': 0.6.0
   '@openwallet-foundation/askar-shared': 0.6.0
   ws: ^8.13.0
   '@types/ws': ^8.5.13
   '@types/node': ^20.14.9
-
-patchedDependencies:
-  '@credo-ts/didcomm@0.8.0-pr-2704-20261026120726':
-    hash: u2o2dlecobv46xlyd6q2j62zpu
-    path: patches/@credo-ts__didcomm@0.8.0-pr-2704-20261026120726.patch
 
 importers:
 
@@ -29,28 +24,28 @@ importers:
     dependencies:
       '@2060.io/credo-ts-didcomm-shorten-url':
         specifier: 0.0.12
-        version: 0.0.12(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))
+        version: 0.0.12(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))
       '@credo-ts/askar':
-        specifier: 0.8.0-pr-2704-20261026120726
-        version: 0.8.0-pr-2704-20261026120726(@openwallet-foundation/askar-shared@0.6.0)(typescript@5.9.3)
+        specifier: 0.8.0-pr-2704-20261026191309
+        version: 0.8.0-pr-2704-20261026191309(@openwallet-foundation/askar-shared@0.6.0)(typescript@5.9.3)
       '@credo-ts/core':
-        specifier: 0.8.0-pr-2704-20261026120726
-        version: 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+        specifier: 0.8.0-pr-2704-20261026191309
+        version: 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@credo-ts/didcomm':
-        specifier: 0.8.0-pr-2704-20261026120726
-        version: 0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)
+        specifier: 0.8.0-pr-2704-20261026191309
+        version: 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@credo-ts/didcomm-push-notifications':
         specifier: ^0.0.1
-        version: 0.0.1(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))
+        version: 0.0.1(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
         specifier: 0.0.3
-        version: 0.0.3(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))
+        version: 0.0.3(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))
       '@credo-ts/node':
-        specifier: 0.8.0-pr-2704-20261026120726
-        version: 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+        specifier: 0.8.0-pr-2704-20261026191309
+        version: 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@credo-ts/webvh':
-        specifier: 0.8.0-pr-2704-20261026120726
-        version: 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+        specifier: 0.8.0-pr-2704-20261026191309
+        version: 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@hyperledger/anoncreds-shared':
         specifier: ^0.4.0
         version: 0.4.0
@@ -187,8 +182,8 @@ packages:
   '@2060.io/credo-ts-didcomm-shorten-url@0.0.12':
     resolution: {integrity: sha512-FJxopR3kuHQ8ZCRcAw50vz9wPDjYk0WIiQGEaof8jS/9jybppHYpopnkQxDgMz6u9SI5/w6Vb4P/PFhYVZGtkw==}
     peerDependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309
 
   '@animo-id/mdoc@0.5.2':
     resolution: {integrity: sha512-EQVsNOOeXFfBaEHkiKoh24jbSEQ1MORB/kUu0rnNrAEETpY5GK/H9iWevYFdmNDIqQTIEJlkU7S+sIj3pe66eA==}
@@ -395,37 +390,37 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@credo-ts/askar@0.8.0-pr-2704-20261026120726':
-    resolution: {integrity: sha512-1fXXG56+QdaCKMFY7cdB3DMao+EOaCw7AXCbi8nCw1Hhy97tgkpVpyTprNHIFFrNH7UB8wU00k6Clq3ac1KrXw==}
+  '@credo-ts/askar@0.8.0-pr-2704-20261026191309':
+    resolution: {integrity: sha512-aPGkTeCye4scdEl4VPGYMnxaZJfbjUV2mKnmu2O/qEHMmMM59PUf77G2d1VrqfW6EzIwlak2EK0rPQheZYCvIQ==}
     peerDependencies:
       '@openwallet-foundation/askar-shared': 0.6.0
 
-  '@credo-ts/core@0.8.0-pr-2704-20261026120726':
-    resolution: {integrity: sha512-A0pk6Kglga9KdxQHCXdAnO8mvNHPDfN8UR74ioVoSuU1zjnY1Mwzn0bm8wawRXT1EjAlPLPJrFdJsfp78vZHAw==}
+  '@credo-ts/core@0.8.0-pr-2704-20261026191309':
+    resolution: {integrity: sha512-DAYkzz8h+k/F3GsxiLPSXpsqfbktED5u71thTAbhmL8JYMmF6+6yqf5dtznWObrmcFhXFrZDbjLOM4usmdLa5w==}
 
   '@credo-ts/didcomm-push-notifications@0.0.1':
     resolution: {integrity: sha512-gWeIsjDMxMrcdJF9ZZ1hhL2IO1gWWJ0iflrg+NzTEn6D1VkgzdQgrJcv5zSXxjQ2Xj+wEp4XrmuQYUVbp8hALA==}
     peerDependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309
 
   '@credo-ts/didcomm-transport-queue-postgres@0.0.3':
     resolution: {integrity: sha512-Ah1zzBA9MaVFJCCj+z7OWMVTIJA5iTaH1oTZSCxOkpW59G4l0lkgWAo7zr9VuDlMgt6Ar0oX0x5G8gDCnPDEWA==}
     peerDependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309
 
-  '@credo-ts/didcomm@0.8.0-pr-2704-20261026120726':
-    resolution: {integrity: sha512-43SL45dkw5HjPAkAUKkne7CshllpHUHjMs5TzBmiHbC9blNJXzYqNRQwf2GasCIECTgBTIp+9GmxTv12499szw==}
+  '@credo-ts/didcomm@0.8.0-pr-2704-20261026191309':
+    resolution: {integrity: sha512-VXLVKmhvgb5Qae/m+gFYQx2i70WBHA+12e0EQzcxYRtxfYEw4y1peSDdE4rPGrELSs+9+fRsNJkbpWhbmYVn1g==}
 
-  '@credo-ts/node@0.8.0-pr-2704-20261026120726':
-    resolution: {integrity: sha512-lyA6mRAh4gcZlmZrGoXoRTbChQg2yYfzefF+oJ7QrtbaVxDrxmqacc/gVJ/f+RDGrMc9nuIjPLDyaINQArOFUw==}
+  '@credo-ts/node@0.8.0-pr-2704-20261026191309':
+    resolution: {integrity: sha512-vz+MWLYk6DOpwwl8GlxPUgBc6aNK+PJXAgDtTkFe81bH4VFE+K7Ged9FnRXIRKJDcBR8LN/Xd2g/bV1nBOLIBA==}
     engines: {node: '>=22'}
 
-  '@credo-ts/webvh@0.8.0-pr-2704-20261026120726':
-    resolution: {integrity: sha512-vayYueeIxzfBCBCn6TJTdL+6VWF09EtNyzhQqXvFOs4QE6TKH5dtdjd0GhB3nHcpzs/ZuZn8cIv4F6XgnXolww==}
+  '@credo-ts/webvh@0.8.0-pr-2704-20261026191309':
+    resolution: {integrity: sha512-k0D2RER7ZIj7cIHKhYJlTF3b4sgZRAI6jTwFlrym1BYr2QZA8ohWaUMlFodlUsXPfxwqPapdVwHw/TFLQKcyPQ==}
     peerDependencies:
-      '@credo-ts/anoncreds': 0.8.0-pr-2704-20261026120726
+      '@credo-ts/anoncreds': 0.8.0-pr-2704-20261026191309
     peerDependenciesMeta:
       '@credo-ts/anoncreds':
         optional: true
@@ -827,11 +822,16 @@ packages:
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
-  '@scure/base@2.0.0':
-    resolution: {integrity: sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==}
+  '@scure/base@2.4.0':
+    resolution: {integrity: sha512-thZ1TuJwFwBblOhgsjDKvvGirBxNp+wSvY/DR6tJBJOTDhdAAcHJ8Vbr2eFnqaxeca4+t0i9KBf+uHYGWwZORg==}
 
   '@sd-jwt/core@0.23.2':
     resolution: {integrity: sha512-E1v/lt9K9RsQAesCDqEl7mLe0cVIDiVjlwLb6zZ6KE4iEL5bR1GeW8LO7XgRCFBEdGnpfBjt7QFna6UqD6PzfQ==}
+
+  '@sd-jwt/decode@0.15.0':
+    resolution: {integrity: sha512-c9PX4/Cnl1G0pSUXU236lkDx1AzkbgGKFnevBaVIPX8WlJl0nII345uDW/KWCV4rs5Ci8j4ZviWVOJm8TCt2fg==}
+    engines: {node: '>=18'}
+    deprecated: 'Merged into @sd-jwt/core (>= 0.20.0). Security: GHSA-f9j6-8p6x-r9j6.'
 
   '@sd-jwt/decode@0.7.2':
     resolution: {integrity: sha512-dan2LSvK63SKwb62031G4r7TE4TaiI0EK1KbPXqS+LCXNkNDUHqhtYp9uOpj+grXceCsMtMa2f8VnUfsjmwHHg==}
@@ -851,6 +851,11 @@ packages:
   '@sd-jwt/sd-jwt-vc@0.23.2':
     resolution: {integrity: sha512-/LA9RQqJ3gFC469e1oWXXq/SRw6tlOgpP36Pevqe+vCH4OKstxZXhIvBuzFdHKnsZWevZ6lzCnj6qaMlTRMkcA==}
 
+  '@sd-jwt/types@0.15.0':
+    resolution: {integrity: sha512-3b/jz4xkQ9HAOVtnR5s+R9qzqPUig8EvTK4kDOL1rSdTHSQ8E50+Gji1k2m/0hF/DP4EskWc5iQJKrk2qRohaQ==}
+    engines: {node: '>=18'}
+    deprecated: Package got merged into @sd-jwt/core, please use this instead
+
   '@sd-jwt/types@0.7.2':
     resolution: {integrity: sha512-1NRKowiW0ZiB9SGLApLPBH4Xk8gDQJ+nA9NdZ+uy6MmJKLEwjuJxO7yTvRIv/jX/0/Ebh339S7Kq4RD2AiFuRg==}
     engines: {node: '>=18'}
@@ -858,6 +863,11 @@ packages:
 
   '@sd-jwt/types@0.9.2':
     resolution: {integrity: sha512-eV/MY80ekeTrqaohzPpkrgwPki6Igx69D6RniduV1Ehv6o/zaJQ2F0hY/RqBAkJhQtBQoOzouwKYHme40k1Dlw==}
+    engines: {node: '>=18'}
+    deprecated: Package got merged into @sd-jwt/core, please use this instead
+
+  '@sd-jwt/utils@0.15.0':
+    resolution: {integrity: sha512-eHenn93LQD1DirBwz8bgE5vEH+sJaKKP+1y9kk2OGuPh1vLiw1hT0O7zlvRVHf9Z9SFYe09ZVucH0jDkjo5OAw==}
     engines: {node: '>=18'}
     deprecated: Package got merged into @sd-jwt/core, please use this instead
 
@@ -882,13 +892,15 @@ packages:
 
   '@sphereon/kmp-mdoc-core@0.2.0-SNAPSHOT.26':
     resolution: {integrity: sha512-QXJ6R8ENiZV2rPMbn06cw5JKwqUYN1kzVRbYfONqE1PEXx1noQ4md7uxr2zSczi0ubKkNcbyYDNtIMTZIhGzmQ==}
-    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution: {integrity: sha512-foFxfLkRwcn/MOp/eht46Q7wsvpQGlO7aowowIIb5Tz9u97kYZ2kz6K2h2ODxWuv5CRA7Q0MY8XUBGE2lfOhOQ==}
 
   '@sphereon/ssi-types@0.33.0':
     resolution: {integrity: sha512-OQnWLKZQU6lHlMw3JS5308q5Kctv1eT/NNQthGNXETarsgJFiD711pWMOJvi0p5kLpU8N1e7/okaH3mXsVAW0A==}
+
+  '@sphereon/ssi-types@0.40.1':
+    resolution: {integrity: sha512-57Rzto9G0uQCyu9M7h6pV7iV/0Z7TkZki1iv8hSI+hUnM8MeDTlt9/YuuDWuzpgQhG4iIQg0CuHPJN/g1vj5UA==}
 
   '@stablelib/binary@2.0.1':
     resolution: {integrity: sha512-U9iAO8lXgEDONsA0zPPSgcf3HUBNAqHiJmSHgZz62OvC3Hi2Bhc5kTnQ3S1/L+sthDTHtCMhcEiklmIly6uQ3w==}
@@ -1313,8 +1325,8 @@ packages:
     resolution: {integrity: sha512-ZTgYYLMOXY9qKU/57FAo8F+HA2dGX7bqGc71txDRC1rS4frdFI5R7NhluHxH6M0YItAP0sHB4uqAOcYKxO6uGA==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
 
-  body-parser@2.2.2:
-    resolution: {integrity: sha512-oP5VkATKlNwcgvxi0vM0p/D3n2C3EReYVX+DNYs5TjZFn/oQt2j+4sVJtSMr18pdRr8wjTcBl6LoV+FUwzPmNA==}
+  body-parser@2.4.0:
+    resolution: {integrity: sha512-Ifk1KcLrxaGt1occQagQNFNNOqRt1LFuehEnHHzB8Z6cRgIxRU1TBaiIsUiCdA+gy5PL7Y1IX31DNKkRmxtXjQ==}
     engines: {node: '>=18'}
 
   brace-expansion@1.1.13:
@@ -1463,13 +1475,17 @@ packages:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
     engines: {node: '>= 0.6'}
 
-  content-disposition@1.0.1:
-    resolution: {integrity: sha512-oIXISMynqSqm241k6kcQ5UwttDILMK4BiurCfGEREw6+X9jkkpEe5T9FZaApyLGGOnFuyMWZpdolTXMtvEJ08Q==}
+  content-disposition@2.0.1:
+    resolution: {integrity: sha512-e+H0ZXHSWYrENhQzw1LPuP4oF5MzVKmDU6d3hxlvaPEYLLg62MxtQNPRx4SYSuYJSBUgnQIG4HIN2tEtNv7Dog==}
     engines: {node: '>=18'}
 
   content-type@1.0.5:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}
     engines: {node: '>= 0.6'}
+
+  content-type@2.1.0:
+    resolution: {integrity: sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==}
+    engines: {node: '>=18'}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -1510,6 +1526,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  dcql@1.0.1:
+    resolution: {integrity: sha512-XZ9VJfvHZwPbeg6O+GvyNi7P5n4L+J0ATCFBUvgn2LXzQPoatHnOt9b7uHHtFWZzxyD5ngLpBCEOteEzKgtIAA==}
 
   dcql@4.0.0:
     resolution: {integrity: sha512-GfInd9DqzwU9t6Nf2VkFjlwust0qexwuPlUdbm5LlocEwym/Xip/LBacChbIPwxWnsGHWw3YhCaY1JopefSb6g==}
@@ -1779,8 +1798,8 @@ packages:
     resolution: {integrity: sha512-F2X8g9P1X7uCPZMA3MVf9wcTqlyNp7IhH5qPCI0izhaOIYXaW9L535tGA3qmjRzpH+bZczqq7hVKxTR4NWnu+g==}
     engines: {node: '>= 0.10.0'}
 
-  express@5.2.1:
-    resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
+  express@5.3.0:
+    resolution: {integrity: sha512-qCqy1xSoaugxOD4IVHb1ZWdkvCF2W3aE2okKouWj8VwJ+ztskSiXoBnCSJqfKT+cVPJhuJqe9YLbY425+Zh00g==}
     engines: {node: '>= 18'}
 
   extend@3.0.2:
@@ -2052,8 +2071,8 @@ packages:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
 
-  iconv-lite@0.7.2:
-    resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
+  iconv-lite@0.7.3:
+    resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
     engines: {node: '>=0.10.0'}
 
   ieee754@1.2.1:
@@ -2905,6 +2924,10 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
+  proxy-addr@2.0.8:
+    resolution: {integrity: sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==}
+    engines: {node: '>= 0.10'}
+
   proxy-from-env@2.1.0:
     resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
     engines: {node: '>=10'}
@@ -2936,6 +2959,10 @@ packages:
 
   qs@6.15.0:
     resolution: {integrity: sha512-mAZTtNCeetKMH+pSjrb76NAM8V9a05I9aBZOHztWy/UqcJdQYNsf59vrRKWnojAT9Y+GbIvoTBC++CPHqpDBhQ==}
+    engines: {node: '>=0.6'}
+
+  qs@6.16.1:
+    resolution: {integrity: sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==}
     engines: {node: '>=0.6'}
 
   query-string@9.3.1:
@@ -3096,6 +3123,10 @@ packages:
     resolution: {integrity: sha512-FCLHtRD/gnpCiCHEiJLOwdmFP+wzCmDEkc9y7NsYxeF4u7Btsn1ZuwgwJGxImImHicJArLP4R0yX4c2KCrMrTA==}
     engines: {node: '>= 0.4'}
 
+  side-channel-list@1.0.1:
+    resolution: {integrity: sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==}
+    engines: {node: '>= 0.4'}
+
   side-channel-map@1.0.1:
     resolution: {integrity: sha512-VCjCNfgMsby3tTdo02nbjtM/ewra6jPHmpThenkTYh8pG9ucZ/1P8So4u4FGBek/BjpOVsDCMoLA/iuBKIFXRA==}
     engines: {node: '>= 0.4'}
@@ -3106,6 +3137,10 @@ packages:
 
   side-channel@1.1.0:
     resolution: {integrity: sha512-ZX99e6tRweoUXqR+VBrslhda51Nh5MTQwou5tnUDgbtyM0dBgmhEDtWGP/xbKn6hqfPRHujUNwz5fy/wbbhnpw==}
+    engines: {node: '>= 0.4'}
+
+  side-channel@1.1.1:
+    resolution: {integrity: sha512-6x6dK6zJdpTzF4sQeNYxwtvBzf6Eg4GtlesS94HOvTudUeyK2WXAaIfmDgsyslYrRBeFIlsi54AYsFGUuhmvrQ==}
     engines: {node: '>= 0.4'}
 
   signal-exit@3.0.7:
@@ -3342,9 +3377,9 @@ packages:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
 
-  type-is@2.0.1:
-    resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
-    engines: {node: '>= 0.6'}
+  type-is@2.1.0:
+    resolution: {integrity: sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==}
+    engines: {node: '>= 18'}
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -3419,6 +3454,14 @@ packages:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
     engines: {node: '>=10.12.0'}
 
+  valibot@1.0.0-beta.8:
+    resolution: {integrity: sha512-OPAwJZtowb0j91b+bd77+ny7D1VVzsCzD7Jl9waLUlMprTsfI9Y3HHbW3hAQD7wKDKHsmGEesuiYWaYvcZL2wg==}
+    peerDependencies:
+      typescript: ~5.9.3
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   valibot@1.5.0:
     resolution: {integrity: sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ==}
     peerDependencies:
@@ -3445,8 +3488,8 @@ packages:
     resolution: {integrity: sha512-DclShDbyFGnUuk17Is+hdBPsBbQRiZfcp6sEBS+4y8DeYN+sXnxYJPpdcgbLoNZHGYNoj12MR7MgO/j4VUrdFw==}
     engines: {node: '>=22'}
 
-  webcrypto-core@1.8.1:
-    resolution: {integrity: sha512-P+x1MvlNCXlKbLSOY4cYrdreqPG5hbzkmawbcXLKN/mf6DZW0SdNNkZ+sjwsqVkI4A4Ko2sPZmkZtCKY58w83A==}
+  webcrypto-core@1.9.2:
+    resolution: {integrity: sha512-gsXecm82UQNlTBURJGuqOWy1Ww08S3kZUcr3aOJS02Pk0xLtkfeUAVC0u0xhgdonFme80edSJUIJyuvL/7250Q==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -3549,10 +3592,10 @@ packages:
 
 snapshots:
 
-  '@2060.io/credo-ts-didcomm-shorten-url@0.0.12(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))':
+  '@2060.io/credo-ts-didcomm-shorten-url@0.0.12(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.1
       reflect-metadata: 0.1.14
@@ -3790,9 +3833,9 @@ snapshots:
   '@cbor-extract/cbor-extract-win32-x64@2.2.2':
     optional: true
 
-  '@credo-ts/askar@0.8.0-pr-2704-20261026120726(@openwallet-foundation/askar-shared@0.6.0)(typescript@5.9.3)':
+  '@credo-ts/askar@0.8.0-pr-2704-20261026191309(@openwallet-foundation/askar-shared@0.6.0)(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@noble/curves': 2.4.0
       '@openwallet-foundation/askar-shared': 0.6.0
       '@panva/hpke-noble': 1.1.7(hpke@1.1.7)
@@ -3805,7 +3848,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3)':
+  '@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3)':
     dependencies:
       '@animo-id/pex': 6.1.1
       '@astronautlabs/jsonpath': 1.1.2
@@ -3823,11 +3866,11 @@ snapshots:
       '@peculiar/asn1-schema': 2.11.0
       '@peculiar/asn1-x509': 2.11.0
       '@peculiar/x509': 2.2.0
-      '@scure/base': 2.0.0
+      '@scure/base': 2.4.0
       '@sd-jwt/core': 0.23.2
       '@sd-jwt/sd-jwt-vc': 0.23.2
       '@sphereon/pex-models': 2.3.2
-      '@sphereon/ssi-types': 0.33.0
+      '@sphereon/ssi-types': 0.40.1(typescript@5.9.3)
       '@stablelib/ed25519': 2.1.0
       '@types/events': 3.0.3
       '@types/ws': 8.18.1
@@ -3846,31 +3889,31 @@ snapshots:
       uuid: 14.0.3
       varint: 6.0.0
       web-did-resolver: 3.2.0
-      webcrypto-core: 1.8.1
+      webcrypto-core: 1.9.2
       zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))':
+  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.4
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.3(@credo-ts/core@0.8.0-pr-2704-20261026120726(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.3(@credo-ts/core@0.8.0-pr-2704-20261026191309(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3))':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       pg: 8.20.0
       pg-pubsub: 0.8.1
     transitivePeerDependencies:
       - pg-native
 
-  '@credo-ts/didcomm@0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)':
+  '@credo-ts/didcomm@0.8.0-pr-2704-20261026191309(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@stablelib/ed25519': 2.1.0
       class-transformer: 0.5.1
       class-validator: 0.14.4
@@ -3881,14 +3924,14 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/node@0.8.0-pr-2704-20261026120726(typescript@5.9.3)':
+  '@credo-ts/node@0.8.0-pr-2704-20261026191309(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026120726(patch_hash=u2o2dlecobv46xlyd6q2j62zpu)(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       '@types/express': 5.0.6
       '@types/node': 20.19.39
       '@types/ws': 8.18.1
-      express: 5.2.1
+      express: 5.3.0
       hpke: 1.1.7
       rxjs: 7.8.2
       ws: 8.20.0
@@ -3898,9 +3941,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@credo-ts/webvh@0.8.0-pr-2704-20261026120726(typescript@5.9.3)':
+  '@credo-ts/webvh@0.8.0-pr-2704-20261026191309(typescript@5.9.3)':
     dependencies:
-      '@credo-ts/core': 0.8.0-pr-2704-20261026120726(typescript@5.9.3)
+      '@credo-ts/core': 0.8.0-pr-2704-20261026191309(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.4
       didwebvh-ts: 2.8.0
@@ -4548,11 +4591,16 @@ snapshots:
 
   '@scarf/scarf@1.4.0': {}
 
-  '@scure/base@2.0.0': {}
+  '@scure/base@2.4.0': {}
 
   '@sd-jwt/core@0.23.2':
     dependencies:
       '@owf/identity-common': 0.6.0
+
+  '@sd-jwt/decode@0.15.0':
+    dependencies:
+      '@sd-jwt/types': 0.15.0
+      '@sd-jwt/utils': 0.15.0
 
   '@sd-jwt/decode@0.7.2':
     dependencies:
@@ -4577,9 +4625,16 @@ snapshots:
       '@sd-jwt/core': 0.23.2
       zod: 4.6.7
 
+  '@sd-jwt/types@0.15.0': {}
+
   '@sd-jwt/types@0.7.2': {}
 
   '@sd-jwt/types@0.9.2': {}
+
+  '@sd-jwt/utils@0.15.0':
+    dependencies:
+      '@sd-jwt/types': 0.15.0
+      js-base64: 3.7.8
 
   '@sd-jwt/utils@0.7.2':
     dependencies:
@@ -4620,6 +4675,21 @@ snapshots:
       uint8arrays: 3.1.1
     transitivePeerDependencies:
       - supports-color
+
+  '@sphereon/ssi-types@0.40.1(typescript@5.9.3)':
+    dependencies:
+      '@noble/hashes': 1.6.1
+      '@sd-jwt/decode': 0.15.0
+      '@sd-jwt/types': 0.15.0
+      '@sphereon/kmp-mdoc-core': 0.2.0-SNAPSHOT.26
+      dcql: 1.0.1(typescript@5.9.3)
+      debug: 4.4.3
+      events: 3.3.0
+      jwt-decode: 4.0.0
+      uint8arrays: 3.1.1
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   '@stablelib/binary@2.0.1':
     dependencies:
@@ -5157,17 +5227,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  body-parser@2.2.2:
+  body-parser@2.4.0:
     dependencies:
       bytes: 3.1.2
-      content-type: 1.0.5
+      content-type: 2.1.0
       debug: 4.4.3
       http-errors: 2.0.1
-      iconv-lite: 0.7.2
+      iconv-lite: 0.7.3
       on-finished: 2.4.1
-      qs: 6.15.0
+      qs: 6.16.1
       raw-body: 3.0.2
-      type-is: 2.0.1
+      type-is: 2.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -5321,9 +5391,11 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  content-disposition@1.0.1: {}
+  content-disposition@2.0.1: {}
 
   content-type@1.0.5: {}
+
+  content-type@2.1.0: {}
 
   convert-source-map@2.0.0: {}
 
@@ -5366,6 +5438,12 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  dcql@1.0.1(typescript@5.9.3):
+    dependencies:
+      valibot: 1.0.0-beta.8(typescript@5.9.3)
+    transitivePeerDependencies:
+      - typescript
 
   dcql@4.0.0(typescript@5.9.3):
     dependencies:
@@ -5675,12 +5753,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  express@5.2.1:
+  express@5.3.0:
     dependencies:
       accepts: 2.0.0
-      body-parser: 2.2.2
-      content-disposition: 1.0.1
-      content-type: 1.0.5
+      body-parser: 2.4.0
+      content-disposition: 2.0.1
+      content-type: 2.1.0
       cookie: 0.7.2
       cookie-signature: 1.2.2
       debug: 4.4.3
@@ -5696,14 +5774,14 @@ snapshots:
       on-finished: 2.4.1
       once: 1.4.0
       parseurl: 1.3.3
-      proxy-addr: 2.0.7
-      qs: 6.15.0
+      proxy-addr: 2.0.8
+      qs: 6.16.1
       range-parser: 1.2.1
       router: 2.2.0
       send: 1.2.1
       serve-static: 2.2.1
       statuses: 2.0.2
-      type-is: 2.0.1
+      type-is: 2.1.0
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
@@ -6063,7 +6141,7 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  iconv-lite@0.7.2:
+  iconv-lite@0.7.3:
     dependencies:
       safer-buffer: 2.1.2
 
@@ -7063,6 +7141,11 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
+  proxy-addr@2.0.8:
+    dependencies:
+      forwarded: 0.2.0
+      ipaddr.js: 1.9.1
+
   proxy-from-env@2.1.0: {}
 
   punycode.js@2.3.1:
@@ -7089,6 +7172,11 @@ snapshots:
     dependencies:
       side-channel: 1.1.0
 
+  qs@6.16.1:
+    dependencies:
+      es-define-property: 1.0.1
+      side-channel: 1.1.1
+
   query-string@9.3.1:
     dependencies:
       decode-uri-component: 0.4.1
@@ -7112,7 +7200,7 @@ snapshots:
     dependencies:
       bytes: 3.1.2
       http-errors: 2.0.1
-      iconv-lite: 0.7.2
+      iconv-lite: 0.7.3
       unpipe: 1.0.0
 
   rdf-canonize@3.4.0:
@@ -7280,6 +7368,11 @@ snapshots:
       es-errors: 1.3.0
       object-inspect: 1.13.4
 
+  side-channel-list@1.0.1:
+    dependencies:
+      es-errors: 1.3.0
+      object-inspect: 1.13.4
+
   side-channel-map@1.0.1:
     dependencies:
       call-bound: 1.0.4
@@ -7300,6 +7393,14 @@ snapshots:
       es-errors: 1.3.0
       object-inspect: 1.13.4
       side-channel-list: 1.0.0
+      side-channel-map: 1.0.1
+      side-channel-weakmap: 1.0.2
+
+  side-channel@1.1.1:
+    dependencies:
+      es-errors: 1.3.0
+      object-inspect: 1.13.4
+      side-channel-list: 1.0.1
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
 
@@ -7531,9 +7632,9 @@ snapshots:
       media-typer: 0.3.0
       mime-types: 2.1.35
 
-  type-is@2.0.1:
+  type-is@2.1.0:
     dependencies:
-      content-type: 1.0.5
+      content-type: 2.1.0
       media-typer: 1.1.0
       mime-types: 3.0.2
 
@@ -7597,6 +7698,10 @@ snapshots:
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
+  valibot@1.0.0-beta.8(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
+
   valibot@1.5.0(typescript@5.9.3):
     optionalDependencies:
       typescript: 5.9.3
@@ -7615,12 +7720,12 @@ snapshots:
     dependencies:
       did-resolver: 6.0.0
 
-  webcrypto-core@1.8.1:
+  webcrypto-core@1.9.2:
     dependencies:
       '@peculiar/asn1-schema': 2.11.0
       '@peculiar/json-schema': 1.1.12
+      '@peculiar/utils': 2.0.3
       asn1js: 3.1.0
-      pvtsutils: 1.3.6
       tslib: 2.8.1
 
   webidl-conversions@3.0.1:
