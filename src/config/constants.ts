@@ -11,6 +11,11 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
   return defaultValue
 }
 
+function parseNonNegativeNumberEnv(value: string | undefined, defaultValue: number): number {
+  const parsed = Number(value)
+  return value?.trim() && Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue
+}
+
 export const AGENT_PORT = Number(process.env.AGENT_PORT || 4000)
 export const AGENT_LOG_LEVEL = process.env.AGENT_LOG_LEVEL ? Number(process.env.AGENT_LOG_LEVEL) : LogLevel.Debug
 
@@ -19,6 +24,7 @@ export const AGENT_ENDPOINTS = process.env.AGENT_ENDPOINTS?.replace(' ', '').spl
 export const AGENT_PUBLIC_DID = process.env.AGENT_PUBLIC_DID
 export const HTTP_SUPPORT = Boolean(process.env.HTTP_SUPPORT ?? true)
 export const WS_SUPPORT = Boolean(process.env.WS_SUPPORT ?? true)
+export const WS_SEND_TIMEOUT_MS = Number(process.env.WS_SEND_TIMEOUT_MS) || 10000
 export const DIDCOMM_V1_SUPPORT = parseBoolEnv(process.env.DIDCOMM_V1_SUPPORT, true)
 export const DIDCOMM_V2_SUPPORT = parseBoolEnv(process.env.DIDCOMM_V2_SUPPORT, true)
 
@@ -32,6 +38,10 @@ export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD
 export const POSTGRES_ADMIN_USER = process.env.POSTGRES_ADMIN_USER
 export const POSTGRES_ADMIN_PASSWORD = process.env.POSTGRES_ADMIN_PASSWORD
 export const MPR_POSTGRES_DATABASE_NAME = process.env.MPR_POSTGRES_DATABASE_NAME
+export const PENDING_MESSAGES_PUSH_DELAY_MS = parseNonNegativeNumberEnv(
+  process.env.PENDING_MESSAGES_PUSH_DELAY_MS,
+  60_000
+)
 
 //FIREBASE CONFIG FILE
 
