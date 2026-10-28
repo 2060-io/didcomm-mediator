@@ -90,7 +90,19 @@ export class DidCommMediatorAgent extends Agent {
     // TODO: Make DIDComm version, keys, etc. configurable. Keys can also be imported
     const domain = parsedDid.id.includes(':') ? parsedDid.id.split(':')[1] : parsedDid.id
 
-    const existingRecord = await this.findCreatedDid(parsedDid)
+    let existingRecord = await this.findCreatedDid(parsedDid)
+
+    // A did:web record from a mediator before 2.0.0 publishes an Ed25519VerificationKey2018 key
+    // that the agent rotated at each start, and no DIDComm v2 service. Recreate it once with
+    // managed keys and services. Established connections use pairwise keys, so they are not
+    // affected. Only did:web is recreated: a new did:webvh record would change the SCID.
+    if (existingRecord && parsedDid.method === 'web' && this.isLegacyDidRecord(existingRecord)) {
+      this.logger?.warn(
+        `Existing record for ${existingRecord.did} has no managed DIDComm keys. Recreating it with new keys and services`
+      )
+      await this.dependencyManager.resolve(DidRepository).delete(this.context, existingRecord)
+      existingRecord = null
+    }
 
     // DID has not been created yet. Let's do it
     if (!existingRecord) {
@@ -260,6 +272,14 @@ export class DidCommMediatorAgent extends Agent {
     } catch (error) {
       this.logger?.debug(`Failed to release bootstrap lock ${key}: ${error}`)
     }
+  }
+
+  /**
+   * A record is legacy when its DID document has no managed Ed25519VerificationKey2020 key.
+   * Mediator versions before 2.0.0 published the DIDComm key as Ed25519VerificationKey2018.
+   */
+  private isLegacyDidRecord(didRecord: DidRecord): boolean {
+    return !didRecord.didDocument || !this.findEd25519VerificationMethodId(didRecord.didDocument)
   }
 
   private async findCreatedDid(parsedDid: ParsedDid) {
