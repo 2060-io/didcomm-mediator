@@ -46,9 +46,11 @@ export class LocalFcmNotificationSender implements FcmNotificationSender {
         collapseKey: 'generic-new-messages',
         priority: 'high',
       }
+      // No title: the operating system shows the receiving app's own name and icon above the alert, so one
+      // mediator serves several wallet apps without any of them showing another's brand. The body names no
+      // app and says nothing of the message; the app replaces it with a precise local notification when it runs.
       const notification = {
-        title: 'Hologram',
-        body: 'Checking for new messages',
+        body: 'You have new messages',
       }
       // No aps sound key: silent delivery (no tone or vibration) on iOS
       const apns: ApnsConfig = {
