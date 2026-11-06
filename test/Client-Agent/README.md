@@ -76,7 +76,7 @@ If you need run multiple Client-Agent you may use the Multiple_Agents script, ru
 1. **Request Shortened URL**  
    **Endpoint**: `/shorten-url/request`  
    **Method**: `POST`  
-   **Description**: Sends a DIDComm `request-shortened-url` message using the `@2060.io/credo-ts-didcomm-shorten-url` module. Requires `connectionId`, `url`, `goalCode` and `requestedValiditySeconds` in the payload. Example:
+   **Description**: Sends a DIDComm `request-shortened-url` message using the `@credo-ts/didcomm-shorten-url` module. Requires `connectionId`, `url`, `goalCode` and `requestedValiditySeconds` in the payload. Example:
 
    ```json
    {

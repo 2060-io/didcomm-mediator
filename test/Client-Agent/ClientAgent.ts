@@ -29,7 +29,7 @@ import {
   DidCommShortenUrlRepository,
   DidCommShortenUrlApi,
   DidCommShortenedUrlInvalidatedEvent,
-} from '@2060.io/credo-ts-didcomm-shorten-url'
+} from '@credo-ts/didcomm-shorten-url'
 
 const CLIENT_AGENT_PORT = process.env.CLIENT_AGENT_PORT || 3000
 const CLIENT_AGENT_HOST = process.env.CLIENT_AGENT_HOST || '192.168.100.84'

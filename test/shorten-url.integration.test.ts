@@ -13,7 +13,7 @@ import {
   ShortenUrlRole,
   ShortenUrlState,
   DidCommShortenUrlEventTypes,
-} from '@2060.io/credo-ts-didcomm-shorten-url'
+} from '@credo-ts/didcomm-shorten-url'
 import { log } from 'console'
 
 // Mock LocalFcmNotificationSender to prevent actual FCM initialization during tests
