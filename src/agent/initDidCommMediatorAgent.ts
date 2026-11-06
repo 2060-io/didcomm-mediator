@@ -17,7 +17,7 @@ import {
   DidCommRequestShortenedUrlReceivedEvent,
   DidCommShortenUrlEventTypes,
   DidCommShortenUrlRepository,
-} from '@2060.io/credo-ts-didcomm-shorten-url'
+} from '@credo-ts/didcomm-shorten-url'
 import cors from 'cors'
 import express from 'express'
 import { WebSocketServer } from 'ws'

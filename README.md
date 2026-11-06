@@ -43,7 +43,7 @@ These variables might be set also in `.env` file in the form of KEY=VALUE (one p
 
 ### Shorten URL support
 
-The mediator can act as a DIDComm [shorten-url protocol](https://didcomm.org/shorten-url/1.0/) provider through the library ([@2060.io/credo-ts-didcomm-shorten-url](https://github.com/2060-io/credo-ts-didcomm-ext/tree/main/packages/shorten-url)).
+The mediator can act as a DIDComm [shorten-url protocol](https://didcomm.org/shorten-url/1.0/) provider through the library ([@credo-ts/didcomm-shorten-url](https://github.com/openwallet-foundation/credo-ts-didcomm-ext/tree/main/packages/shorten-url)).
 
 - Set `SHORTEN_INVITATION_BASE_URL` to the publicly reachable origin that will host the `/s` endpoint (for example, the domain behind a reverse proxy). The mediator appends `/s?id=<recordId>` to this base when returning shortened links to clients.
 - The `/s` endpoint resolves the stored long URL and issues an HTTP 302 redirect by default. When the request includes `Accept: application/json`, the mediator attempts to parse DIDComm invitation URLs and returns the invitation payload as JSON; non-invitation URLs are returned as `{ "url": "<longUrl>" }`.

@@ -1,9 +1,5 @@
 import { AgentContext, ConsoleLogger, LogLevel } from '@credo-ts/core'
-import {
-  DidCommShortenUrlRecord,
-  DidCommShortenUrlRepository,
-  ShortenUrlState,
-} from '@2060.io/credo-ts-didcomm-shorten-url'
+import { DidCommShortenUrlRecord, DidCommShortenUrlRepository, ShortenUrlState } from '@credo-ts/didcomm-shorten-url'
 
 const defaultLogger = new ConsoleLogger(LogLevel.Off)
 

@@ -32,7 +32,7 @@ import {
   type DidCommQueueTransportRepository,
 } from '@credo-ts/didcomm'
 import { PushNotificationsFcmModule } from '@credo-ts/didcomm-push-notifications'
-import { DidCommShortenUrlModule, ShortenUrlRole } from '@2060.io/credo-ts-didcomm-shorten-url'
+import { DidCommShortenUrlModule, ShortenUrlRole } from '@credo-ts/didcomm-shorten-url'
 import { WebVhDidResolver, WebVhDidRegistrar } from '@credo-ts/webvh'
 import { multibaseEncode, MultibaseEncoding } from 'didwebvh-ts'
 import { WebDidRegistrar } from './WebDidRegistrar.js'
