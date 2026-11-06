@@ -62,7 +62,6 @@ export const initMediator = async (
   config: Omit<CloudAgentOptions, 'inboundTransports' | 'outboundTransports' | 'queueTransportRepository'> & {
     shortenInvitationBaseUrl?: string
     shortenUrlCleanupIntervalSeconds?: number
-    messagePickupMaxReceiveBytes?: number
     postgresUser?: string
     postgresPassword?: string
     postgresHost?: string
