@@ -64,12 +64,13 @@ export class InMemoryDidCommQueueTransportRepository implements DidCommQueueTran
   }
 
   public takeFromQueue(agentContext: AgentContext, options: TakeFromQueueOptions) {
-    const { connectionId, recipientDid, limit, deleteMessages } = options
+    const { connectionId, recipientDid, messageIds, limit, deleteMessages } = options
     let filtered = this.messages.filter(
       (msg) =>
         msg.connectionId === connectionId &&
         msg.state === 'pending' &&
-        (recipientDid === undefined || msg.recipientDids.includes(recipientDid))
+        (recipientDid === undefined || msg.recipientDids.includes(recipientDid)) &&
+        (messageIds === undefined || messageIds.includes(msg.id))
     )
     const messagesToTake = limit ?? filtered.length
     filtered = filtered.slice(0, messagesToTake)
