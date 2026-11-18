@@ -40,6 +40,10 @@ At the moment, all configuration is done by environment variables. All of them a
 
 These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
 
+### Readiness check
+
+The HTTP server starts to listen before the mediator completes its initialization. During this time, `/health/ready`, `/.well-known/did.json`, `/.well-known/did.jsonl` and `/s` return `503 Service Unavailable` with a `Retry-After` header. When the initialization is complete, `/health/ready` returns `200 OK`. Use `/health/ready` for a Kubernetes readiness probe or for a wait step in a test stack.
+
 ### Shorten URL support
 
 The mediator can act as a DIDComm [shorten-url protocol](https://didcomm.org/shorten-url/1.0/) provider through the library ([@credo-ts/didcomm-shorten-url](https://github.com/openwallet-foundation/credo-ts-didcomm-ext/tree/main/packages/shorten-url)).
