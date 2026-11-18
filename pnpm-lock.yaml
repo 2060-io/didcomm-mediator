@@ -17,6 +17,11 @@ overrides:
   '@types/ws': ^8.5.13
   '@types/node': ^20.14.9
 
+patchedDependencies:
+  '@credo-ts/didcomm@0.8.0-alpha-20261118113730':
+    hash: 4l4kgkg53krz35pifxgwloho3m
+    path: patches/@credo-ts__didcomm@0.8.0-alpha-20261118113730.patch
+
 importers:
 
   .:
@@ -29,16 +34,16 @@ importers:
         version: 0.8.0-alpha-20261118113730(typescript@5.9.3)
       '@credo-ts/didcomm':
         specifier: 0.8.0-alpha-20261118113730
-        version: 0.8.0-alpha-20261118113730(typescript@5.9.3)
+        version: 0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)
       '@credo-ts/didcomm-push-notifications':
         specifier: ^0.0.1
-        version: 0.0.1(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))
+        version: 0.0.1(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))
       '@credo-ts/didcomm-shorten-url':
         specifier: 0.2.0
-        version: 0.2.0(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))
+        version: 0.2.0(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))
       '@credo-ts/didcomm-transport-queue-postgres':
         specifier: 0.0.3
-        version: 0.0.3(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))
+        version: 0.0.3(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))
       '@credo-ts/node':
         specifier: 0.8.0-alpha-20261118113730
         version: 0.8.0-alpha-20261118113730(typescript@5.9.3)
@@ -876,6 +881,7 @@ packages:
 
   '@sphereon/kmp-mdoc-core@0.2.0-SNAPSHOT.26':
     resolution: {integrity: sha512-QXJ6R8ENiZV2rPMbn06cw5JKwqUYN1kzVRbYfONqE1PEXx1noQ4md7uxr2zSczi0ubKkNcbyYDNtIMTZIhGzmQ==}
+    bundledDependencies: []
 
   '@sphereon/pex-models@2.3.2':
     resolution: {integrity: sha512-foFxfLkRwcn/MOp/eht46Q7wsvpQGlO7aowowIIb5Tz9u97kYZ2kz6K2h2ODxWuv5CRA7Q0MY8XUBGE2lfOhOQ==}
@@ -3866,32 +3872,32 @@ snapshots:
       - supports-color
       - typescript
 
-  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))':
+  '@credo-ts/didcomm-push-notifications@0.0.1(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.8.0-alpha-20261118113730(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.4
 
-  '@credo-ts/didcomm-shorten-url@0.2.0(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))':
+  '@credo-ts/didcomm-shorten-url@0.2.0(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.8.0-alpha-20261118113730(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)
       class-transformer: 0.5.1
       class-validator: 0.14.4
       reflect-metadata: 0.1.14
       tsyringe: 4.8.0
 
-  '@credo-ts/didcomm-transport-queue-postgres@0.0.3(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3))':
+  '@credo-ts/didcomm-transport-queue-postgres@0.0.3(@credo-ts/core@0.8.0-alpha-20261118113730(typescript@5.9.3))(@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3))':
     dependencies:
       '@credo-ts/core': 0.8.0-alpha-20261118113730(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)
       pg: 8.20.0
       pg-pubsub: 0.8.1
     transitivePeerDependencies:
       - pg-native
 
-  '@credo-ts/didcomm@0.8.0-alpha-20261118113730(typescript@5.9.3)':
+  '@credo-ts/didcomm@0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)':
     dependencies:
       '@credo-ts/core': 0.8.0-alpha-20261118113730(typescript@5.9.3)
       '@stablelib/ed25519': 2.1.0
@@ -3908,7 +3914,7 @@ snapshots:
   '@credo-ts/node@0.8.0-alpha-20261118113730(typescript@5.9.3)':
     dependencies:
       '@credo-ts/core': 0.8.0-alpha-20261118113730(typescript@5.9.3)
-      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(typescript@5.9.3)
+      '@credo-ts/didcomm': 0.8.0-alpha-20261118113730(patch_hash=4l4kgkg53krz35pifxgwloho3m)(typescript@5.9.3)
       '@types/express': 5.0.6
       '@types/node': 20.19.39
       '@types/ws': 8.18.1
