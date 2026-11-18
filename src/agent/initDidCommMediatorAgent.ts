@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http'
-import type { Express } from 'express'
+import type { Express, Response } from 'express'
 
 import { ConsoleLogger, LogLevel, utils } from '@credo-ts/core'
 import {
@@ -101,6 +101,13 @@ export const initMediator = async (
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
   app.set('json spaces', 2)
+
+  // The HTTP server starts to listen while the agent initializes, before the public DID exists.
+  // Routes that read agent storage return 503 until the initialization is complete.
+  let ready = false
+  const sendNotReady = (res: Response) => res.status(503).set('Retry-After', '1').send('Service Unavailable')
+
+  app.get('/health/ready', (_req, res) => (ready ? res.status(200).send('OK') : sendNotReady(res)))
 
   const inboundTransports = []
   const outboundTransports = [new DidCommWsOutboundTransport(), new DidCommHttpOutboundTransport()]
@@ -239,27 +246,39 @@ export const initMediator = async (
   if (publicDid) {
     app.get('/.well-known/did.json', async (_req, res) => {
       logger.info(`Public Did Document requested`)
+      if (!ready) return sendNotReady(res)
 
-      const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
+      try {
+        const { didDocument: resolvedDidDocument } = await resolveDidDocumentData(agent)
 
-      if (resolvedDidDocument) {
-        res.send(resolvedDidDocument)
-      } else {
-        res.status(404).end()
+        if (resolvedDidDocument) {
+          res.send(resolvedDidDocument)
+        } else {
+          res.status(404).end()
+        }
+      } catch (error) {
+        logger.error(`Failed to resolve public DID document: ${error}`)
+        res.status(500).send('Internal Server Error')
       }
     })
 
     app.get('/.well-known/did.jsonl', async (_req, res) => {
       logger.info(`Public DID log requested`)
+      if (!ready) return sendNotReady(res)
 
-      const { didLog } = await resolveDidDocumentData(agent)
+      try {
+        const { didLog } = await resolveDidDocumentData(agent)
 
-      if (didLog) {
-        res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
-        res.setHeader('Cache-Control', 'no-cache')
-        res.send(didLog)
-      } else {
-        res.status(404).end()
+        if (didLog) {
+          res.setHeader('Content-Type', 'text/jsonl; charset=utf-8')
+          res.setHeader('Cache-Control', 'no-cache')
+          res.send(didLog)
+        } else {
+          res.status(404).end()
+        }
+      } catch (error) {
+        logger.error(`Failed to resolve public DID log: ${error}`)
+        res.status(500).send('Internal Server Error')
       }
     })
 
@@ -267,7 +286,8 @@ export const initMediator = async (
       DidCommConnectionEventTypes.DidCommConnectionStateChanged,
       async ({ payload }) => {
         const connection = payload.connectionRecord
-        if (connection.outOfBandId && payload.connectionRecord.state === DidCommDidExchangeState.RequestReceived) {
+        if (!connection.outOfBandId || connection.state !== DidCommDidExchangeState.RequestReceived) return
+        try {
           // Get the first record matching agent's DID and obtain all alternatives for it
           const [agentPublicDidRecord] = await agent.dids.getCreatedDids({ did: agent.did })
           const alternativeDids = agentPublicDidRecord?.getTag('alternativeDids')
@@ -280,6 +300,8 @@ export const initMediator = async (
             await agent.didcomm.connections.acceptRequest(connection.id)
             logger.debug(`Accepted request for ${invitationId}`)
           }
+        } catch (error) {
+          logger.error(`Failed to process connection request ${connection.id}: ${error}`)
         }
       }
     )
@@ -292,22 +314,27 @@ export const initMediator = async (
       const { message, connection } = payload
       if (!connection) return
 
-      if (message.type === DidCommPushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
-        const deviceInfo = message as DidCommPushNotificationsFcmSetDeviceInfoMessage
-        connection.setTag('device_token', deviceInfo.deviceToken)
-        connection.setTag('device_platform', deviceInfo.devicePlatform)
-        await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connection)
-      }
+      try {
+        if (message.type === DidCommPushNotificationsFcmSetDeviceInfoMessage.type.messageTypeUri) {
+          const deviceInfo = message as DidCommPushNotificationsFcmSetDeviceInfoMessage
+          connection.setTag('device_token', deviceInfo.deviceToken)
+          connection.setTag('device_platform', deviceInfo.devicePlatform)
+          await agent.dependencyManager.resolve(DidCommConnectionService).update(agent.context, connection)
+        }
 
-      if (message.type === DidCommHangupMessage.type.messageTypeUri) {
-        logger.debug(`Hangup received. Connection Id: ${connection.id}`)
-        await agent.didcomm.connections.deleteById(connection.id)
-        logger.debug(`Connection ${connection.id} deleted`)
+        if (message.type === DidCommHangupMessage.type.messageTypeUri) {
+          logger.debug(`Hangup received. Connection Id: ${connection.id}`)
+          await agent.didcomm.connections.deleteById(connection.id)
+          logger.debug(`Connection ${connection.id} deleted`)
+        }
+      } catch (error) {
+        logger.error(`Failed to process message ${message.id} for connection ${connection.id}: ${error}`)
       }
     })
   }
 
   app.get('/s', async (req, res) => {
+    if (!ready) return sendNotReady(res)
     const id = req.query.id
     try {
       if (typeof id !== 'string') {
@@ -332,7 +359,7 @@ export const initMediator = async (
         return res.status(404).json({ error: 'Shortened URL not found' })
       }
       if (await isShortenUrlRecordExpired(shortUrlRecord)) {
-        shortenUrlRepository.deleteById(agent.context, id)
+        await shortenUrlRepository.deleteById(agent.context, id)
         logger.info('[ShortenUrl] /s endpoint received expired shortened URL', { id })
         return res.status(410).json({ error: 'Shortened URL has expired' })
       }
@@ -367,6 +394,8 @@ export const initMediator = async (
       })
     })
   }
+
+  ready = true
 
   return { app, agent, queueTransportRepository }
 }
