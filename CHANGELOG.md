@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.1.0](https://github.com/2060-io/didcomm-mediator/compare/v2.0.0...v2.1.0) (2026-11-20)
+
+
+### Features
+
+* bump credo-ts version ([#71](https://github.com/2060-io/didcomm-mediator/issues/71)) ([5cefe0c](https://github.com/2060-io/didcomm-mediator/commit/5cefe0c63bfffe0e05fb2ed4a9e4a98b138a4a0e))
+* bump to latest credo-ts 0.8 alpha ([#74](https://github.com/2060-io/didcomm-mediator/issues/74)) ([0f400d3](https://github.com/2060-io/didcomm-mediator/commit/0f400d3f89c7fda68acfe7c546fe0e2d4148dedc))
+
+
+### Bug Fixes
+
+* answer 503 until startup is complete and catch route errors ([#75](https://github.com/2060-io/didcomm-mediator/issues/75)) ([ce91ebc](https://github.com/2060-io/didcomm-mediator/commit/ce91ebcd99e67561b199d437950a19b4f848d2e0))
+* answer keylist updates that add an X25519 did:key ([#76](https://github.com/2060-io/didcomm-mediator/issues/76)) ([dab5010](https://github.com/2060-io/didcomm-mediator/commit/dab501017f13655116d2595d4b92baf783ab78ff))
+* get short urls base from did:webvh ([#77](https://github.com/2060-io/didcomm-mediator/issues/77)) ([5a2a395](https://github.com/2060-io/didcomm-mediator/commit/5a2a39507e4e40f197fda1440716c209d98672c2))
+* remove leftovers for mpr config ([75ed756](https://github.com/2060-io/didcomm-mediator/commit/75ed756457313a825d99e04ebdcb1b9f191d5f43))
+
 ## [2.0.0](https://github.com/2060-io/didcomm-mediator/compare/v1.4.1...v2.0.0) (2026-10-28)
 
 
